@@ -70,7 +70,12 @@ Plans:
   1. User can open a settings screen, enter a planned monthly amount for each category, and save it
   2. A budget-vs-actual view shows each category with its planned amount, actual spend, and an over/under indicator
   3. Budget configuration persists across app restarts (no re-entry required)
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Budget data layer: BudgetMap type, store persistence functions, get-budgets/set-budget IPC handlers
+- [ ] 04-02-PLAN.md — Budget UI: BudgetModal (auto-save inputs), BudgetTab (summary cards + comparison table), tab navigation in App.tsx
+- [ ] 04-03-PLAN.md — Human visual verification checkpoint for all Phase 4 budget features
 
 ## Progress
 

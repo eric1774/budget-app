@@ -24,3 +24,13 @@ export type ParseError =
 export type ParseResponse =
   | { ok: true; result: ParseResult }
   | { ok: false; error: ParseError }
+
+// Budget configuration types
+// Key format: "YYYY-MM" (e.g. "2026-02")
+export type MonthKey = string
+
+// Map of category name -> planned monthly amount (in dollars)
+export type CategoryBudgets = Record<string, number>
+
+// Top-level budget store: monthKey -> CategoryBudgets
+export type BudgetMap = Record<MonthKey, CategoryBudgets>
