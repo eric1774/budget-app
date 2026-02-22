@@ -25,3 +25,35 @@ html, body, #root {
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg-app); }
 ::-webkit-scrollbar-thumb { background: #3a3f52; border-radius: 3px; }
+
+/* ── Smooth transitions ── */
+
+/* Chart containers fade + subtle scale on data change */
+.chart-container {
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+/* Category chips transition background/color when toggling */
+.filter-chip {
+  transition: background 150ms ease, color 150ms ease, opacity 150ms ease;
+}
+
+/* Date preset segment buttons */
+.preset-segment {
+  transition: background 150ms ease, color 150ms ease;
+}
+
+/* Chart type icon buttons */
+.chart-type-btn {
+  transition: background 120ms ease;
+}
+
+/* Filter bar slide-in on mount */
+.filter-bar {
+  animation: filterBarFadeIn 200ms ease forwards;
+}
+
+@keyframes filterBarFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
