@@ -1,16 +1,18 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import type { ParseResult, ParseError, ParseResponse } from '../../shared/types'
+import type { ParseResult, ParseError, ParseResponse, BudgetMap } from '../../shared/types'
 import { FilterBar } from './components/FilterBar'
 import type { FilterState } from './components/FilterBar'
 import { SummaryCards } from './components/SummaryCards'
 import { MonthlyChart } from './components/MonthlyChart'
 import { CategoryBreakdownChart } from './components/CategoryBreakdownChart'
 import { BalanceChart } from './components/BalanceChart'
+import { BudgetTab } from './components/BudgetTab'
 import './index.css'
 
 // --- Types ---
 
 type Status = 'welcome' | 'loading' | 'loaded' | 'error'
+type ActiveTab = 'dashboard' | 'budget'
 
 interface BannerState {
   type: 'warning' | 'error' | 'success'
@@ -112,6 +114,8 @@ export default function App(): JSX.Element {
     customTo: '',
     activeCategories: new Set<string>(),
   })
+  const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard')
+  const [budgetMap, setBudgetMap] = useState<BudgetMap>({})
 
   // Show a success banner that auto-dismisses after 2 seconds
   const showSuccessBanner = useCallback((message: string) => {
@@ -123,6 +127,32 @@ export default function App(): JSX.Element {
   useEffect(() => {
     setFilterState((prev) => ({ ...prev, activeCategories: new Set(parseResult?.categories ?? []) }))
   }, [parseResult?.categories])
+
+  // Re-fetch budgetMap when switching back to dashboard (to keep badge in sync)
+  useEffect(() => {
+    window.electronAPI.invoke('get-budgets').then((data) => {
+      setBudgetMap((data as BudgetMap) ?? {})
+    })
+  }, [activeTab])
+
+  // Derive isAnyOverBudget for red dot badge
+  const currentMonthKey = new Date().toISOString().slice(0, 7)
+  const isAnyOverBudget = useMemo(() => {
+    const monthBudgets = budgetMap[currentMonthKey] ?? {}
+    if (Object.keys(monthBudgets).length === 0) return false
+    // Compute actual spend per category for current month
+    const actualByCategory: Record<string, number> = {}
+    for (const t of parseResult?.transactions ?? []) {
+      const tKey = `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`
+      if (tKey === currentMonthKey) {
+        actualByCategory[t.category] = (actualByCategory[t.category] ?? 0) + t.debit
+      }
+    }
+    return Object.entries(monthBudgets).some(([category, budgeted]) => {
+      const actual = actualByCategory[category] ?? 0
+      return actual > budgeted
+    })
+  }, [budgetMap, parseResult, currentMonthKey])
 
   // Derive filteredTransactions based on filterState
   const filteredTransactions = useMemo(() => {
@@ -326,7 +356,7 @@ export default function App(): JSX.Element {
     )
   }
 
-  // Loaded state — full dashboard
+  // Loaded state — full dashboard with tab navigation
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-app)' }}>
       {banner && <Banner {...banner} onDismiss={() => setBanner(null)} />}
@@ -353,28 +383,58 @@ export default function App(): JSX.Element {
         </button>
       </header>
 
-      <FilterBar
-        filterState={filterState}
-        allCategories={parseResult?.categories ?? []}
-        onChange={setFilterState}
-      />
+      {/* Tab navigation */}
+      <nav style={{ display: 'flex', gap: 0, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <button
+          className={`tab-btn${activeTab === 'dashboard' ? ' tab-btn--active' : ''}`}
+          onClick={() => setActiveTab('dashboard')}
+        >
+          Dashboard
+        </button>
+        <button
+          className={`tab-btn${activeTab === 'budget' ? ' tab-btn--active' : ''}`}
+          onClick={() => setActiveTab('budget')}
+          style={{ position: 'relative' }}
+        >
+          Budget
+          {isAnyOverBudget && (
+            <span className="budget-tab-badge" aria-label="Some categories over budget" />
+          )}
+        </button>
+      </nav>
 
-      {/* Dashboard body */}
-      <main style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
-        <SummaryCards transactions={filteredTransactions} />
+      {activeTab === 'dashboard' ? (
+        <>
+          <FilterBar
+            filterState={filterState}
+            allCategories={parseResult?.categories ?? []}
+            onChange={setFilterState}
+          />
+          {/* Dashboard body */}
+          <main style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <SummaryCards transactions={filteredTransactions} />
 
-        {/* Charts */}
-        <MonthlyChart transactions={filteredTransactions} />
+            {/* Charts */}
+            <MonthlyChart transactions={filteredTransactions} />
 
-        <div style={{ display: 'flex', gap: 24 }}>
-          <div style={{ flex: 1 }}>
-            <CategoryBreakdownChart transactions={filteredTransactions} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <BalanceChart transactions={filteredTransactions} />
-          </div>
-        </div>
-      </main>
+            <div style={{ display: 'flex', gap: 24 }}>
+              <div style={{ flex: 1 }}>
+                <CategoryBreakdownChart transactions={filteredTransactions} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <BalanceChart transactions={filteredTransactions} />
+              </div>
+            </div>
+          </main>
+        </>
+      ) : (
+        <main style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
+          <BudgetTab
+            transactions={parseResult?.transactions ?? []}
+            categories={parseResult?.categories ?? []}
+          />
+        </main>
+      )}
     </div>
   )
 }

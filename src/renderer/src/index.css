@@ -57,3 +57,37 @@ html, body, #root {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ── Tab navigation ── */
+.tab-btn {
+  padding: 10px 24px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease;
+}
+.tab-btn:hover { color: var(--text-primary); }
+.tab-btn--active {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}
+
+/* Red dot badge on Budget tab when any category over budget */
+.budget-tab-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-expense);
+}
+
+/* Remove number input spinner arrows */
+.budget-input::-webkit-inner-spin-button,
+.budget-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.budget-input { -moz-appearance: textfield; }
