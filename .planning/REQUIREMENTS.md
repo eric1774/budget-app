@@ -21,8 +21,8 @@
 
 ### Budget Configuration
 
-- [ ] **BUDG-01**: User can set a planned monthly amount per category in a settings/config screen
-- [ ] **BUDG-02**: User can view a budget vs actual comparison: planned vs spent per category with over/under indicator
+- [x] **BUDG-01**: User can set a planned monthly amount per category in a settings/config screen
+- [x] **BUDG-02**: User can view a budget vs actual comparison: planned vs spent per category with over/under indicator
 
 ### Filters & Controls
 
@@ -71,8 +71,8 @@
 | FILT-02 | Phase 3 | Complete |
 | FILT-03 | Phase 3 | Complete |
 | UI-02 | Phase 3 | Complete |
-| BUDG-01 | Phase 4 | Pending |
-| BUDG-02 | Phase 4 | Pending |
+| BUDG-01 | Phase 4 | Complete |
+| BUDG-02 | Phase 4 | Complete |
 
 **Coverage:**
 - v1 requirements: 15 total

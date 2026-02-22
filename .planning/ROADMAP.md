@@ -86,4 +86,4 @@ Plans:
 | 1. Data Foundation | 3/3 | Complete   | 2026-02-22 |
 | 2. Core Dashboard | 3/3 | Complete   | 2026-02-22 |
 | 3. Filters & Controls | 2/3 | In Progress|  |
-| 4. Budget Configuration | 0/TBD | Not started | - |
+| 4. Budget Configuration | 1/3 | In Progress|  |
