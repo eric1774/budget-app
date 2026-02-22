@@ -1,5 +1,7 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import type { ParseResult, ParseError, ParseResponse } from '../../shared/types'
+import { FilterBar } from './components/FilterBar'
+import type { FilterState } from './components/FilterBar'
 import { SummaryCards } from './components/SummaryCards'
 import { MonthlyChart } from './components/MonthlyChart'
 import { CategoryBreakdownChart } from './components/CategoryBreakdownChart'
@@ -104,12 +106,55 @@ export default function App(): JSX.Element {
   const [parseError, setParseError] = useState<ParseError | null>(null)
   const [banner, setBanner] = useState<BannerState | null>(null)
   const [filePath, setFilePath] = useState<string | null>(null)
+  const [filterState, setFilterState] = useState<FilterState>({
+    datePreset: 'this-year',
+    customFrom: '',
+    customTo: '',
+    activeCategories: new Set<string>(),
+  })
 
   // Show a success banner that auto-dismisses after 2 seconds
   const showSuccessBanner = useCallback((message: string) => {
     setBanner({ type: 'success', message, dismissible: false })
     setTimeout(() => setBanner(null), 2000)
   }, [])
+
+  // Reset activeCategories when parseResult changes (file reload)
+  useEffect(() => {
+    setFilterState((prev) => ({ ...prev, activeCategories: new Set(parseResult?.categories ?? []) }))
+  }, [parseResult?.categories])
+
+  // Derive filteredTransactions based on filterState
+  const filteredTransactions = useMemo(() => {
+    if (!parseResult) return []
+    let txns = parseResult.transactions
+
+    const now = new Date()
+    if (filterState.datePreset === 'this-month') {
+      txns = txns.filter((t) => t.date.getFullYear() === now.getFullYear() && t.date.getMonth() === now.getMonth())
+    } else if (filterState.datePreset === 'last-month') {
+      const y = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear()
+      const m = now.getMonth() === 0 ? 11 : now.getMonth() - 1
+      txns = txns.filter((t) => t.date.getFullYear() === y && t.date.getMonth() === m)
+    } else if (filterState.datePreset === 'this-year') {
+      txns = txns.filter((t) => t.date.getFullYear() === now.getFullYear())
+    } else if (filterState.datePreset === 'custom') {
+      const from = filterState.customFrom ? new Date(filterState.customFrom) : null
+      const to = filterState.customTo ? new Date(filterState.customTo) : null
+      if (from) txns = txns.filter((t) => t.date >= from!)
+      if (to) {
+        const toEnd = new Date(to)
+        toEnd.setHours(23, 59, 59, 999)
+        txns = txns.filter((t) => t.date <= toEnd)
+      }
+    }
+    // 'all-time' — no date filter
+
+    if (filterState.activeCategories.size === 0) return []
+    txns = txns.filter((t) => filterState.activeCategories.has(t.category))
+
+    return txns
+  }, [parseResult, filterState])
 
   const loadFile = useCallback(async (path: string, isStoredPath = false) => {
     setStatus('loading')
@@ -308,19 +353,25 @@ export default function App(): JSX.Element {
         </button>
       </header>
 
+      <FilterBar
+        filterState={filterState}
+        allCategories={parseResult?.categories ?? []}
+        onChange={setFilterState}
+      />
+
       {/* Dashboard body */}
       <main style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
-        <SummaryCards transactions={parseResult?.transactions ?? []} />
+        <SummaryCards transactions={filteredTransactions} />
 
         {/* Charts */}
-        <MonthlyChart transactions={parseResult?.transactions ?? []} />
+        <MonthlyChart transactions={filteredTransactions} />
 
         <div style={{ display: 'flex', gap: 24 }}>
           <div style={{ flex: 1 }}>
-            <CategoryBreakdownChart transactions={parseResult?.transactions ?? []} />
+            <CategoryBreakdownChart transactions={filteredTransactions} />
           </div>
           <div style={{ flex: 1 }}>
-            <BalanceChart transactions={parseResult?.transactions ?? []} />
+            <BalanceChart transactions={filteredTransactions} />
           </div>
         </div>
       </main>
