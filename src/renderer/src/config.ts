@@ -7,4 +7,5 @@ export const SAVINGS_CATEGORIES: ReadonlySet<string> = new Set([
   'House Fund',
   'Retirement',
   'Savings',
+  'SAVINGS!',
 ])
