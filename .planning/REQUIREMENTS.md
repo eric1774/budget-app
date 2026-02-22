@@ -15,9 +15,9 @@
 ### Dashboard
 
 - [x] **DASH-01**: User can see summary cards: total income, total expenses, net cash flow, current balance
-- [ ] **DASH-02**: User can view a monthly report chart: income vs expenses by month
-- [ ] **DASH-03**: User can view a YTD category breakdown chart (totals per category for current year)
-- [ ] **DASH-04**: User can view a running balance chart (account balance plotted over time)
+- [x] **DASH-02**: User can view a monthly report chart: income vs expenses by month
+- [x] **DASH-03**: User can view a YTD category breakdown chart (totals per category for current year)
+- [x] **DASH-04**: User can view a running balance chart (account balance plotted over time)
 
 ### Budget Configuration
 
@@ -64,9 +64,9 @@
 | DATA-04 | Phase 1 | Complete |
 | UI-01 | Phase 2 | Complete |
 | DASH-01 | Phase 2 | Complete |
-| DASH-02 | Phase 2 | Pending |
-| DASH-03 | Phase 2 | Pending |
-| DASH-04 | Phase 2 | Pending |
+| DASH-02 | Phase 2 | Complete |
+| DASH-03 | Phase 2 | Complete |
+| DASH-04 | Phase 2 | Complete |
 | FILT-01 | Phase 3 | Pending |
 | FILT-02 | Phase 3 | Pending |
 | FILT-03 | Phase 3 | Pending |

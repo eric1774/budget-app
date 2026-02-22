@@ -7,7 +7,7 @@ Four phases build the app from data foundation to a fully interactive, budget-aw
 ## Phases
 
 - [x] **Phase 1: Data Foundation** - Read Budget.xlsx, parse Logbook columns, auto-detect categories, watch for file changes (completed 2026-02-22)
-- [ ] **Phase 2: Core Dashboard** - Render dark-mode glassy UI with summary cards and all four chart views
+- [x] **Phase 2: Core Dashboard** - Render dark-mode glassy UI with summary cards and all four chart views (completed 2026-02-22)
 - [ ] **Phase 3: Filters & Controls** - Date range filter, category toggle, per-widget chart type switcher with smooth transitions
 - [ ] **Phase 4: Budget Configuration** - In-app planned budget entry and budget-vs-actual comparison view
 
@@ -74,6 +74,6 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Data Foundation | 3/3 | Complete   | 2026-02-22 |
-| 2. Core Dashboard | 1/3 | In Progress|  |
+| 2. Core Dashboard | 3/3 | Complete   | 2026-02-22 |
 | 3. Filters & Controls | 0/TBD | Not started | - |
 | 4. Budget Configuration | 0/TBD | Not started | - |
