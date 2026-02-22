@@ -2,8 +2,8 @@ import { app, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
 import { parseWorkbook } from './excel'
-import type { ParseResponse } from '../shared/types'
-import { getStoredFilePath, setStoredFilePath } from './store'
+import type { ParseResponse, BudgetMap } from '../shared/types'
+import { getStoredFilePath, setStoredFilePath, getBudgets, setBudget } from './store'
 import { startWatcher, stopWatcher } from './watcher'
 
 let mainWindow: BrowserWindow | null = null
@@ -44,6 +44,17 @@ ipcMain.handle('parse-file', async (_event, filePath: string): Promise<ParseResp
 
 // Return stored file path (or null if none)
 ipcMain.handle('get-stored-path', () => getStoredFilePath() ?? null)
+
+// Return full BudgetMap for all months
+ipcMain.handle('get-budgets', (): BudgetMap => {
+  return getBudgets()
+})
+
+// Set budget for a single category+month; amount=0 removes entry
+// Args: { monthKey: string, category: string, amount: number }
+ipcMain.handle('set-budget', (_event, args: { monthKey: string; category: string; amount: number }) => {
+  setBudget(args.monthKey, args.category, args.amount)
+})
 
 // Open native file picker and return selected path (or null if cancelled)
 ipcMain.handle('open-file-dialog', async () => {
