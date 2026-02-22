@@ -55,7 +55,12 @@ Plans:
   2. User can toggle individual categories on/off and all charts immediately reflect the selection
   3. User can switch any chart widget between bar, line, and pie views
   4. Chart and filter changes animate with smooth transitions rather than hard redraws
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — FilterBar component (date presets + category chips) wired into App.tsx with filtered transaction derivation
+- [ ] 03-02-PLAN.md — Per-chart type switcher (bar/line/pie icons) and CSS smooth transitions
+- [ ] 03-03-PLAN.md — Human visual verification checkpoint
 
 ### Phase 4: Budget Configuration
 **Goal**: Users can plan their spending and instantly see how actuals compare
@@ -75,5 +80,5 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Data Foundation | 3/3 | Complete   | 2026-02-22 |
 | 2. Core Dashboard | 3/3 | Complete   | 2026-02-22 |
-| 3. Filters & Controls | 0/TBD | Not started | - |
+| 3. Filters & Controls | 2/3 | In Progress|  |
 | 4. Budget Configuration | 0/TBD | Not started | - |

@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 
 ## Current Position
 
-Phase: 2 of 4 (Core Dashboard)
-Plan: 3 of 3 in current phase
-Status: Phase 2 Complete — all plans executed and user-approved
-Last activity: 2026-02-22 — 02-03 complete: Phase 2 visual verification approved by user
+Phase: 3 of 4 (Filters & Controls)
+Plan: 2 of 3 in current phase
+Status: In Progress — 03-02 complete
+Last activity: 2026-02-22 — 03-02 complete: chart type switchers and CSS transitions added
 
-Progress: [█████░░░░░] 50%
+Progress: [██████░░░░] 60%
 
 ## Performance Metrics
 
@@ -43,6 +43,8 @@ Progress: [█████░░░░░] 50%
 | Phase 02-core-dashboard P01 | 8 | 2 tasks | 4 files |
 | Phase 02-core-dashboard P02 | 10 | 2 tasks | 5 files |
 | Phase 02-core-dashboard P03 | 5 | 1 tasks | 0 files |
+| Phase 03-filters-controls P01 | 8 | 2 tasks | 3 files |
+| Phase 03-filters-controls P02 | 10 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -67,6 +69,10 @@ Recent decisions affecting current work:
 - [Phase 02-core-dashboard]: Recharts v3 bundles own TypeScript types — no @types/recharts needed
 - [Phase 02-core-dashboard]: Balance chart samples to 200 points max for performance on large datasets
 - [Phase 02-core-dashboard]: Phase 2 dashboard visually approved by user — all 7 verification checklist items passed
+- [Phase 03-filters-controls]: FilterState uses Set<string> for activeCategories (O(1) membership); default datePreset is this-year
+- [Phase 03-filters-controls]: CategoryBreakdownChart internal year filter removed — trusts upstream filteredTransactions from App.tsx
+- [Phase 03-filters-controls]: chartType state is local to each chart component — resets on app restart, no persistence needed per spec
+- [Phase 03-filters-controls]: CSS-only transitions (no animation library) — 150-200ms ease appropriate for data tool responsiveness
 
 ### Pending Todos
 
@@ -79,5 +85,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed 02-03-PLAN.md — Phase 2 visual verification approved by user
+Stopped at: Completed 03-02-PLAN.md — chart type switchers and CSS transitions
 Resume file: None

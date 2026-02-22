@@ -26,14 +26,14 @@
 
 ### Filters & Controls
 
-- [ ] **FILT-01**: User can filter all views by date range (presets: this month, this year; plus custom range)
-- [ ] **FILT-02**: User can toggle individual categories on/off, affecting all charts
-- [ ] **FILT-03**: User can switch chart type per widget (bar, line, pie)
+- [x] **FILT-01**: User can filter all views by date range (presets: this month, this year; plus custom range)
+- [x] **FILT-02**: User can toggle individual categories on/off, affecting all charts
+- [x] **FILT-03**: User can switch chart type per widget (bar, line, pie)
 
 ### Aesthetic
 
 - [x] **UI-01**: App uses dark mode throughout with glassy/frosted card components
-- [ ] **UI-02**: Chart/filter interactions include smooth transitions
+- [x] **UI-02**: Chart/filter interactions include smooth transitions
 
 ## v2 Requirements
 
@@ -67,10 +67,10 @@
 | DASH-02 | Phase 2 | Complete |
 | DASH-03 | Phase 2 | Complete |
 | DASH-04 | Phase 2 | Complete |
-| FILT-01 | Phase 3 | Pending |
-| FILT-02 | Phase 3 | Pending |
-| FILT-03 | Phase 3 | Pending |
-| UI-02 | Phase 3 | Pending |
+| FILT-01 | Phase 3 | Complete |
+| FILT-02 | Phase 3 | Complete |
+| FILT-03 | Phase 3 | Complete |
+| UI-02 | Phase 3 | Complete |
 | BUDG-01 | Phase 4 | Pending |
 | BUDG-02 | Phase 4 | Pending |
 
