@@ -1,5 +1,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import type { ParseResult, ParseError, ParseResponse } from '../../shared/types'
+import { GlassCard } from './components/GlassCard'
+import { SummaryCards } from './components/SummaryCards'
+import './index.css'
 
 // --- Types ---
 
@@ -18,15 +21,15 @@ interface BannerProps extends BannerState {
 }
 
 const bannerColors: Record<BannerState['type'], string> = {
-  warning: '#7a5c00',
-  error: '#8b0000',
-  success: '#1a5e1a',
+  warning: '#ffd166',
+  error: '#ff8585',
+  success: '#86efac',
 }
 
 const bannerBg: Record<BannerState['type'], string> = {
-  warning: '#fff3cd',
-  error: '#f8d7da',
-  success: '#d4edda',
+  warning: 'rgba(120,90,0,0.7)',
+  error: 'rgba(139,0,0,0.7)',
+  success: 'rgba(26,94,26,0.7)',
 }
 
 function Banner({ type, message, dismissible, onDismiss }: BannerProps): JSX.Element {
@@ -75,31 +78,19 @@ const styles = {
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
     height: '100vh',
-    fontFamily: 'sans-serif',
     gap: 16,
+    background: 'var(--bg-app)',
+    color: 'var(--text-primary)',
   },
   button: {
     padding: '10px 24px',
     fontSize: 16,
     cursor: 'pointer',
-    backgroundColor: '#0078d4',
-    color: 'white',
+    backgroundColor: 'var(--color-accent)',
+    color: '#1a1d23',
     border: 'none',
     borderRadius: 4,
-  },
-  smallButton: {
-    padding: '6px 14px',
-    fontSize: 13,
-    cursor: 'pointer',
-    backgroundColor: '#555',
-    color: 'white',
-    border: 'none',
-    borderRadius: 4,
-    marginTop: 8,
-  },
-  container: {
-    fontFamily: 'sans-serif',
-    padding: 24,
+    fontWeight: 600,
   },
 }
 
@@ -255,8 +246,8 @@ export default function App(): JSX.Element {
         {banner && (
           <Banner {...banner} onDismiss={() => setBanner(null)} />
         )}
-        <h1>Budget Dashboard</h1>
-        <p>Select your Budget.xlsx file to get started.</p>
+        <h1 style={{ color: 'var(--color-accent)', fontSize: 28, fontWeight: 700 }}>Budget Dashboard</h1>
+        <p style={{ color: 'var(--text-muted)' }}>Select your Budget.xlsx file to get started.</p>
         <button style={styles.button} onClick={handleSelectFile}>
           Select File
         </button>
@@ -266,16 +257,20 @@ export default function App(): JSX.Element {
 
   // Loading state
   if (status === 'loading') {
-    return <div style={styles.center}><p>Loading...</p></div>
+    return (
+      <div style={styles.center}>
+        <p style={{ color: 'var(--text-muted)' }}>Loading...</p>
+      </div>
+    )
   }
 
   // Hard error state (no data yet)
   if (status === 'error' && !parseResult) {
     return (
-      <div>
+      <div style={{ background: 'var(--bg-app)', minHeight: '100vh' }}>
         {banner && <Banner {...banner} onDismiss={() => setBanner(null)} />}
         <div style={styles.center}>
-          <p style={{ color: 'red' }}>{parseError?.message}</p>
+          <p style={{ color: 'var(--color-expense)' }}>{parseError?.message}</p>
           <button style={styles.button} onClick={handleSelectFile}>
             Select Different File
           </button>
@@ -284,20 +279,54 @@ export default function App(): JSX.Element {
     )
   }
 
-  // Loaded state (may also have a banner)
+  // Loaded state — full dashboard
   return (
-    <div style={styles.container}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-app)' }}>
       {banner && <Banner {...banner} onDismiss={() => setBanner(null)} />}
-      <h1>Budget Dashboard</h1>
-      <p>File: {filePath}</p>
-      <p>Transactions: {parseResult?.transactions.length ?? 0}</p>
-      <p>
-        Categories ({parseResult?.categories.length ?? 0}):{' '}
-        {parseResult?.categories.join(', ')}
-      </p>
-      <button style={styles.smallButton} onClick={handleSelectFile}>
-        Change File
-      </button>
+
+      {/* Slim header */}
+      <header style={{
+        padding: '12px 24px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
+      }}>
+        <span style={{ fontWeight: 600, fontSize: 16, color: 'var(--color-accent)', letterSpacing: '0.02em' }}>
+          Budget Dashboard
+        </span>
+        <span style={{ fontSize: 12, color: 'var(--text-muted)', maxWidth: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {filePath ?? ''}
+        </span>
+        <button
+          style={{ padding: '4px 12px', fontSize: 12, cursor: 'pointer', background: 'rgba(255,255,255,0.08)', color: 'var(--text-primary)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6 }}
+          onClick={handleSelectFile}
+        >
+          Change File
+        </button>
+      </header>
+
+      {/* Dashboard body */}
+      <main style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <SummaryCards transactions={parseResult?.transactions ?? []} />
+
+        {/* Chart area placeholders — filled in Plan 02 */}
+        <GlassCard style={{ padding: 24, minHeight: 280 }}>
+          <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Monthly Income vs Expenses</div>
+          <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>Chart coming in Plan 02</div>
+        </GlassCard>
+
+        <div style={{ display: 'flex', gap: 24 }}>
+          <GlassCard style={{ flex: 1, padding: 24, minHeight: 240 }}>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.05em' }}>YTD Category Breakdown</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>Chart coming in Plan 02</div>
+          </GlassCard>
+          <GlassCard style={{ flex: 1, padding: 24, minHeight: 240 }}>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Running Balance</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>Chart coming in Plan 02</div>
+          </GlassCard>
+        </div>
+      </main>
     </div>
   )
 }
