@@ -70,6 +70,7 @@ export function FilterBar({ filterState, allCategories, onChange }: FilterBarPro
 
   return (
     <div
+      className="filter-bar"
       style={{
         background: 'rgba(255,255,255,0.04)',
         borderBottom: '1px solid rgba(255,255,255,0.08)',
@@ -88,6 +89,7 @@ export function FilterBar({ filterState, allCategories, onChange }: FilterBarPro
             return (
               <button
                 key={preset.key}
+                className="preset-segment"
                 onClick={() => handlePresetClick(preset.key)}
                 style={{
                   padding: '5px 12px',
@@ -197,6 +199,7 @@ export function FilterBar({ filterState, allCategories, onChange }: FilterBarPro
           return (
             <button
               key={cat}
+              className="filter-chip"
               onClick={() => handleToggleCategory(cat)}
               style={{
                 borderRadius: 999,
