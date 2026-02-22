@@ -1,0 +1,27 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-app: #1a1d23;
+  --bg-card: rgba(36, 40, 50, 0.85);
+  --border-accent: rgba(32, 200, 160, 0.55);
+  --glow-accent: rgba(32, 200, 160, 0.25);
+  --text-primary: #e8eaf0;
+  --text-muted: #8a8fa8;
+  --color-income: #22c55e;
+  --color-expense: #ef4444;
+  --color-balance: #06b6d4;
+  --color-accent: #20c8a0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+html, body, #root {
+  height: 100%;
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  overflow-x: hidden;
+}
+
+/* Remove default scrollbar theming so dark bg shows behind scrollbar track */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-app); }
+::-webkit-scrollbar-thumb { background: #3a3f52; border-radius: 3px; }
