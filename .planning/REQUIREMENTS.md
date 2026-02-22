@@ -9,7 +9,7 @@
 
 - [x] **DATA-01**: App reads Sheet 1 (Logbook) from a user-selected Budget.xlsx file
 - [x] **DATA-02**: App parses columns: Date, Description, Category, Income, Debit, Balance (Credit and Notes columns ignored)
-- [ ] **DATA-03**: File watcher detects when Budget.xlsx is saved and auto-refreshes all views
+- [x] **DATA-03**: File watcher detects when Budget.xlsx is saved and auto-refreshes all views
 - [x] **DATA-04**: App auto-detects available categories from unique Category values in the Logbook
 
 ### Dashboard
@@ -60,7 +60,7 @@
 |-------------|-------|--------|
 | DATA-01 | Phase 1 | Complete |
 | DATA-02 | Phase 1 | Complete |
-| DATA-03 | Phase 1 | Pending |
+| DATA-03 | Phase 1 | Complete |
 | DATA-04 | Phase 1 | Complete |
 | UI-01 | Phase 2 | Pending |
 | DASH-01 | Phase 2 | Pending |

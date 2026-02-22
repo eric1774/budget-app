@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 1 of 4 (Data Foundation)
-Plan: 2 of TBD in current phase
-Status: In progress
-Last activity: 2026-02-21 — Completed 01-02 (Excel parsing via xlsx/SheetJS)
+Plan: 3 of TBD in current phase
+Status: Checkpoint — awaiting human verification
+Last activity: 2026-02-21 — Completed 01-03 tasks (file picker, persistence, watcher); checkpoint pending
 
 Progress: [██░░░░░░░░] 20%
 
@@ -38,6 +38,7 @@ Progress: [██░░░░░░░░] 20%
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | 01-data-foundation P02 | 20 min | 2 tasks | 8 files |
+| Phase 01-data-foundation P03 | 2 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -54,6 +55,7 @@ Recent decisions affecting current work:
 - Generic contextBridge invoke wrapper: single preload covers all IPC channels without rewrites (01-01)
 - [Phase 01-data-foundation]: Case-insensitive header matching: Budget.xlsx uses lowercase column names and has 'decription' typo — normalizeHeader() handles both
 - [Phase 01-data-foundation]: src/shared/types.ts included in both tsconfig.node.json and tsconfig.web.json to avoid TS6307 error
+- [Phase 01-data-foundation]: chokidar awaitWriteFinish for Excel save compatibility; 5 retries/800ms for locked file recovery
 
 ### Pending Todos
 
@@ -66,5 +68,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 01-02-PLAN.md (Excel parsing via xlsx/SheetJS)
+Stopped at: Completed 01-03-PLAN.md tasks 1-2; checkpoint:human-verify pending for Phase 1 sign-off
 Resume file: None
