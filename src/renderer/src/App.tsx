@@ -1,7 +1,9 @@
 import { useEffect, useState, useCallback } from 'react'
 import type { ParseResult, ParseError, ParseResponse } from '../../shared/types'
-import { GlassCard } from './components/GlassCard'
 import { SummaryCards } from './components/SummaryCards'
+import { MonthlyChart } from './components/MonthlyChart'
+import { CategoryBreakdownChart } from './components/CategoryBreakdownChart'
+import { BalanceChart } from './components/BalanceChart'
 import './index.css'
 
 // --- Types ---
@@ -310,21 +312,16 @@ export default function App(): JSX.Element {
       <main style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
         <SummaryCards transactions={parseResult?.transactions ?? []} />
 
-        {/* Chart area placeholders — filled in Plan 02 */}
-        <GlassCard style={{ padding: 24, minHeight: 280 }}>
-          <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Monthly Income vs Expenses</div>
-          <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>Chart coming in Plan 02</div>
-        </GlassCard>
+        {/* Charts */}
+        <MonthlyChart transactions={parseResult?.transactions ?? []} />
 
         <div style={{ display: 'flex', gap: 24 }}>
-          <GlassCard style={{ flex: 1, padding: 24, minHeight: 240 }}>
-            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.05em' }}>YTD Category Breakdown</div>
-            <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>Chart coming in Plan 02</div>
-          </GlassCard>
-          <GlassCard style={{ flex: 1, padding: 24, minHeight: 240 }}>
-            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Running Balance</div>
-            <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>Chart coming in Plan 02</div>
-          </GlassCard>
+          <div style={{ flex: 1 }}>
+            <CategoryBreakdownChart transactions={parseResult?.transactions ?? []} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <BalanceChart transactions={parseResult?.transactions ?? []} />
+          </div>
         </div>
       </main>
     </div>
