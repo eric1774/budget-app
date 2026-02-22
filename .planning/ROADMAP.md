@@ -39,7 +39,12 @@ Plans:
   3. Monthly income-vs-expenses chart displays bars or lines grouped by month
   4. YTD category breakdown chart shows totals per category for the current year
   5. Running balance chart plots account balance over time from the Balance column
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Dark-mode design system, GlassCard component, and 4 summary cards
+- [ ] 02-02-PLAN.md — Install Recharts, build monthly/YTD/balance charts, wire into dashboard
+- [ ] 02-03-PLAN.md — Human visual verification checkpoint
 
 ### Phase 3: Filters & Controls
 **Goal**: Users can slice the dashboard to focus on any time window or category subset
@@ -69,6 +74,6 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Data Foundation | 3/3 | Complete   | 2026-02-22 |
-| 2. Core Dashboard | 0/TBD | Not started | - |
+| 2. Core Dashboard | 1/3 | In Progress|  |
 | 3. Filters & Controls | 0/TBD | Not started | - |
 | 4. Budget Configuration | 0/TBD | Not started | - |

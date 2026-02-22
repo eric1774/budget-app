@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** Every transaction logged in Excel instantly becomes a clear, beautiful visual — see where money goes without touching a spreadsheet.
-**Current focus:** Phase 1 - Data Foundation
+**Current focus:** Phase 2 - Core Dashboard
 
 ## Current Position
 
-Phase: 1 of 4 (Data Foundation)
-Plan: 3 of TBD in current phase
-Status: Complete — Phase 1 data foundation fully verified by user
-Last activity: 2026-02-21 — 01-03 user-verified: welcome screen, file picker, 172 transactions/14 categories, auto-reload, file-change detection all confirmed
+Phase: 2 of 4 (Core Dashboard)
+Plan: 2 of TBD in current phase
+Status: In Progress — Phase 2 Plan 01 complete (dark design system + summary cards)
+Last activity: 2026-02-22 — 02-01 complete: dark CSS token system, GlassCard, SummaryCards, App.tsx dashboard shell
 
-Progress: [██░░░░░░░░] 20%
+Progress: [███░░░░░░░] 30%
 
 ## Performance Metrics
 
@@ -40,6 +40,7 @@ Progress: [██░░░░░░░░] 20%
 | 01-data-foundation P02 | 20 min | 2 tasks | 8 files |
 | Phase 01-data-foundation P03 | 2 | 2 tasks | 6 files |
 | Phase 01-data-foundation P03 | 35 | 3 tasks | 6 files |
+| Phase 02-core-dashboard P01 | 8 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -58,6 +59,9 @@ Recent decisions affecting current work:
 - [Phase 01-data-foundation]: src/shared/types.ts included in both tsconfig.node.json and tsconfig.web.json to avoid TS6307 error
 - [Phase 01-data-foundation]: chokidar awaitWriteFinish for Excel save compatibility; 5 retries/800ms for locked file recovery
 - [Phase 01-data-foundation]: chokidar pinned to v3: Electron main is CommonJS, chokidar v4 is ESM-only — v3 required for compatibility
+- [Phase 02-core-dashboard]: CSS custom properties as design tokens: all colors/backgrounds defined in :root for consistent theming across all components
+- [Phase 02-core-dashboard]: Named exports only for React components: GlassCard and SummaryCards use named exports for tree-shaking consistency
+- [Phase 02-core-dashboard]: CAD currency formatting: Intl.NumberFormat en-CA with maximumFractionDigits 0 for clean whole-number display
 
 ### Pending Todos
 
@@ -69,6 +73,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-21
-Stopped at: Completed 01-03-PLAN.md — all 3 tasks done, user verified Phase 1 data foundation complete
+Last session: 2026-02-22
+Stopped at: Completed 02-01-PLAN.md — dark design system, GlassCard, SummaryCards, App.tsx dashboard shell
 Resume file: None

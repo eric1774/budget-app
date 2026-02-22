@@ -14,7 +14,7 @@
 
 ### Dashboard
 
-- [ ] **DASH-01**: User can see summary cards: total income, total expenses, net cash flow, current balance
+- [x] **DASH-01**: User can see summary cards: total income, total expenses, net cash flow, current balance
 - [ ] **DASH-02**: User can view a monthly report chart: income vs expenses by month
 - [ ] **DASH-03**: User can view a YTD category breakdown chart (totals per category for current year)
 - [ ] **DASH-04**: User can view a running balance chart (account balance plotted over time)
@@ -32,7 +32,7 @@
 
 ### Aesthetic
 
-- [ ] **UI-01**: App uses dark mode throughout with glassy/frosted card components
+- [x] **UI-01**: App uses dark mode throughout with glassy/frosted card components
 - [ ] **UI-02**: Chart/filter interactions include smooth transitions
 
 ## v2 Requirements
@@ -62,8 +62,8 @@
 | DATA-02 | Phase 1 | Complete |
 | DATA-03 | Phase 1 | Complete |
 | DATA-04 | Phase 1 | Complete |
-| UI-01 | Phase 2 | Pending |
-| DASH-01 | Phase 2 | Pending |
+| UI-01 | Phase 2 | Complete |
+| DASH-01 | Phase 2 | Complete |
 | DASH-02 | Phase 2 | Pending |
 | DASH-03 | Phase 2 | Pending |
 | DASH-04 | Phase 2 | Pending |
