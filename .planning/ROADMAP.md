@@ -27,7 +27,7 @@ Four phases build the app from data foundation to a fully interactive, budget-aw
 Plans:
 - [ ] 01-01-PLAN.md — Scaffold Electron + React + TypeScript project with electron-vite and IPC bridge
 - [ ] 01-02-PLAN.md — Excel parser: parse Logbook sheet into typed Transaction objects, expose categories via IPC
-- [ ] 01-03-PLAN.md — File picker, path persistence, chokidar watcher with retry logic, and full Phase 1 renderer
+- [x] 01-03-PLAN.md — File picker, path persistence, chokidar watcher with retry logic, and full Phase 1 renderer (completed 2026-02-22)
 
 ### Phase 2: Core Dashboard
 **Goal**: Users see a beautiful, information-rich dashboard the moment data is loaded

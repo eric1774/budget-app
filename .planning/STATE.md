@@ -11,8 +11,8 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 
 Phase: 1 of 4 (Data Foundation)
 Plan: 3 of TBD in current phase
-Status: Checkpoint — awaiting human verification
-Last activity: 2026-02-21 — Completed 01-03 tasks (file picker, persistence, watcher); checkpoint pending
+Status: Complete — Phase 1 data foundation fully verified by user
+Last activity: 2026-02-21 — 01-03 user-verified: welcome screen, file picker, 172 transactions/14 categories, auto-reload, file-change detection all confirmed
 
 Progress: [██░░░░░░░░] 20%
 
@@ -39,6 +39,7 @@ Progress: [██░░░░░░░░] 20%
 |------|----------|-------|-------|
 | 01-data-foundation P02 | 20 min | 2 tasks | 8 files |
 | Phase 01-data-foundation P03 | 2 | 2 tasks | 6 files |
+| Phase 01-data-foundation P03 | 35 | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -56,6 +57,7 @@ Recent decisions affecting current work:
 - [Phase 01-data-foundation]: Case-insensitive header matching: Budget.xlsx uses lowercase column names and has 'decription' typo — normalizeHeader() handles both
 - [Phase 01-data-foundation]: src/shared/types.ts included in both tsconfig.node.json and tsconfig.web.json to avoid TS6307 error
 - [Phase 01-data-foundation]: chokidar awaitWriteFinish for Excel save compatibility; 5 retries/800ms for locked file recovery
+- [Phase 01-data-foundation]: chokidar pinned to v3: Electron main is CommonJS, chokidar v4 is ESM-only — v3 required for compatibility
 
 ### Pending Todos
 
@@ -68,5 +70,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 01-03-PLAN.md tasks 1-2; checkpoint:human-verify pending for Phase 1 sign-off
+Stopped at: Completed 01-03-PLAN.md — all 3 tasks done, user verified Phase 1 data foundation complete
 Resume file: None

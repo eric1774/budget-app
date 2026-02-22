@@ -67,7 +67,7 @@ completed: 2026-02-21
 - **Duration:** ~2 min
 - **Started:** 2026-02-21T00:00:00Z
 - **Completed:** 2026-02-21T00:02:00Z
-- **Tasks:** 2 of 2 (checkpoint pending human verification)
+- **Tasks:** 3 of 3 (checkpoint verified by user 2026-02-21)
 - **Files modified:** 6
 
 ## Accomplishments
@@ -93,7 +93,7 @@ completed: 2026-02-21
 
 ## Watcher Configuration
 
-- **Library:** chokidar
+- **Library:** chokidar v3 (pinned — v4 is ESM-only, incompatible with Electron CommonJS main process)
 - **MAX_RETRIES:** 5
 - **RETRY_INTERVAL_MS:** 800ms (total retry window: ~4 seconds)
 - **DEBOUNCE_MS:** 400ms
@@ -104,6 +104,8 @@ completed: 2026-02-21
 
 1. **Task 1: File path persistence, file picker IPC, and chokidar watcher** - `c6ed383` (feat)
 2. **Task 2: Full Phase 1 renderer — welcome state, file picker, banners, auto-refresh** - `9ffc8a3` (feat)
+3. **Task 3: Checkpoint verified by user** - `6c1b825` (docs — checkpoint metadata)
+4. **Deviation: chokidar v3 downgrade** - `f881eae` (fix)
 
 ## Files Created/Modified
 - `src/main/store.ts` - getStoredFilePath/setStoredFilePath using userData/settings.json
@@ -121,7 +123,20 @@ completed: 2026-02-21
 
 ## Deviations from Plan
 
-None - plan executed exactly as written.
+### Auto-fixed Issues
+
+**1. [Rule 3 - Blocking] Downgraded chokidar from v4 to v3 for CommonJS compatibility**
+- **Found during:** Task 1 (watcher implementation)
+- **Issue:** chokidar v4 is ESM-only. Electron main process compiles to CommonJS — import failed at runtime.
+- **Fix:** Ran `npm install chokidar@3` to install the CommonJS-compatible version.
+- **Files modified:** package.json, package-lock.json
+- **Verification:** Watcher started without import errors; file-change detection confirmed working by user.
+- **Committed in:** f881eae
+
+---
+
+**Total deviations:** 1 auto-fixed (1 blocking — dependency version incompatibility)
+**Impact on plan:** Essential fix; no scope creep.
 
 ## Issues Encountered
 - `npm run dev` / Electron window launch not verifiable in headless execution environment. TypeScript compiles clean on both tsconfig contexts. Manual launch required for human verification checkpoint.
