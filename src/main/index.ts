@@ -1,6 +1,8 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
+import { parseWorkbook } from './excel'
+import type { ParseResponse } from '../shared/types'
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -22,6 +24,11 @@ function createWindow(): void {
 
 // Placeholder IPC handler — confirms IPC bridge works end-to-end
 ipcMain.handle('ping', () => 'pong')
+
+// Parse Budget.xlsx file and return typed Transaction objects
+ipcMain.handle('parse-file', async (_event, filePath: string): Promise<ParseResponse> => {
+  return parseWorkbook(filePath)
+})
 
 app.whenReady().then(() => {
   createWindow()
