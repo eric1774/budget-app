@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import type { ParseResult, ParseError, ParseResponse, BudgetMap } from '../../shared/types'
+import type { ParseResult, ParseError, ParseResponse, BudgetMap, ServerInfo } from '../../shared/types'
+import { ServerToolbar } from './components/ServerToolbar'
 import { FilterBar } from './components/FilterBar'
 import type { FilterState } from './components/FilterBar'
 import { SummaryCards } from './components/SummaryCards'
@@ -116,6 +117,8 @@ export default function App(): JSX.Element {
   })
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard')
   const [budgetMap, setBudgetMap] = useState<BudgetMap>({})
+  const [serverInfo, setServerInfo] = useState<ServerInfo | null>(null)
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null)
 
   // Show a success banner that auto-dismisses after 2 seconds
   const showSuccessBanner = useCallback((message: string) => {
@@ -251,6 +254,11 @@ export default function App(): JSX.Element {
     await loadFile(path)
   }, [loadFile])
 
+  const handleServerRestart = useCallback(async () => {
+    const info = (await window.electronAPI.invoke('restart-server')) as ServerInfo | null
+    if (info) setServerInfo(info)
+  }, [])
+
   // On mount: read stored path and subscribe to IPC events
   useEffect(() => {
     let mounted = true
@@ -268,6 +276,17 @@ export default function App(): JSX.Element {
 
     init()
 
+    // Fetch initial server info
+    window.electronAPI?.invoke('get-server-info').then((info) => {
+      setServerInfo((info as ServerInfo) ?? null)
+    })
+
+    // Subscribe to server-info updates (e.g. after server restart)
+    const unsubServerInfo = window.electronAPI.on('server-info', (data: unknown) => {
+      if (!mounted) return
+      setServerInfo((data as ServerInfo) ?? null)
+    })
+
     // Subscribe to file watcher events
     const unsubFileChanged = window.electronAPI.on(
       'file-changed',
@@ -278,6 +297,7 @@ export default function App(): JSX.Element {
           setParseResult(d.result)
           setParseError(null)
           setStatus('loaded')
+          setLastSyncedAt(new Date())
           showSuccessBanner('Refreshed')
         } else if (!d.ok && d.error) {
           setBanner({ type: 'error', message: d.error.message, dismissible: true })
@@ -309,6 +329,7 @@ export default function App(): JSX.Element {
 
     return () => {
       mounted = false
+      unsubServerInfo()
       unsubFileChanged()
       unsubFileLocked()
       unsubFileLockedPersistent()
@@ -382,6 +403,13 @@ export default function App(): JSX.Element {
           Change File
         </button>
       </header>
+
+      {/* Server toolbar — only renders inside Electron */}
+      <ServerToolbar
+        serverInfo={serverInfo}
+        lastSyncedAt={lastSyncedAt}
+        onRestart={handleServerRestart}
+      />
 
       {/* Tab navigation */}
       <nav style={{ display: 'flex', gap: 0, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
