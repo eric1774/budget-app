@@ -6,7 +6,7 @@ import { createServer as createNetServer } from 'net'
 import { WebSocketServer, WebSocket } from 'ws'
 import { app } from 'electron'
 import { is } from '@electron-toolkit/utils'
-import type { ServerInfo } from '../shared/types'
+import type { ServerInfo, ParseResponse } from '../shared/types'
 
 // --- LAN IP detection ---
 function getLanIp(): string {
@@ -55,6 +55,12 @@ const MIME: Record<string, string> = {
 let httpServer: ReturnType<typeof createHttpServer> | null = null
 let wss: WebSocketServer | null = null
 let serverInfo: ServerInfo | null = null
+let lastSnapshot: ParseResponse | null = null
+
+// Store the latest parse result so /api/snapshot can return it to browser clients
+export function setLastSnapshot(response: ParseResponse): void {
+  lastSnapshot = response
+}
 
 export async function startServer(): Promise<ServerInfo> {
   if (httpServer) return serverInfo!
@@ -68,6 +74,19 @@ export async function startServer(): Promise<ServerInfo> {
     // Strip query strings; decode URI; prevent directory traversal
     let urlPath = (req.url ?? '/').split('?')[0]
     try { urlPath = decodeURIComponent(urlPath) } catch { urlPath = '/' }
+
+    // REST endpoint: GET /api/snapshot — returns last good ParseResponse as JSON
+    if (urlPath === '/api/snapshot') {
+      if (lastSnapshot === null) {
+        res.writeHead(503, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: 'No snapshot available yet' }))
+      } else {
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify(lastSnapshot))
+      }
+      return
+    }
+
     if (urlPath === '/') urlPath = '/index.html'
     const safePath = join(rendererRoot, urlPath.replace(/\.\./g, ''))
     const mime = MIME[extname(safePath).toLowerCase()] ?? 'application/octet-stream'

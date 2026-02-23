@@ -1,5 +1,8 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import type { ParseResult, ParseError, ParseResponse, BudgetMap, ServerInfo } from '../../shared/types'
+import { WsClient, buildWsUrl } from './ws-client'
+import type { WsState } from './ws-client'
+import { LoadingSkeleton } from './components/LoadingSkeleton'
 import { ServerToolbar } from './components/ServerToolbar'
 import { FilterBar } from './components/FilterBar'
 import type { FilterState } from './components/FilterBar'
@@ -101,6 +104,15 @@ const styles = {
   },
 }
 
+// --- Helpers ---
+
+function formatRelTime(d: Date): string {
+  const diffMs = Date.now() - d.getTime()
+  const diffMin = Math.floor(diffMs / 60000)
+  if (diffMin < 1) return 'just now'
+  return `${diffMin} min ago`
+}
+
 // --- Main App ---
 
 export default function App(): JSX.Element {
@@ -119,11 +131,65 @@ export default function App(): JSX.Element {
   const [budgetMap, setBudgetMap] = useState<BudgetMap>({})
   const [serverInfo, setServerInfo] = useState<ServerInfo | null>(null)
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null)
+  // Browser-mode WebSocket state (null = not in browser WS mode / Electron mode)
+  const [wsState, setWsState] = useState<WsState | null>(null)
+  // Timestamp of last parse error for the "Last updated X min ago" stale data badge
+  const [parseErrorBadgeAt, setParseErrorBadgeAt] = useState<Date | null>(null)
 
   // Show a success banner that auto-dismisses after 2 seconds
   const showSuccessBanner = useCallback((message: string) => {
     setBanner({ type: 'success', message, dismissible: false })
     setTimeout(() => setBanner(null), 2000)
+  }, [])
+
+  // Browser-mode WsClient lifecycle — only runs when window.electronAPI is absent
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.electronAPI) return
+
+    let mounted = true
+    const client = new WsClient(buildWsUrl(), {
+      onMessage: (payload) => {
+        if (!mounted) return
+        const p = payload as { type: string; ok: boolean; result?: ParseResult; error?: ParseError }
+        if (p.type === 'file-changed') {
+          if (p.ok && p.result) {
+            setParseResult(p.result)
+            setParseError(null)
+            setParseErrorBadgeAt(null)
+            setStatus('loaded')
+            setLastSyncedAt(new Date())
+          } else if (!p.ok && p.error) {
+            // Keep last good data, set error badge timestamp
+            setParseErrorBadgeAt(new Date())
+          }
+        }
+      },
+      onStateChange: (state) => {
+        if (!mounted) return
+        setWsState(state)
+        if (state === 'connected') {
+          // Fetch fresh snapshot immediately after (re)connect
+          fetch('/api/snapshot')
+            .then((r) => r.json())
+            .then((data) => {
+              if (!mounted) return
+              const snap = data as ParseResponse
+              if (snap.ok) {
+                setParseResult(snap.result)
+                setStatus('loaded')
+                setLastSyncedAt(new Date())
+              }
+            })
+            .catch(() => {})
+        }
+      },
+    })
+
+    return () => {
+      mounted = false
+      client.destroy()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Reset activeCategories when parseResult changes (file reload)
@@ -355,6 +421,14 @@ export default function App(): JSX.Element {
 
   // Loading state
   if (status === 'loading') {
+    // In browser mode (wsState !== null), show skeleton placeholder shapes
+    if (wsState !== null) {
+      return (
+        <div style={{ background: 'var(--bg-app)', minHeight: '100vh' }}>
+          <LoadingSkeleton />
+        </div>
+      )
+    }
     return (
       <div style={styles.center}>
         <p style={{ color: 'var(--text-muted)' }}>Loading...</p>
@@ -430,6 +504,42 @@ export default function App(): JSX.Element {
           )}
         </button>
       </nav>
+
+      {/* Reconnecting indicator — browser mode only */}
+      {wsState === 'reconnecting' && (
+        <div style={{
+          position: 'fixed',
+          bottom: 16,
+          right: 16,
+          background: 'rgba(255,200,0,0.15)',
+          border: '1px solid rgba(255,200,0,0.4)',
+          borderRadius: 6,
+          padding: '6px 12px',
+          fontSize: 12,
+          color: '#ffd166',
+          zIndex: 999,
+        }}>
+          Reconnecting...
+        </div>
+      )}
+
+      {/* Parse error badge — stale data warning (browser mode only) */}
+      {parseErrorBadgeAt && (
+        <div style={{
+          position: 'fixed',
+          bottom: wsState === 'reconnecting' ? 52 : 16,
+          right: 16,
+          background: 'rgba(139,0,0,0.5)',
+          border: '1px solid rgba(255,100,100,0.4)',
+          borderRadius: 6,
+          padding: '6px 12px',
+          fontSize: 12,
+          color: '#ff8585',
+          zIndex: 999,
+        }}>
+          Last updated {formatRelTime(parseErrorBadgeAt)} ⚠️
+        </div>
+      )}
 
       {activeTab === 'dashboard' ? (
         <>

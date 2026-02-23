@@ -2,7 +2,7 @@ import chokidar, { FSWatcher } from 'chokidar'
 import { BrowserWindow } from 'electron'
 import { parseWorkbook } from './excel'
 import type { ParseResponse } from '../shared/types'
-import { broadcastDataUpdate } from './server'
+import { broadcastDataUpdate, setLastSnapshot } from './server'
 
 let watcher: FSWatcher | null = null
 let retryTimeout: ReturnType<typeof setTimeout> | null = null
@@ -35,6 +35,7 @@ function handleFileChange(filePath: string, win: BrowserWindow, retryCount: numb
   const response: ParseResponse = parseWorkbook(filePath)
   if (response.ok) {
     const payload = { ok: true, result: response.result }
+    setLastSnapshot(response)
     win.webContents.send('file-changed', payload)
     broadcastDataUpdate({ type: 'file-changed', ...payload })
   } else if (response.error.kind === 'read-error' && retryCount < MAX_RETRIES) {
