@@ -15,7 +15,8 @@ function getCurrentMonthKey(): string {
 }
 
 function formatMonthLabel(monthKey: string): string {
-  return new Date(monthKey + '-01').toLocaleDateString('en-CA', { month: 'long', year: 'numeric' })
+  const [y, m] = monthKey.split('-').map(Number)
+  return new Date(y, m - 1, 1).toLocaleDateString('en-CA', { month: 'long', year: 'numeric' })
 }
 
 function adjustMonth(monthKey: string, delta: number): string {

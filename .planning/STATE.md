@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 4 of 4 (Budget Configuration)
-Plan: 1 of 2 in current phase
-Status: In progress — Phase 4 plan 1 complete
-Last activity: 2026-02-22 — 04-01 complete: BudgetMap types, store functions, and IPC handlers ready
+Plan: 2 of 2 in current phase
+Status: Complete — Phase 4 plan 2 complete, all phases done
+Last activity: 2026-02-22 — 04-02 complete: Budget tab UI with modal, summary cards, and comparison table
 
-Progress: [█████████░] 88%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -47,6 +47,7 @@ Progress: [█████████░] 88%
 | Phase 03-filters-controls P02 | 10 | 2 tasks | 4 files |
 | Phase 03-filters-controls P03 | 5 | 1 tasks | 0 files |
 | Phase 04-budget-configuration P01 | 8 | 3 tasks | 3 files |
+| Phase 04-budget-configuration P02 | 15 | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,8 @@ Recent decisions affecting current work:
 - [Phase 03-filters-controls]: Phase 3 user-approved — all 15 checklist items passed visual verification in running Electron app
 - [Phase 04-budget-configuration]: Budget data co-located in settings.json alongside lastFilePath — no separate file needed
 - [Phase 04-budget-configuration]: amount=0 convention removes budget entry with automatic empty-month cleanup
+- [Phase 04-budget-configuration]: isAnyOverBudget via single-pass reduce O(n) rather than nested .some() — cleaner and avoids O(n^2) on large datasets
+- [Phase 04-budget-configuration]: budgetMap re-fetched on activeTab change to keep red dot badge in sync after Budget tab edits
 
 ### Pending Todos
 
@@ -90,5 +93,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed 04-01-PLAN.md — IPC budget data layer ready
+Stopped at: Completed 04-02-PLAN.md — Budget tab UI complete, all phases done
 Resume file: None
