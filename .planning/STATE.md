@@ -11,8 +11,8 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 
 Phase: 4 of 4 (Budget Configuration)
 Plan: 2 of 2 in current phase
-Status: Complete — Phase 4 plan 2 complete, all phases done
-Last activity: 2026-02-22 — 04-02 complete: Budget tab UI with modal, summary cards, and comparison table
+Status: Complete — Phase 4 plan 3 (verification) complete, all phases done
+Last activity: 2026-02-22 — 04-03 complete: Phase 4 human verification passed, UTC month label bug fixed
 
 Progress: [██████████] 100%
 
@@ -48,6 +48,7 @@ Progress: [██████████] 100%
 | Phase 03-filters-controls P03 | 5 | 1 tasks | 0 files |
 | Phase 04-budget-configuration P01 | 8 | 3 tasks | 3 files |
 | Phase 04-budget-configuration P02 | 15 | 3 tasks | 4 files |
+| Phase 04-budget-configuration P03 | 10 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,7 @@ Recent decisions affecting current work:
 - [Phase 04-budget-configuration]: amount=0 convention removes budget entry with automatic empty-month cleanup
 - [Phase 04-budget-configuration]: isAnyOverBudget via single-pass reduce O(n) rather than nested .some() — cleaner and avoids O(n^2) on large datasets
 - [Phase 04-budget-configuration]: budgetMap re-fetched on activeTab change to keep red dot badge in sync after Budget tab edits
+- [Phase 04-budget-configuration]: formatMonthLabel uses new Date(y, m-1, 1) local-time constructor to avoid UTC off-by-one shift in negative-offset timezones
 
 ### Pending Todos
 
@@ -93,5 +95,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed 04-02-PLAN.md — Budget tab UI complete, all phases done
+Stopped at: Completed 04-03-PLAN.md — Phase 4 fully verified, all 18 checklist items pass
 Resume file: None

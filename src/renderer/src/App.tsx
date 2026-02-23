@@ -431,7 +431,7 @@ export default function App(): JSX.Element {
         <main style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
           <BudgetTab
             transactions={parseResult?.transactions ?? []}
-            categories={parseResult?.categories ?? []}
+            categories={(parseResult?.categories ?? []).filter(c => c !== 'Income')}
           />
         </main>
       )}
