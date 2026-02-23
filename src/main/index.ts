@@ -5,6 +5,7 @@ import { parseWorkbook } from './excel'
 import type { ParseResponse, BudgetMap } from '../shared/types'
 import { getStoredFilePath, setStoredFilePath, getBudgets, setBudget } from './store'
 import { startWatcher, stopWatcher } from './watcher'
+import { startServer, stopServer, getServerInfo } from './server'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -22,6 +23,7 @@ function createWindow(): void {
   mainWindow.webContents.on('did-finish-load', () => {
     const storedPath = getStoredFilePath()
     mainWindow!.webContents.send('stored-path', storedPath ?? null)
+    mainWindow!.webContents.send('server-info', getServerInfo())
     if (storedPath) {
       startWatcher(storedPath, mainWindow!)
     }
@@ -70,7 +72,19 @@ ipcMain.handle('open-file-dialog', async () => {
   return filePath
 })
 
-app.whenReady().then(() => {
+// IPC handler for renderer to request current server info
+ipcMain.handle('get-server-info', () => getServerInfo())
+
+// IPC handler to restart the server (for toolbar restart button)
+ipcMain.handle('restart-server', async () => {
+  stopServer()
+  const info = await startServer()
+  mainWindow?.webContents.send('server-info', info)
+  return info
+})
+
+app.whenReady().then(async () => {
+  await startServer()
   createWindow()
 
   app.on('activate', () => {
@@ -82,6 +96,7 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   stopWatcher()
+  stopServer()
   if (process.platform !== 'darwin') {
     app.quit()
   }

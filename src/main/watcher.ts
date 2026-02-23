@@ -2,12 +2,13 @@ import chokidar, { FSWatcher } from 'chokidar'
 import { BrowserWindow } from 'electron'
 import { parseWorkbook } from './excel'
 import type { ParseResponse } from '../shared/types'
+import { broadcastDataUpdate } from './server'
 
 let watcher: FSWatcher | null = null
 let retryTimeout: ReturnType<typeof setTimeout> | null = null
 const MAX_RETRIES = 5
 const RETRY_INTERVAL_MS = 800
-const DEBOUNCE_MS = 400
+const DEBOUNCE_MS = 200
 
 export function startWatcher(filePath: string, win: BrowserWindow): void {
   stopWatcher()
@@ -16,7 +17,7 @@ export function startWatcher(filePath: string, win: BrowserWindow): void {
   watcher = chokidar.watch(filePath, {
     persistent: true,
     ignoreInitial: true,
-    awaitWriteFinish: { stabilityThreshold: 200, pollInterval: 100 },
+    awaitWriteFinish: { stabilityThreshold: 150, pollInterval: 100 },
   })
 
   watcher.on('change', () => {
@@ -33,7 +34,9 @@ export function stopWatcher(): void {
 function handleFileChange(filePath: string, win: BrowserWindow, retryCount: number): void {
   const response: ParseResponse = parseWorkbook(filePath)
   if (response.ok) {
-    win.webContents.send('file-changed', { ok: true, result: response.result })
+    const payload = { ok: true, result: response.result }
+    win.webContents.send('file-changed', payload)
+    broadcastDataUpdate({ type: 'file-changed', ...payload })
   } else if (response.error.kind === 'read-error' && retryCount < MAX_RETRIES) {
     // File may be locked by Excel — retry silently
     retryTimeout = setTimeout(
@@ -50,5 +53,6 @@ function handleFileChange(filePath: string, win: BrowserWindow, retryCount: numb
   } else {
     // Structural error (missing sheet, columns) — send as normal error
     win.webContents.send('file-changed', { ok: false, error: response.error })
+    broadcastDataUpdate({ type: 'file-changed', ok: false, error: response.error })
   }
 }
