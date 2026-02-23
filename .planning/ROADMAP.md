@@ -75,6 +75,6 @@ Plans:
 | 2. Core Dashboard | v1.0 | 3/3 | Complete | 2026-02-22 |
 | 3. Filters & Controls | v1.0 | 3/3 | Complete | 2026-02-22 |
 | 4. Budget Configuration | v1.0 | 3/3 | Complete | 2026-02-22 |
-| 5. Local Server + Sync | v1.1 | 0/3 | Not started | - |
+| 5. Local Server + Sync | 1/3 | In Progress|  | - |
 | 6. PWA + Responsive UI | v1.1 | 0/3 | Not started | - |
 | 7. Log Tab | v1.1 | 0/3 | Not started | - |

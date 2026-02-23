@@ -1,84 +1,87 @@
 # Requirements: Budget Dashboard
 
-**Defined:** 2026-02-21
-**Core Value:** Every transaction logged in Excel instantly becomes a clear, beautiful visual — see where money goes without touching a spreadsheet.
+**Defined:** 2026-02-23
+**Core Value:** Every transaction I log in Excel instantly becomes a clear, beautiful visual — I can see where my money goes without touching a spreadsheet.
 
-## v1 Requirements
+## v1.1 Requirements
 
-### Data
+### Local Network Server
 
-- [x] **DATA-01**: App reads Sheet 1 (Logbook) from a user-selected Budget.xlsx file
-- [x] **DATA-02**: App parses columns: Date, Description, Category, Income, Debit, Balance (Credit and Notes columns ignored)
-- [x] **DATA-03**: File watcher detects when Budget.xlsx is saved and auto-refreshes all views
-- [x] **DATA-04**: App auto-detects available categories from unique Category values in the Logbook
+- [x] **SRV-01**: Electron app starts a local HTTP server on a configurable port (default: 3737) when launched
+- [x] **SRV-02**: HTTP server serves the React app as a PWA to any browser on the same Wi-Fi network
+- [x] **SRV-03**: Server sends live data updates to connected clients via WebSocket when Budget.xlsx changes
+- [ ] **SRV-04**: App displays the local network URL (e.g., `http://192.168.x.x:3737`) so user can open it on phone
 
-### Dashboard
+### PWA
 
-- [x] **DASH-01**: User can see summary cards: total income, total expenses, net cash flow, current balance
-- [x] **DASH-02**: User can view a monthly report chart: income vs expenses by month
-- [x] **DASH-03**: User can view a YTD category breakdown chart (totals per category for current year)
-- [x] **DASH-04**: User can view a running balance chart (account balance plotted over time)
+- [ ] **PWA-01**: Web app includes a PWA manifest (name, icon, theme color) so it can be installed to phone home screen
+- [ ] **PWA-02**: App works correctly in mobile browsers (Safari on iOS, Chrome on Android)
 
-### Budget Configuration
+### Responsive UI
 
-- [x] **BUDG-01**: User can set a planned monthly amount per category in a settings/config screen
-- [x] **BUDG-02**: User can view a budget vs actual comparison: planned vs spent per category with over/under indicator
+- [ ] **RESP-01**: Dashboard tab layout adapts to mobile screen widths (cards stack vertically, charts resize)
+- [ ] **RESP-02**: Budget tab adapts to mobile (comparison table scrolls or reflows on small screens)
+- [ ] **RESP-03**: Tab navigation is usable with touch (tap targets large enough, no hover-only interactions)
 
-### Filters & Controls
+### Log Tab
 
-- [x] **FILT-01**: User can filter all views by date range (presets: this month, this year; plus custom range)
-- [x] **FILT-02**: User can toggle individual categories on/off, affecting all charts
-- [x] **FILT-03**: User can switch chart type per widget (bar, line, pie)
+- [ ] **LOG-01**: A "Log" tab appears in the tab bar next to Dashboard and Budget
+- [ ] **LOG-02**: Log tab displays all Logbook transactions in a table with columns: Date, Description, Category, Income, Debit, Balance
+- [ ] **LOG-03**: Log tab has a date range filter (same presets: this month, this year, custom)
+- [ ] **LOG-04**: Log tab has a category filter (multi-select chips, same as Dashboard)
+- [ ] **LOG-05**: Log tab has an income/expense toggle (all / income only / expenses only)
+- [ ] **LOG-06**: Log tab has a searchable description filter — user can type to match descriptions (like Excel column filter)
 
-### Aesthetic
+### Sync
 
-- [x] **UI-01**: App uses dark mode throughout with glassy/frosted card components
-- [x] **UI-02**: Chart/filter interactions include smooth transitions
+- [x] **SYNC-01**: Chokidar debounce is tuned for fast pickup (≤1s after file write) to minimize delay when OneDrive syncs edited file to disk
 
-## v2 Requirements
+## Future Requirements
 
 ### Enhancements
 
-- **V2-01**: Category drill-down view — spending over time for a single selected category
-- **V2-02**: Export report as PDF or image
-- **V2-03**: Credit card transaction filter (Credit column flag)
-- **V2-04**: Monthly budget targets that vary by month (v1 uses same amount every month)
+- **ENH-01**: Category drill-down view — spending over time for a single selected category
+- **ENH-02**: Export report as PDF or image
+- **ENH-03**: Credit card transaction filter (Credit column flag)
+- **ENH-04**: Monthly budget targets that vary by month
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
+| OneDrive API / cloud backend | Local network only — desktop must be on same Wi-Fi |
+| Remote access away from home Wi-Fi | By design — no backend to host |
+| Native iOS/Android app | PWA covers mobile use case |
 | Write-back to Excel | App is read-only; Excel is the source of truth |
-| Cloud sync / hosting | Local only for v1 |
-| Mobile app | Desktop browser only for v1 |
-| Sheet 2 (YTD sheet) | All data derived from Sheet 1 Logbook |
 | Multi-user / accounts | Personal tool, single user |
+| Balance column filtering in Log tab | Display only — filtering by balance not needed |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DATA-01 | Phase 1 | Complete |
-| DATA-02 | Phase 1 | Complete |
-| DATA-03 | Phase 1 | Complete |
-| DATA-04 | Phase 1 | Complete |
-| UI-01 | Phase 2 | Complete |
-| DASH-01 | Phase 2 | Complete |
-| DASH-02 | Phase 2 | Complete |
-| DASH-03 | Phase 2 | Complete |
-| DASH-04 | Phase 2 | Complete |
-| FILT-01 | Phase 3 | Complete |
-| FILT-02 | Phase 3 | Complete |
-| FILT-03 | Phase 3 | Complete |
-| UI-02 | Phase 3 | Complete |
-| BUDG-01 | Phase 4 | Complete |
-| BUDG-02 | Phase 4 | Complete |
+| SRV-01 | Phase 5 | Complete |
+| SRV-02 | Phase 5 | Complete |
+| SRV-03 | Phase 5 | Complete |
+| SRV-04 | Phase 5 | Pending |
+| PWA-01 | Phase 6 | Pending |
+| PWA-02 | Phase 6 | Pending |
+| RESP-01 | Phase 6 | Pending |
+| RESP-02 | Phase 6 | Pending |
+| RESP-03 | Phase 6 | Pending |
+| LOG-01 | Phase 7 | Pending |
+| LOG-02 | Phase 7 | Pending |
+| LOG-03 | Phase 7 | Pending |
+| LOG-04 | Phase 7 | Pending |
+| LOG-05 | Phase 7 | Pending |
+| LOG-06 | Phase 7 | Pending |
+| SYNC-01 | Phase 5 | Complete |
 
 **Coverage:**
-- v1 requirements: 15 total
-- Mapped to phases: 15
-- Unmapped: 0 ✓
+- v1.1 requirements: 16 total
+- Mapped to phases: 16
+- Unmapped: 0
 
 ---
-*Requirements defined: 2026-02-21*
-*Last updated: 2026-02-21 after initial definition*
+*Requirements defined: 2026-02-23*
+*Last updated: 2026-02-23 after roadmap creation (v1.1)*

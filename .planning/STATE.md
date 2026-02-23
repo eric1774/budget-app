@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-23)
 
 **Core value:** Every transaction logged in Excel instantly becomes a clear, beautiful visual — see where money goes without touching a spreadsheet.
-**Current focus:** Planning next milestone (v1.1)
+**Current focus:** v1.1 — Phase 5: Local Server + Sync
 
 ## Current Position
 
-Phase: 4 of 4 (Budget Configuration)
-Plan: 2 of 2 in current phase
-Status: Complete — Phase 4 plan 3 (verification) complete, all phases done
-Last activity: 2026-02-22 — 04-03 complete: Phase 4 human verification passed, UTC month label bug fixed
+Phase: 5 of 7 (Local Server + Sync)
+Plan: 1 of 3 in current phase
+Status: In progress — Phase 5 Plan 1 complete
+Last activity: 2026-02-23 — 05-01 complete: HTTP + WebSocket server on port 3737 serving React app over LAN
 
-Progress: [██████████] 100%
+Progress: [█░░░░░░░░░] 10% (v1.1)
 
 ## Performance Metrics
 
@@ -49,6 +49,7 @@ Progress: [██████████] 100%
 | Phase 04-budget-configuration P01 | 8 | 3 tasks | 3 files |
 | Phase 04-budget-configuration P02 | 15 | 3 tasks | 4 files |
 | Phase 04-budget-configuration P03 | 10 | 1 tasks | 1 files |
+| Phase 05-local-server-sync P01 | 15 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -83,6 +84,9 @@ Recent decisions affecting current work:
 - [Phase 04-budget-configuration]: isAnyOverBudget via single-pass reduce O(n) rather than nested .some() — cleaner and avoids O(n^2) on large datasets
 - [Phase 04-budget-configuration]: budgetMap re-fetched on activeTab change to keep red dot badge in sync after Budget tab edits
 - [Phase 04-budget-configuration]: formatMonthLabel uses new Date(y, m-1, 1) local-time constructor to avoid UTC off-by-one shift in negative-offset timezones
+- [Phase 05-local-server-sync]: ws over express for HTTP+WS server — built-in http sufficient, avoids large dependency
+- [Phase 05-local-server-sync]: getLanIp scans private-range IPv4 to get correct LAN address on multi-NIC machines
+- [Phase 05-local-server-sync]: DEBOUNCE_MS tuned 400->200ms, stabilityThreshold 200->150ms for <=1s file-change pipeline (SYNC-01)
 
 ### Pending Todos
 
@@ -94,6 +98,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-22
-Stopped at: Completed 04-03-PLAN.md — Phase 4 fully verified, all 18 checklist items pass
+Last session: 2026-02-23
+Stopped at: Completed 05-01-PLAN.md — HTTP + WebSocket server layer complete
 Resume file: None
