@@ -2,10 +2,10 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-21)
+See: .planning/PROJECT.md (updated 2026-02-23)
 
 **Core value:** Every transaction logged in Excel instantly becomes a clear, beautiful visual — see where money goes without touching a spreadsheet.
-**Current focus:** Phase 2 - Core Dashboard
+**Current focus:** Planning next milestone (v1.1)
 
 ## Current Position
 

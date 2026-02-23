@@ -34,3 +34,10 @@ export type CategoryBudgets = Record<string, number>
 
 // Top-level budget store: monthKey -> CategoryBudgets
 export type BudgetMap = Record<MonthKey, CategoryBudgets>
+
+// Server info for LAN access
+export interface ServerInfo {
+  url: string   // e.g. "http://192.168.1.42:3737"
+  ip: string    // e.g. "192.168.1.42"
+  port: number  // actual port in use (3737 or next free)
+}

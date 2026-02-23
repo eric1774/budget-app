@@ -1,89 +1,80 @@
 # Roadmap: Budget Dashboard
 
-## Overview
+## Milestones
 
-Four phases build the app from data foundation to a fully interactive, budget-aware dashboard. Phase 1 establishes reliable Excel reading and file watching. Phase 2 renders the core visual dashboard. Phase 3 adds filters and chart controls that make the data explorable. Phase 4 closes the loop with budget configuration and planned-vs-actual comparison.
+- ✅ **v1.0 MVP** — Phases 1–4 (shipped 2026-02-22)
+- 🔄 **v1.1 Mobile + Log** — Phases 5–7 (in progress)
 
 ## Phases
 
-- [x] **Phase 1: Data Foundation** - Read Budget.xlsx, parse Logbook columns, auto-detect categories, watch for file changes (completed 2026-02-22)
-- [x] **Phase 2: Core Dashboard** - Render dark-mode glassy UI with summary cards and all four chart views (completed 2026-02-22)
-- [ ] **Phase 3: Filters & Controls** - Date range filter, category toggle, per-widget chart type switcher with smooth transitions
-- [x] **Phase 4: Budget Configuration** - In-app planned budget entry and budget-vs-actual comparison view (completed 2026-02-23)
+<details>
+<summary>✅ v1.0 MVP (Phases 1–4) — SHIPPED 2026-02-22</summary>
+
+- [x] Phase 1: Data Foundation (3/3 plans) — completed 2026-02-22
+- [x] Phase 2: Core Dashboard (3/3 plans) — completed 2026-02-22
+- [x] Phase 3: Filters & Controls (3/3 plans) — completed 2026-02-22
+- [x] Phase 4: Budget Configuration (3/3 plans) — completed 2026-02-22
+
+Full archive: `.planning/milestones/v1.0-ROADMAP.md`
+
+</details>
+
+### v1.1 Mobile + Log
+
+- [ ] **Phase 5: Local Server + Sync** — Electron serves the app over local Wi-Fi with live WebSocket updates (3 plans)
+- [ ] **Phase 6: PWA + Responsive UI** — App installs to phone home screen and adapts to mobile screens
+- [ ] **Phase 7: Log Tab** — Read-only transaction table with date, category, income/expense, and description filters
 
 ## Phase Details
 
-### Phase 1: Data Foundation
-**Goal**: The app reliably ingests Budget.xlsx and stays in sync as the file changes
-**Depends on**: Nothing (first phase)
-**Requirements**: DATA-01, DATA-02, DATA-03, DATA-04
+### Phase 5: Local Server + Sync
+**Goal**: The Electron app serves the React dashboard over local Wi-Fi so any browser on the same network can open it and receive live data updates when Budget.xlsx changes
+**Depends on**: Phase 4 (v1.0 complete)
+**Requirements**: SRV-01, SRV-02, SRV-03, SRV-04, SYNC-01
 **Success Criteria** (what must be TRUE):
-  1. User can select their Budget.xlsx file and the app reads it without error
-  2. All Logbook rows are parsed with correct Date, Description, Category, Income, Debit, and Balance values
-  3. After saving Budget.xlsx in Excel, the app reflects the change within a few seconds without a manual refresh
-  4. All unique Category values from the Logbook are available in the app for use by filters and charts
+  1. User opens the Electron app and sees a local network URL (e.g., `http://192.168.x.x:3737`) displayed in the UI
+  2. User navigates to that URL on their phone browser (same Wi-Fi) and sees the full dashboard
+  3. User saves Budget.xlsx and the phone browser updates within 1 second without manual refresh
+  4. Chokidar picks up file changes in ≤1s after write (verified with a stopwatch-level test)
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Scaffold Electron + React + TypeScript project with electron-vite and IPC bridge
-- [ ] 01-02-PLAN.md — Excel parser: parse Logbook sheet into typed Transaction objects, expose categories via IPC
-- [x] 01-03-PLAN.md — File picker, path persistence, chokidar watcher with retry logic, and full Phase 1 renderer (completed 2026-02-22)
+- [ ] 05-01-PLAN.md — HTTP + WebSocket server in Electron main process (Wave 1)
+- [ ] 05-02-PLAN.md — Toolbar UI: URL display, QR code popup, restart button, sync timestamp (Wave 2)
+- [ ] 05-03-PLAN.md — Browser-side WebSocket client, loading skeleton, reconnect indicators (Wave 2)
 
-### Phase 2: Core Dashboard
-**Goal**: Users see a beautiful, information-rich dashboard the moment data is loaded
-**Depends on**: Phase 1
-**Requirements**: UI-01, DASH-01, DASH-02, DASH-03, DASH-04
+### Phase 6: PWA + Responsive UI
+**Goal**: Users can install the dashboard to their phone home screen and every tab is fully usable on a small touch screen
+**Depends on**: Phase 5
+**Requirements**: PWA-01, PWA-02, RESP-01, RESP-02, RESP-03
 **Success Criteria** (what must be TRUE):
-  1. App renders in dark mode with glassy/frosted card components throughout
-  2. Summary cards show correct total income, total expenses, net cash flow, and current balance
-  3. Monthly income-vs-expenses chart displays bars or lines grouped by month
-  4. YTD category breakdown chart shows totals per category for the current year
-  5. Running balance chart plots account balance over time from the Balance column
-**Plans**: 3 plans
+  1. On iPhone (Safari) user sees "Add to Home Screen" prompt and the installed icon launches the dashboard
+  2. On Android (Chrome) user can install the app from the browser install prompt
+  3. Dashboard tab on a 390px-wide screen shows summary cards stacked vertically and charts resized to full width
+  4. Budget tab comparison table is scrollable horizontally or reflows cleanly on a small screen
+  5. All tab navigation is tappable with a fingertip — no hover-only interactions required
+**Plans**: TBD
 
-Plans:
-- [ ] 02-01-PLAN.md — Dark-mode design system, GlassCard component, and 4 summary cards
-- [ ] 02-02-PLAN.md — Install Recharts, build monthly/YTD/balance charts, wire into dashboard
-- [ ] 02-03-PLAN.md — Human visual verification checkpoint
-
-### Phase 3: Filters & Controls
-**Goal**: Users can slice the dashboard to focus on any time window or category subset
-**Depends on**: Phase 2
-**Requirements**: FILT-01, FILT-02, FILT-03, UI-02
+### Phase 7: Log Tab
+**Goal**: Users can browse and filter every Logbook transaction from the browser or Electron app in a dedicated Log tab
+**Depends on**: Phase 5
+**Requirements**: LOG-01, LOG-02, LOG-03, LOG-04, LOG-05, LOG-06
 **Success Criteria** (what must be TRUE):
-  1. User can select "This Month", "This Year", or a custom date range and all charts update accordingly
-  2. User can toggle individual categories on/off and all charts immediately reflect the selection
-  3. User can switch any chart widget between bar, line, and pie views
-  4. Chart and filter changes animate with smooth transitions rather than hard redraws
-**Plans**: 3 plans
-
-Plans:
-- [ ] 03-01-PLAN.md — FilterBar component (date presets + category chips) wired into App.tsx with filtered transaction derivation
-- [ ] 03-02-PLAN.md — Per-chart type switcher (bar/line/pie icons) and CSS smooth transitions
-- [ ] 03-03-PLAN.md — Human visual verification checkpoint
-
-### Phase 4: Budget Configuration
-**Goal**: Users can plan their spending and instantly see how actuals compare
-**Depends on**: Phase 3
-**Requirements**: BUDG-01, BUDG-02
-**Success Criteria** (what must be TRUE):
-  1. User can open a settings screen, enter a planned monthly amount for each category, and save it
-  2. A budget-vs-actual view shows each category with its planned amount, actual spend, and an over/under indicator
-  3. Budget configuration persists across app restarts (no re-entry required)
-**Plans**: 3 plans
-
-Plans:
-- [ ] 04-01-PLAN.md — Budget data layer: BudgetMap type, store persistence functions, get-budgets/set-budget IPC handlers
-- [ ] 04-02-PLAN.md — Budget UI: BudgetModal (auto-save inputs), BudgetTab (summary cards + comparison table), tab navigation in App.tsx
-- [ ] 04-03-PLAN.md — Human visual verification checkpoint for all Phase 4 budget features
+  1. A "Log" tab appears in the tab bar and switches to a transaction table view
+  2. The table shows Date, Description, Category, Income, Debit, and Balance for all transactions
+  3. User selects "This Month" date preset and the table filters to current-month transactions only
+  4. User selects one or more category chips and the table shows only those categories
+  5. User types a word in the description search box and the table filters to matching rows in real time
+**Plans**: TBD
 
 ## Progress
 
-**Execution Order:** 1 → 2 → 3 → 4
-
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 1. Data Foundation | 3/3 | Complete   | 2026-02-22 |
-| 2. Core Dashboard | 3/3 | Complete   | 2026-02-22 |
-| 3. Filters & Controls | 2/3 | In Progress|  |
-| 4. Budget Configuration | 3/3 | Complete   | 2026-02-23 |
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 1. Data Foundation | v1.0 | 3/3 | Complete | 2026-02-22 |
+| 2. Core Dashboard | v1.0 | 3/3 | Complete | 2026-02-22 |
+| 3. Filters & Controls | v1.0 | 3/3 | Complete | 2026-02-22 |
+| 4. Budget Configuration | v1.0 | 3/3 | Complete | 2026-02-22 |
+| 5. Local Server + Sync | v1.1 | 0/3 | Not started | - |
+| 6. PWA + Responsive UI | v1.1 | 0/3 | Not started | - |
+| 7. Log Tab | v1.1 | 0/3 | Not started | - |
