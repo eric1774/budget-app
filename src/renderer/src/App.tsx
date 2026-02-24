@@ -199,6 +199,7 @@ export default function App(): JSX.Element {
 
   // Re-fetch budgetMap when switching back to dashboard (to keep badge in sync)
   useEffect(() => {
+    if (!window.electronAPI) return
     window.electronAPI.invoke('get-budgets').then((data) => {
       setBudgetMap((data as BudgetMap) ?? {})
     })
@@ -325,8 +326,9 @@ export default function App(): JSX.Element {
     if (info) setServerInfo(info)
   }, [])
 
-  // On mount: read stored path and subscribe to IPC events
+  // On mount: read stored path and subscribe to IPC events (Electron only)
   useEffect(() => {
+    if (!window.electronAPI) return
     let mounted = true
 
     const init = async (): Promise<void> => {
