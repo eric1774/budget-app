@@ -67,7 +67,7 @@ export async function startServer(): Promise<ServerInfo> {
   const port = await findFreePort(DEFAULT_PORT)
   const ip = getLanIp()
   const rendererRoot = is.dev
-    ? join(__dirname, '../../renderer')
+    ? join(__dirname, '../renderer')
     : join(app.getAppPath(), 'out/renderer')
 
   httpServer = createHttpServer((req: IncomingMessage, res: ServerResponse) => {
