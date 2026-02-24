@@ -85,7 +85,7 @@ export function BudgetTab({ transactions, categories }: BudgetTabProps): JSX.Ele
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div className="budget-main" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Month selector row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -141,7 +141,7 @@ export function BudgetTab({ transactions, categories }: BudgetTabProps): JSX.Ele
       </div>
 
       {/* Summary cards */}
-      <div style={{ display: 'flex', gap: 16 }}>
+      <div className="budget-summary-cards" style={{ display: 'flex', gap: 16 }}>
         <GlassCard style={{ flex: 1, padding: '16px 20px' }}>
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>Total Budgeted</div>
           <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--text-primary)' }}>{cad.format(totalBudgeted)}</div>
@@ -159,8 +159,9 @@ export function BudgetTab({ transactions, categories }: BudgetTabProps): JSX.Ele
       </div>
 
       {/* Comparison table */}
-      <GlassCard style={{ overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <GlassCard style={{ overflow: 'hidden', padding: 0 }}>
+        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <table style={{ width: '100%', minWidth: 480, borderCollapse: 'collapse' }}>
           <thead>
             <tr>
               {['Category', 'Budgeted', 'Actual', 'Over/Under'].map((h) => (
@@ -216,6 +217,7 @@ export function BudgetTab({ transactions, categories }: BudgetTabProps): JSX.Ele
             )}
           </tbody>
         </table>
+        </div>
       </GlassCard>
 
       {/* BudgetModal */}

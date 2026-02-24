@@ -15,13 +15,13 @@
 ### PWA
 
 - [x] **PWA-01**: Web app includes a PWA manifest (name, icon, theme color) so it can be installed to phone home screen
-- [ ] **PWA-02**: App works correctly in mobile browsers (Safari on iOS, Chrome on Android)
+- [x] **PWA-02**: App works correctly in mobile browsers (Safari on iOS, Chrome on Android)
 
 ### Responsive UI
 
-- [ ] **RESP-01**: Dashboard tab layout adapts to mobile screen widths (cards stack vertically, charts resize)
+- [x] **RESP-01**: Dashboard tab layout adapts to mobile screen widths (cards stack vertically, charts resize)
 - [ ] **RESP-02**: Budget tab adapts to mobile (comparison table scrolls or reflows on small screens)
-- [ ] **RESP-03**: Tab navigation is usable with touch (tap targets large enough, no hover-only interactions)
+- [x] **RESP-03**: Tab navigation is usable with touch (tap targets large enough, no hover-only interactions)
 
 ### Log Tab
 
@@ -65,10 +65,10 @@
 | SRV-03 | Phase 5 | Complete |
 | SRV-04 | Phase 5 | Complete |
 | PWA-01 | Phase 6 | Complete |
-| PWA-02 | Phase 6 | Pending |
-| RESP-01 | Phase 6 | Pending |
+| PWA-02 | Phase 6 | Complete |
+| RESP-01 | Phase 6 | Complete |
 | RESP-02 | Phase 6 | Pending |
-| RESP-03 | Phase 6 | Pending |
+| RESP-03 | Phase 6 | Complete |
 | LOG-01 | Phase 7 | Pending |
 | LOG-02 | Phase 7 | Pending |
 | LOG-03 | Phase 7 | Pending |
