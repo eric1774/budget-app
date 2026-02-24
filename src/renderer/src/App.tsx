@@ -589,7 +589,7 @@ export default function App(): JSX.Element {
           </main>
         </>
       ) : (
-        <main style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
+        <main className="budget-tab-outer" style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
           <BudgetTab
             transactions={parseResult?.transactions ?? []}
             categories={(parseResult?.categories ?? []).filter(c => c !== 'Income')}
