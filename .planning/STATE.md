@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-23)
 ## Current Position
 
 Phase: 6 of 7 (PWA + Responsive UI) — In Progress
-Plan: 2 of 4 in current phase — COMPLETE
-Status: Phase 6 in progress — 06-01 (PWA manifest, icons, service worker) and 06-02 (mobile responsive dashboard) complete.
-Last activity: 2026-02-23 — 06-02 completed: mobile responsive CSS, tap targets, offline badge
+Plan: 3 of 4 in current phase — COMPLETE
+Status: Phase 6 in progress — 06-01 (PWA manifest, icons, service worker), 06-02 (mobile responsive dashboard), and 06-03 (budget tab mobile) complete.
+Last activity: 2026-02-23 — 06-03 completed: budget table horizontal scroll, summary cards mobile stack
 
 Progress: [█░░░░░░░░░] 10% (v1.1)
 
@@ -55,6 +55,7 @@ Progress: [█░░░░░░░░░] 10% (v1.1)
 | Phase 05-local-server-sync P03 | 45 | 3 tasks | 5 files |
 | Phase 06-pwa-responsive-ui P01 | 2 | 2 tasks | 5 files |
 | Phase 06-pwa-responsive-ui P02 | 8 | 2 tasks | 2 files |
+| Phase 06-pwa-responsive-ui P03 | 5 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -98,6 +99,7 @@ Recent decisions affecting current work:
 - [Phase 06-pwa-responsive-ui]: Changed breakpoint from 700px to 640px — standard sm breakpoint covering 390px devices
 - [Phase 06-pwa-responsive-ui]: flex: 1 on .tab-btn + width: 100% on nav ensures full-width tab distribution without JS
 - [Phase 06-pwa-responsive-ui]: Offline badge placed bottom-left to avoid collision with bottom-right reconnecting badge
+- [Phase 06-pwa-responsive-ui]: Budget table uses horizontal scroll container (not stacked cards) — stays tabular on mobile
 
 ### Pending Todos
 
@@ -110,5 +112,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 06-02-PLAN.md — mobile responsive dashboard, tap targets, offline badge
+Stopped at: Completed 06-03-PLAN.md — budget tab mobile scroll and stacking
 Resume file: None
