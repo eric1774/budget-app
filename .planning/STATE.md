@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-02-23)
 
 ## Current Position
 
-Phase: 5 of 7 (Local Server + Sync) — COMPLETE
-Plan: 3 of 3 in current phase — COMPLETE
-Status: Phase 5 complete — all 3 plans done and user-verified. Ready to start Phase 6.
-Last activity: 2026-02-23 — 05-03 human verification approved: browser WS live updates, reconnect, LoadingSkeleton all working on LAN
+Phase: 6 of 7 (PWA + Responsive UI) — In Progress
+Plan: 1 of 4 in current phase — COMPLETE
+Status: Phase 6 started — 06-01 (PWA manifest, icons, service worker) complete.
+Last activity: 2026-02-23 — 06-01 completed: PWA manifest, SW, icons all verified
 
 Progress: [█░░░░░░░░░] 10% (v1.1)
 
@@ -53,6 +53,7 @@ Progress: [█░░░░░░░░░] 10% (v1.1)
 | Phase 05-local-server-sync P03 | 20 | 2 tasks | 5 files |
 | Phase 05-local-server-sync P02 | 45 | 3 tasks | 4 files |
 | Phase 05-local-server-sync P03 | 45 | 3 tasks | 5 files |
+| Phase 06-pwa-responsive-ui P01 | 2 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -92,6 +93,7 @@ Recent decisions affecting current work:
 - [Phase 05-local-server-sync]: DEBOUNCE_MS tuned 400->200ms, stabilityThreshold 200->150ms for <=1s file-change pipeline (SYNC-01)
 - [Phase 05-local-server-sync]: Exponential backoff 1s->30s cap for WsClient reconnect; browser native WebSocket; lastSnapshot pattern for /api/snapshot endpoint
 - [Phase 05-local-server-sync]: stopServer() made async with closeAllConnections() so restart-server IPC reliably frees port 3737 before rebinding
+- [Phase 06-pwa-responsive-ui]: Vanilla service worker (no Workbox) — app shell only caching
 
 ### Pending Todos
 
@@ -104,5 +106,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 05-03-PLAN.md — Phase 5 fully complete, user-verified
+Stopped at: Completed 06-01-PLAN.md — PWA manifest, service worker, icons complete
 Resume file: None

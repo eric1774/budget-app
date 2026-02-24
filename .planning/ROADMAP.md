@@ -82,5 +82,5 @@ Plans:
 | 3. Filters & Controls | v1.0 | 3/3 | Complete | 2026-02-22 |
 | 4. Budget Configuration | v1.0 | 3/3 | Complete | 2026-02-22 |
 | 5. Local Server + Sync | 3/3 | Complete   | 2026-02-24 | - |
-| 6. PWA + Responsive UI | v1.1 | 0/3 | Not started | - |
+| 6. PWA + Responsive UI | 1/4 | In Progress|  | - |
 | 7. Log Tab | v1.1 | 0/3 | Not started | - |
