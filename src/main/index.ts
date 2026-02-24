@@ -79,7 +79,7 @@ ipcMain.handle('get-server-info', () => getServerInfo())
 
 // IPC handler to restart the server (for toolbar restart button)
 ipcMain.handle('restart-server', async () => {
-  stopServer()
+  await stopServer()
   const info = await startServer()
   mainWindow?.webContents.send('server-info', info)
   return info

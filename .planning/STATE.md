@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-23)
 ## Current Position
 
 Phase: 5 of 7 (Local Server + Sync)
-Plan: 1 of 3 in current phase
-Status: In progress — Phase 5 Plan 1 complete
-Last activity: 2026-02-23 — 05-01 complete: HTTP + WebSocket server on port 3737 serving React app over LAN
+Plan: 3 of 3 in current phase
+Status: Awaiting checkpoint — Phase 5 Plan 3 at human-verify checkpoint (Tasks 1 & 2 complete)
+Last activity: 2026-02-23 — 05-03 code complete: browser WsClient + LoadingSkeleton + /api/snapshot — awaiting human verification
 
 Progress: [█░░░░░░░░░] 10% (v1.1)
 
@@ -50,6 +50,7 @@ Progress: [█░░░░░░░░░] 10% (v1.1)
 | Phase 04-budget-configuration P02 | 15 | 3 tasks | 4 files |
 | Phase 04-budget-configuration P03 | 10 | 1 tasks | 1 files |
 | Phase 05-local-server-sync P01 | 15 | 2 tasks | 5 files |
+| Phase 05-local-server-sync P03 | 20 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -87,6 +88,7 @@ Recent decisions affecting current work:
 - [Phase 05-local-server-sync]: ws over express for HTTP+WS server — built-in http sufficient, avoids large dependency
 - [Phase 05-local-server-sync]: getLanIp scans private-range IPv4 to get correct LAN address on multi-NIC machines
 - [Phase 05-local-server-sync]: DEBOUNCE_MS tuned 400->200ms, stabilityThreshold 200->150ms for <=1s file-change pipeline (SYNC-01)
+- [Phase 05-local-server-sync]: Exponential backoff 1s->30s cap for WsClient reconnect; browser native WebSocket; lastSnapshot pattern for /api/snapshot endpoint
 
 ### Pending Todos
 
@@ -99,5 +101,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 05-01-PLAN.md — HTTP + WebSocket server layer complete
+Stopped at: 05-03 checkpoint:human-verify — browser WS client code complete, awaiting user verification on LAN
 Resume file: None

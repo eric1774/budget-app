@@ -113,10 +113,21 @@ export async function startServer(): Promise<ServerInfo> {
   return serverInfo
 }
 
-export function stopServer(): void {
-  wss?.close()
-  httpServer?.close()
-  wss = null; httpServer = null; serverInfo = null
+export function stopServer(): Promise<void> {
+  return new Promise((resolve) => {
+    const wssDone = new Promise<void>((r) => {
+      if (!wss) { r(); return }
+      wss.close(() => r())
+    })
+    const httpDone = new Promise<void>((r) => {
+      if (!httpServer) { r(); return }
+      // Destroy all keep-alive sockets so close() resolves immediately
+      httpServer.closeAllConnections?.()
+      httpServer.close(() => r())
+    })
+    wss = null; httpServer = null; serverInfo = null
+    Promise.all([wssDone, httpDone]).then(() => resolve())
+  })
 }
 
 export function getServerInfo(): ServerInfo | null {
