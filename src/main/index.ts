@@ -5,7 +5,7 @@ import { parseWorkbook } from './excel'
 import type { ParseResponse, BudgetMap } from '../shared/types'
 import { getStoredFilePath, setStoredFilePath, getBudgets, setBudget } from './store'
 import { startWatcher, stopWatcher } from './watcher'
-import { startServer, stopServer, getServerInfo } from './server'
+import { startServer, stopServer, getServerInfo, setLastSnapshot } from './server'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -41,7 +41,9 @@ ipcMain.handle('ping', () => 'pong')
 
 // Parse Budget.xlsx file and return typed Transaction objects
 ipcMain.handle('parse-file', async (_event, filePath: string): Promise<ParseResponse> => {
-  return parseWorkbook(filePath)
+  const response = parseWorkbook(filePath)
+  if (response.ok) setLastSnapshot(response)
+  return response
 })
 
 // Return stored file path (or null if none)
