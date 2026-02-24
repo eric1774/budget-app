@@ -10,7 +10,7 @@
 - [x] **SRV-01**: Electron app starts a local HTTP server on a configurable port (default: 3737) when launched
 - [x] **SRV-02**: HTTP server serves the React app as a PWA to any browser on the same Wi-Fi network
 - [x] **SRV-03**: Server sends live data updates to connected clients via WebSocket when Budget.xlsx changes
-- [ ] **SRV-04**: App displays the local network URL (e.g., `http://192.168.x.x:3737`) so user can open it on phone
+- [x] **SRV-04**: App displays the local network URL (e.g., `http://192.168.x.x:3737`) so user can open it on phone
 
 ### PWA
 
@@ -63,7 +63,7 @@
 | SRV-01 | Phase 5 | Complete |
 | SRV-02 | Phase 5 | Complete |
 | SRV-03 | Phase 5 | Complete |
-| SRV-04 | Phase 5 | Pending |
+| SRV-04 | Phase 5 | Complete |
 | PWA-01 | Phase 6 | Pending |
 | PWA-02 | Phase 6 | Pending |
 | RESP-01 | Phase 6 | Pending |

@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-23)
 
 **Core value:** Every transaction logged in Excel instantly becomes a clear, beautiful visual — see where money goes without touching a spreadsheet.
-**Current focus:** v1.1 — Phase 5: Local Server + Sync
+**Current focus:** v1.1 — Phase 6 (next phase)
 
 ## Current Position
 
-Phase: 5 of 7 (Local Server + Sync)
-Plan: 3 of 3 in current phase
-Status: Awaiting checkpoint — Phase 5 Plan 3 at human-verify checkpoint (Tasks 1 & 2 complete)
-Last activity: 2026-02-23 — 05-03 code complete: browser WsClient + LoadingSkeleton + /api/snapshot — awaiting human verification
+Phase: 5 of 7 (Local Server + Sync) — COMPLETE
+Plan: 3 of 3 in current phase — COMPLETE
+Status: Phase 5 complete — all 3 plans done and user-verified. Ready to start Phase 6.
+Last activity: 2026-02-23 — 05-03 human verification approved: browser WS live updates, reconnect, LoadingSkeleton all working on LAN
 
 Progress: [█░░░░░░░░░] 10% (v1.1)
 
@@ -51,6 +51,8 @@ Progress: [█░░░░░░░░░] 10% (v1.1)
 | Phase 04-budget-configuration P03 | 10 | 1 tasks | 1 files |
 | Phase 05-local-server-sync P01 | 15 | 2 tasks | 5 files |
 | Phase 05-local-server-sync P03 | 20 | 2 tasks | 5 files |
+| Phase 05-local-server-sync P02 | 45 | 3 tasks | 4 files |
+| Phase 05-local-server-sync P03 | 45 | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -89,6 +91,7 @@ Recent decisions affecting current work:
 - [Phase 05-local-server-sync]: getLanIp scans private-range IPv4 to get correct LAN address on multi-NIC machines
 - [Phase 05-local-server-sync]: DEBOUNCE_MS tuned 400->200ms, stabilityThreshold 200->150ms for <=1s file-change pipeline (SYNC-01)
 - [Phase 05-local-server-sync]: Exponential backoff 1s->30s cap for WsClient reconnect; browser native WebSocket; lastSnapshot pattern for /api/snapshot endpoint
+- [Phase 05-local-server-sync]: stopServer() made async with closeAllConnections() so restart-server IPC reliably frees port 3737 before rebinding
 
 ### Pending Todos
 
@@ -101,5 +104,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: 05-03 checkpoint:human-verify — browser WS client code complete, awaiting user verification on LAN
+Stopped at: Completed 05-03-PLAN.md — Phase 5 fully complete, user-verified
 Resume file: None

@@ -117,6 +117,8 @@ export function stopServer(): Promise<void> {
   return new Promise((resolve) => {
     const wssDone = new Promise<void>((r) => {
       if (!wss) { r(); return }
+      // Terminate all open connections so wss.close() callback fires immediately
+      wss.clients.forEach((client) => client.terminate())
       wss.close(() => r())
     })
     const httpDone = new Promise<void>((r) => {
