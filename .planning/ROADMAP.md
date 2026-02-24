@@ -53,7 +53,13 @@ Plans:
   3. Dashboard tab on a 390px-wide screen shows summary cards stacked vertically and charts resized to full width
   4. Budget tab comparison table is scrollable horizontally or reflows cleanly on a small screen
   5. All tab navigation is tappable with a fingertip — no hover-only interactions required
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 06-01-PLAN.md — PWA manifest, service worker, and icons (Wave 1)
+- [ ] 06-02-PLAN.md — Responsive CSS: tab 44px targets, summary cards 2-col, offline badge (Wave 1)
+- [ ] 06-03-PLAN.md — Budget tab horizontal scroll and mobile card stack (Wave 1)
+- [ ] 06-04-PLAN.md — Human verification: PWA install and mobile layout (Wave 2)
 
 ### Phase 7: Log Tab
 **Goal**: Users can browse and filter every Logbook transaction from the browser or Electron app in a dedicated Log tab
