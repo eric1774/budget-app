@@ -13,6 +13,18 @@ import { BalanceChart } from './components/BalanceChart'
 import { BudgetTab } from './components/BudgetTab'
 import './index.css'
 
+// --- Helpers ---
+
+function reviveDates(result: ParseResult): ParseResult {
+  return {
+    ...result,
+    transactions: result.transactions.map((t) => ({
+      ...t,
+      date: t.date instanceof Date ? t.date : new Date(t.date as unknown as string),
+    })),
+  }
+}
+
 // --- Types ---
 
 type Status = 'welcome' | 'loading' | 'loaded' | 'error'
@@ -153,7 +165,7 @@ export default function App(): JSX.Element {
         const p = payload as { type: string; ok: boolean; result?: ParseResult; error?: ParseError }
         if (p.type === 'file-changed') {
           if (p.ok && p.result) {
-            setParseResult(p.result)
+            setParseResult(reviveDates(p.result))
             setParseError(null)
             setParseErrorBadgeAt(null)
             setStatus('loaded')
@@ -175,7 +187,7 @@ export default function App(): JSX.Element {
               if (!mounted) return
               const snap = data as ParseResponse
               if (snap.ok) {
-                setParseResult(snap.result)
+                setParseResult(reviveDates(snap.result))
                 setStatus('loaded')
                 setLastSyncedAt(new Date())
               }
@@ -459,21 +471,15 @@ export default function App(): JSX.Element {
       {banner && <Banner {...banner} onDismiss={() => setBanner(null)} />}
 
       {/* Slim header */}
-      <header style={{
-        padding: '12px 24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-      }}>
+      <header className="app-header">
         <span style={{ fontWeight: 600, fontSize: 16, color: 'var(--color-accent)', letterSpacing: '0.02em' }}>
           Budget Dashboard
         </span>
-        <span style={{ fontSize: 12, color: 'var(--text-muted)', maxWidth: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <span className="app-header__filepath">
           {filePath ?? ''}
         </span>
         <button
-          style={{ padding: '4px 12px', fontSize: 12, cursor: 'pointer', background: 'rgba(255,255,255,0.08)', color: 'var(--text-primary)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6 }}
+          style={{ padding: '4px 12px', fontSize: 12, cursor: 'pointer', background: 'rgba(255,255,255,0.08)', color: 'var(--text-primary)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6, whiteSpace: 'nowrap' }}
           onClick={handleSelectFile}
         >
           Change File
@@ -488,7 +494,7 @@ export default function App(): JSX.Element {
       />
 
       {/* Tab navigation */}
-      <nav style={{ display: 'flex', gap: 0, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <nav style={{ display: 'flex', gap: 0, borderBottom: '1px solid rgba(255,255,255,0.06)', width: '100%' }}>
         <button
           className={`tab-btn${activeTab === 'dashboard' ? ' tab-btn--active' : ''}`}
           onClick={() => setActiveTab('dashboard')}
@@ -506,6 +512,25 @@ export default function App(): JSX.Element {
           )}
         </button>
       </nav>
+
+      {/* Offline badge — browser mode only, when disconnected */}
+      {wsState === 'disconnected' && (
+        <div style={{
+          position: 'fixed',
+          bottom: 16,
+          left: 16,
+          background: 'rgba(60,60,60,0.85)',
+          border: '1px solid rgba(255,255,255,0.15)',
+          borderRadius: 6,
+          padding: '4px 10px',
+          fontSize: 11,
+          color: 'var(--text-muted)',
+          zIndex: 999,
+          letterSpacing: '0.04em',
+        }}>
+          Offline
+        </div>
+      )}
 
       {/* Reconnecting indicator — browser mode only */}
       {wsState === 'reconnecting' && (
@@ -551,19 +576,15 @@ export default function App(): JSX.Element {
             onChange={setFilterState}
           />
           {/* Dashboard body */}
-          <main style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+          <main className="dashboard-main">
             <SummaryCards transactions={filteredTransactions} />
 
             {/* Charts */}
             <MonthlyChart transactions={filteredTransactions} />
 
-            <div style={{ display: 'flex', gap: 24 }}>
-              <div style={{ flex: 1 }}>
-                <CategoryBreakdownChart transactions={filteredTransactions} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <BalanceChart transactions={filteredTransactions} />
-              </div>
+            <div className="charts-row">
+              <CategoryBreakdownChart transactions={filteredTransactions} />
+              <BalanceChart transactions={filteredTransactions} />
             </div>
           </main>
         </>
