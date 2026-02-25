@@ -273,6 +273,16 @@ export default function App(): JSX.Element {
     return txns
   }, [parseResult, filterState])
 
+  const availableMonths = useMemo(() => {
+    if (!parseResult) return []
+    const seen = new Set<string>()
+    for (const t of parseResult.transactions) {
+      const ym = `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`
+      seen.add(ym)
+    }
+    return Array.from(seen).sort((a, b) => b.localeCompare(a))  // newest first
+  }, [parseResult])
+
   const logFilteredTransactions = useMemo(() => {
     if (!parseResult) return []
     let txns = parseResult.transactions
@@ -281,10 +291,9 @@ export default function App(): JSX.Element {
     const now = new Date()
     if (logFilterState.datePreset === 'this-month') {
       txns = txns.filter((t) => t.date.getFullYear() === now.getFullYear() && t.date.getMonth() === now.getMonth())
-    } else if (logFilterState.datePreset === 'last-month') {
-      const y = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear()
-      const m = now.getMonth() === 0 ? 11 : now.getMonth() - 1
-      txns = txns.filter((t) => t.date.getFullYear() === y && t.date.getMonth() === m)
+    } else if (logFilterState.datePreset === 'specific-month' && logFilterState.selectedMonthYear) {
+      const [sy, sm] = logFilterState.selectedMonthYear.split('-')
+      txns = txns.filter((t) => t.date.getFullYear() === parseInt(sy, 10) && t.date.getMonth() === parseInt(sm, 10) - 1)
     }
     // 'all' — no date filter
 
@@ -647,6 +656,7 @@ export default function App(): JSX.Element {
           <LogFilterBar
             filterState={logFilterState}
             allCategories={parseResult?.categories ?? []}
+            availableMonths={availableMonths}
             onChange={setLogFilterState}
           />
           <LogTab

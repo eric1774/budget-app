@@ -1,9 +1,10 @@
 import React from 'react'
 
-export type LogDatePreset = 'this-month' | 'last-month' | 'all'
+export type LogDatePreset = 'this-month' | 'specific-month' | 'all'
 
 export interface LogFilterState {
   datePreset: LogDatePreset
+  selectedMonthYear: string | null  // 'YYYY-MM' when datePreset === 'specific-month'
   activeCategories: Set<string>   // categories included; empty Set means ALL categories included (no filter)
   incomeExpense: 'all' | 'income' | 'expenses'
   descriptionSearch: string
@@ -11,20 +12,23 @@ export interface LogFilterState {
 
 export const DEFAULT_LOG_FILTER: LogFilterState = {
   datePreset: 'all',
+  selectedMonthYear: null,
   activeCategories: new Set(),   // empty = no category filter applied
   incomeExpense: 'all',
   descriptionSearch: '',
 }
 
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
 interface LogFilterBarProps {
   filterState: LogFilterState
   allCategories: string[]
+  availableMonths: string[]  // 'YYYY-MM' strings, newest first
   onChange: (state: LogFilterState) => void
 }
 
-const DATE_PRESETS: { key: LogDatePreset; label: string }[] = [
+const TOP_PRESETS: { key: LogDatePreset; label: string }[] = [
   { key: 'this-month', label: 'This Month' },
-  { key: 'last-month', label: 'Last Month' },
   { key: 'all', label: 'All' },
 ]
 
@@ -34,7 +38,7 @@ const INCOME_EXPENSE_OPTIONS: { key: LogFilterState['incomeExpense']; label: str
   { key: 'expenses', label: 'Expenses' },
 ]
 
-export function LogFilterBar({ filterState, allCategories, onChange }: LogFilterBarProps): JSX.Element {
+export function LogFilterBar({ filterState, allCategories, availableMonths, onChange }: LogFilterBarProps): JSX.Element {
   function handleChipToggle(cat: string): void {
     const next = new Set(filterState.activeCategories)
     if (next.has(cat)) {
@@ -49,15 +53,15 @@ export function LogFilterBar({ filterState, allCategories, onChange }: LogFilter
     <div className="log-filter-bar">
       {/* Row 1: date presets + income/expense toggle + description search */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-        {/* Date presets */}
+        {/* Top date presets: This Month / All */}
         <div style={{ display: 'flex', borderRadius: 6, overflow: 'hidden' }}>
-          {DATE_PRESETS.map((preset, i) => {
+          {TOP_PRESETS.map((preset, i) => {
             const isActive = filterState.datePreset === preset.key
             return (
               <button
                 key={preset.key}
                 className="preset-segment"
-                onClick={() => onChange({ ...filterState, datePreset: preset.key })}
+                onClick={() => onChange({ ...filterState, datePreset: preset.key, selectedMonthYear: null })}
                 style={{
                   padding: '5px 12px',
                   fontSize: 12,
@@ -66,7 +70,7 @@ export function LogFilterBar({ filterState, allCategories, onChange }: LogFilter
                   background: isActive ? 'var(--color-accent)' : 'rgba(255,255,255,0.08)',
                   color: isActive ? '#1a1d23' : 'var(--text-muted)',
                   border: 'none',
-                  borderRight: i < DATE_PRESETS.length - 1 ? '1px solid rgba(255,255,255,0.12)' : 'none',
+                  borderRight: i < TOP_PRESETS.length - 1 ? '1px solid rgba(255,255,255,0.12)' : 'none',
                   transition: 'background 0.15s, color 0.15s',
                   whiteSpace: 'nowrap',
                 }}
@@ -124,7 +128,50 @@ export function LogFilterBar({ filterState, allCategories, onChange }: LogFilter
         />
       </div>
 
-      {/* Row 2: category chips */}
+      {/* Row 2: month picker — scrollable row of available months */}
+      {availableMonths.length > 0 && (
+        <div
+          style={{
+            display: 'flex',
+            gap: 6,
+            overflowX: 'auto',
+            overflowY: 'hidden',
+            WebkitOverflowScrolling: 'touch',
+            paddingBottom: 2,
+            scrollbarWidth: 'none',
+          }}
+          className="log-category-chips"
+        >
+          {availableMonths.map((ym) => {
+            const [y, m] = ym.split('-')
+            const label = `${MONTH_NAMES[parseInt(m, 10) - 1]} ${y.slice(2)}`
+            const isActive = filterState.datePreset === 'specific-month' && filterState.selectedMonthYear === ym
+            return (
+              <button
+                key={ym}
+                onClick={() => onChange({ ...filterState, datePreset: 'specific-month', selectedMonthYear: ym })}
+                style={{
+                  borderRadius: 999,
+                  padding: '4px 12px',
+                  fontSize: 12,
+                  cursor: 'pointer',
+                  border: 'none',
+                  background: isActive ? 'var(--color-accent)' : 'rgba(255,255,255,0.06)',
+                  color: isActive ? '#1a1d23' : 'var(--text-muted)',
+                  fontWeight: isActive ? 600 : 400,
+                  transition: 'background 0.15s, color 0.15s',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                }}
+              >
+                {label}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Row 3: category chips */}
       <div
         className="log-category-chips"
         style={{
