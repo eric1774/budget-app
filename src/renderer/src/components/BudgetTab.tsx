@@ -26,7 +26,11 @@ function adjustMonth(monthKey: string, delta: number): string {
 }
 
 export function BudgetTab({ transactions, categories }: BudgetTabProps): JSX.Element {
-  const [monthKey, setMonthKey] = useState<string>(getCurrentMonthKey)
+  const [monthKey, setMonthKey] = useState<string>(() => {
+    if (!transactions.length) return getCurrentMonthKey()
+    const latest = transactions.reduce((max, t) => (t.date > max ? t.date : max), transactions[0].date)
+    return `${latest.getFullYear()}-${String(latest.getMonth() + 1).padStart(2, '0')}`
+  })
   const [allBudgets, setAllBudgets] = useState<BudgetMap>({})
   const [isModalOpen, setIsModalOpen] = useState(false)
 
