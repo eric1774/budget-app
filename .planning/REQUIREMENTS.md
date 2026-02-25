@@ -27,10 +27,10 @@
 
 - [x] **LOG-01**: A "Log" tab appears in the tab bar next to Dashboard and Budget
 - [x] **LOG-02**: Log tab displays all Logbook transactions in a table with columns: Date, Description, Category, Income, Debit, Balance
-- [ ] **LOG-03**: Log tab has a date range filter (same presets: this month, this year, custom)
-- [ ] **LOG-04**: Log tab has a category filter (multi-select chips, same as Dashboard)
-- [ ] **LOG-05**: Log tab has an income/expense toggle (all / income only / expenses only)
-- [ ] **LOG-06**: Log tab has a searchable description filter — user can type to match descriptions (like Excel column filter)
+- [x] **LOG-03**: Log tab has a date range filter (same presets: this month, this year, custom)
+- [x] **LOG-04**: Log tab has a category filter (multi-select chips, same as Dashboard)
+- [x] **LOG-05**: Log tab has an income/expense toggle (all / income only / expenses only)
+- [x] **LOG-06**: Log tab has a searchable description filter — user can type to match descriptions (like Excel column filter)
 
 ### Sync
 
@@ -71,10 +71,10 @@
 | RESP-03 | Phase 6 | Complete |
 | LOG-01 | Phase 7 | Complete |
 | LOG-02 | Phase 7 | Complete |
-| LOG-03 | Phase 7 | Pending |
-| LOG-04 | Phase 7 | Pending |
-| LOG-05 | Phase 7 | Pending |
-| LOG-06 | Phase 7 | Pending |
+| LOG-03 | Phase 7 | Complete |
+| LOG-04 | Phase 7 | Complete |
+| LOG-05 | Phase 7 | Complete |
+| LOG-06 | Phase 7 | Complete |
 | SYNC-01 | Phase 5 | Complete |
 
 **Coverage:**

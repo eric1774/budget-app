@@ -11,6 +11,10 @@ import { MonthlyChart } from './components/MonthlyChart'
 import { CategoryBreakdownChart } from './components/CategoryBreakdownChart'
 import { BalanceChart } from './components/BalanceChart'
 import { BudgetTab } from './components/BudgetTab'
+import { LogTab } from './components/LogTab'
+import { LogFilterBar } from './components/LogFilterBar'
+import type { LogFilterState } from './components/LogFilterBar'
+import { DEFAULT_LOG_FILTER } from './components/LogFilterBar'
 import './index.css'
 
 // --- Helpers ---
@@ -28,7 +32,7 @@ function reviveDates(result: ParseResult): ParseResult {
 // --- Types ---
 
 type Status = 'welcome' | 'loading' | 'loaded' | 'error'
-type ActiveTab = 'dashboard' | 'budget'
+type ActiveTab = 'dashboard' | 'budget' | 'log'
 
 interface BannerState {
   type: 'warning' | 'error' | 'success'
@@ -140,6 +144,7 @@ export default function App(): JSX.Element {
     activeCategories: new Set<string>(),
   })
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard')
+  const [logFilterState, setLogFilterState] = useState<LogFilterState>(DEFAULT_LOG_FILTER)
   const [budgetMap, setBudgetMap] = useState<BudgetMap>({})
   const [serverInfo, setServerInfo] = useState<ServerInfo | null>(null)
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null)
@@ -267,6 +272,42 @@ export default function App(): JSX.Element {
 
     return txns
   }, [parseResult, filterState])
+
+  const logFilteredTransactions = useMemo(() => {
+    if (!parseResult) return []
+    let txns = parseResult.transactions
+
+    // Date filter
+    const now = new Date()
+    if (logFilterState.datePreset === 'this-month') {
+      txns = txns.filter((t) => t.date.getFullYear() === now.getFullYear() && t.date.getMonth() === now.getMonth())
+    } else if (logFilterState.datePreset === 'last-month') {
+      const y = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear()
+      const m = now.getMonth() === 0 ? 11 : now.getMonth() - 1
+      txns = txns.filter((t) => t.date.getFullYear() === y && t.date.getMonth() === m)
+    }
+    // 'all' — no date filter
+
+    // Category filter (empty set = no filter)
+    if (logFilterState.activeCategories.size > 0) {
+      txns = txns.filter((t) => logFilterState.activeCategories.has(t.category))
+    }
+
+    // Income/expense toggle
+    if (logFilterState.incomeExpense === 'income') {
+      txns = txns.filter((t) => t.income > 0)
+    } else if (logFilterState.incomeExpense === 'expenses') {
+      txns = txns.filter((t) => t.debit > 0)
+    }
+
+    // Description search (case-insensitive, Description field only)
+    if (logFilterState.descriptionSearch.trim() !== '') {
+      const needle = logFilterState.descriptionSearch.trim().toLowerCase()
+      txns = txns.filter((t) => t.description.toLowerCase().includes(needle))
+    }
+
+    return txns
+  }, [parseResult, logFilterState])
 
   const loadFile = useCallback(async (path: string, isStoredPath = false) => {
     setStatus('loading')
@@ -511,6 +552,12 @@ export default function App(): JSX.Element {
             <span className="budget-tab-badge" aria-label="Some categories over budget" />
           )}
         </button>
+        <button
+          className={`tab-btn${activeTab === 'log' ? ' tab-btn--active' : ''}`}
+          onClick={() => setActiveTab('log')}
+        >
+          Log
+        </button>
       </nav>
 
       {/* Offline badge — browser mode only, when disconnected */}
@@ -588,13 +635,25 @@ export default function App(): JSX.Element {
             </div>
           </main>
         </>
-      ) : (
+      ) : activeTab === 'budget' ? (
         <main className="budget-tab-outer" style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
           <BudgetTab
             transactions={parseResult?.transactions ?? []}
             categories={(parseResult?.categories ?? []).filter(c => c !== 'Income')}
           />
         </main>
+      ) : (
+        <div className="log-tab-outer">
+          <LogFilterBar
+            filterState={logFilterState}
+            allCategories={parseResult?.categories ?? []}
+            onChange={setLogFilterState}
+          />
+          <LogTab
+            transactions={logFilteredTransactions}
+            totalCount={parseResult?.transactions.length ?? 0}
+          />
+        </div>
       )}
     </div>
   )
