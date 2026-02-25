@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
+milestone: v1.1
 milestone_name: Mobile + Log
-status: unknown
-last_updated: "2026-02-25T16:42:19.143Z"
+status: complete
+last_updated: "2026-02-25T17:15:00Z"
 progress:
-  total_phases: 3
-  completed_phases: 2
+  total_phases: 7
+  completed_phases: 7
   total_plans: 10
-  completed_plans: 9
+  completed_plans: 10
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-23)
 
 **Core value:** Every transaction logged in Excel instantly becomes a clear, beautiful visual — see where money goes without touching a spreadsheet.
-**Current focus:** v1.1 — Phase 6 (next phase)
+**Current focus:** v1.1 COMPLETE — all 7 phases shipped
 
 ## Current Position
 
-Phase: 7 of 7 (Log Tab) — IN PROGRESS
-Plan: 2 of 3 in current phase — COMPLETE
-Status: Phase 7 in progress — 07-02 (LogFilterBar component + CSS) complete.
-Last activity: 2026-02-25 — 07-02 completed: LogFilterBar with date presets, income/expense toggle, category chips, description search, sticky CSS
+Phase: 7 of 7 (Log Tab) — COMPLETE
+Plan: 3 of 3 in current phase — COMPLETE
+Status: Phase 7 complete — 07-03 (App.tsx wiring + mobile sticky fix) complete. v1.1 milestone shipped.
+Last activity: 2026-02-25 — 07-03 completed: Log tab wired into App.tsx, four-filter AND pipeline, mobile sticky filter bar fix
 
-Progress: [█░░░░░░░░░] 10% (v1.1)
+Progress: [██████████] 100% (v1.1)
 
 ## Performance Metrics
 
@@ -71,6 +71,7 @@ Progress: [█░░░░░░░░░] 10% (v1.1)
 | Phase 06-pwa-responsive-ui P03 | 5 | 2 tasks | 3 files |
 | Phase 07-log-tab P01 | 5 | 1 tasks | 1 files |
 | Phase 07-log-tab P02 | 10 | 2 tasks | 2 files |
+| Phase 07-log-tab P03 | 15 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -118,6 +119,8 @@ Recent decisions affecting current work:
 - [Phase 06-pwa-responsive-ui]: Phase 6 verified complete by user on real device — all 6 observable PWA+responsive truths passed
 - [Phase 07-log-tab]: LogTab receives pre-filtered transactions from parent; totalCount prop carries unfiltered total for Showing X of Y display
 - [Phase 07-log-tab]: activeCategories empty Set means ALL pass in LogFilterBar (inverse of Dashboard FilterBar)
+- [Phase 07-log-tab]: overflow:hidden on .log-tab-outer breaks position:sticky on mobile; override to overflow:visible at <=640px so page body scrolls and sticky filter bar works
+- [Phase 07-log-tab]: Three-way nested ternary for activeTab in App.tsx (dashboard / budget / log)
 
 ### Pending Todos
 
@@ -130,5 +133,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 07-02-PLAN.md — LogFilterBar component and CSS
+Stopped at: Completed 07-03-PLAN.md — Log tab wired into App.tsx + mobile sticky fix. v1.1 milestone COMPLETE.
 Resume file: None
