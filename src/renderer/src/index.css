@@ -244,6 +244,21 @@ html, body, #root {
 @media (max-width: 640px) {
   .log-filter-bar {
     padding: 8px 12px;
+    /* Re-assert sticky so it sticks to the viewport on mobile.
+       On mobile the page body scrolls (log-tab-outer height is unconstrained),
+       so we need position: sticky relative to the scroll root, not a clipped
+       overflow:hidden ancestor. */
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  /* Allow the log tab outer to grow naturally on mobile so the page body
+     scrolls — this is required for position:sticky to work on the filter bar.
+     (overflow:hidden on a parent breaks sticky in all browsers.) */
+  .log-tab-outer {
+    overflow: visible;
+    min-height: 0;
   }
 
   /* On mobile, the first row (controls) wraps so search goes below toggles */
