@@ -208,3 +208,47 @@ html, body, #root {
     align-items: center;
   }
 }
+
+/* ── Log Tab ── */
+
+/* Filter bar: sticky so it stays visible while scrolling the table */
+.log-filter-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg-app);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Hide the scrollbar track on the chip row (WebKit) */
+.log-category-chips::-webkit-scrollbar {
+  height: 0;
+  width: 0;
+}
+
+/* Log tab outer container: fills remaining height so table scrolls internally */
+.log-tab-outer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Chip transition (reuse existing .filter-chip class for chips rendered in LogFilterBar) */
+
+@media (max-width: 640px) {
+  .log-filter-bar {
+    padding: 8px 12px;
+  }
+
+  /* On mobile, the first row (controls) wraps so search goes below toggles */
+  .log-filter-bar > div:first-child {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
