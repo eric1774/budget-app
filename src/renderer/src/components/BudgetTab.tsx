@@ -32,6 +32,7 @@ export function BudgetTab({ transactions, categories }: BudgetTabProps): JSX.Ele
 
   // Load budgets from IPC on mount and on monthKey change
   useEffect(() => {
+    if (!window.electronAPI) return
     window.electronAPI.invoke('get-budgets').then((data) => {
       setAllBudgets((data as BudgetMap) ?? {})
     })
@@ -71,6 +72,7 @@ export function BudgetTab({ transactions, categories }: BudgetTabProps): JSX.Ele
   const netDiff = totalBudgeted - totalActual
 
   const handleBudgetChange = async (category: string, amount: number): Promise<void> => {
+    if (!window.electronAPI) return
     await window.electronAPI.invoke('set-budget', { monthKey, category, amount })
     // Optimistic update
     setAllBudgets((prev) => {
