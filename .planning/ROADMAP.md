@@ -22,7 +22,7 @@ Full archive: `.planning/milestones/v1.0-ROADMAP.md`
 ### v1.1 Mobile + Log
 
 - [x] **Phase 5: Local Server + Sync** — Electron serves the app over local Wi-Fi with live WebSocket updates (3 plans) (completed 2026-02-24)
-- [ ] **Phase 6: PWA + Responsive UI** — App installs to phone home screen and adapts to mobile screens
+- [x] **Phase 6: PWA + Responsive UI** — App installs to phone home screen and adapts to mobile screens (completed 2026-02-25)
 - [ ] **Phase 7: Log Tab** — Read-only transaction table with date, category, income/expense, and description filters
 
 ## Phase Details
@@ -82,5 +82,5 @@ Plans:
 | 3. Filters & Controls | v1.0 | 3/3 | Complete | 2026-02-22 |
 | 4. Budget Configuration | v1.0 | 3/3 | Complete | 2026-02-22 |
 | 5. Local Server + Sync | 3/3 | Complete   | 2026-02-24 | - |
-| 6. PWA + Responsive UI | 3/4 | In Progress|  | - |
+| 6. PWA + Responsive UI | 4/4 | Complete   | 2026-02-25 | - |
 | 7. Log Tab | v1.1 | 0/3 | Not started | - |
