@@ -272,7 +272,7 @@ export default function App(): JSX.Element {
     setStatus('loading')
     const res = (await window.electronAPI.invoke('parse-file', path)) as ParseResponse
     if (res.ok) {
-      setParseResult(res.result)
+      setParseResult(reviveDates(res.result))
       setParseError(null)
       setStatus('loaded')
       if (res.result.skippedRows > 0) {
@@ -374,7 +374,7 @@ export default function App(): JSX.Element {
         if (!mounted) return
         const d = data as { ok: boolean; result?: ParseResult; error?: ParseError }
         if (d.ok && d.result) {
-          setParseResult(d.result)
+          setParseResult(reviveDates(d.result))
           setParseError(null)
           setStatus('loaded')
           setLastSyncedAt(new Date())
