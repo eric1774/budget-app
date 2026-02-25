@@ -83,4 +83,4 @@ Plans:
 | 4. Budget Configuration | v1.0 | 3/3 | Complete | 2026-02-22 |
 | 5. Local Server + Sync | 3/3 | Complete   | 2026-02-24 | - |
 | 6. PWA + Responsive UI | 4/4 | Complete   | 2026-02-25 | - |
-| 7. Log Tab | v1.1 | 0/3 | Not started | - |
+| 7. Log Tab | 1/3 | In Progress|  | - |
