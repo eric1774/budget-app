@@ -36,7 +36,7 @@ Full archive: `.planning/milestones/v1.1-ROADMAP.md`
 - [x] **Phase 8: Asset Data Layer** — assets.json schema, IPC channels, account + snapshot CRUD persistence (completed 2011-03-03)
 - [x] **Phase 9: Assets Tab UI** — tab navigation, account cards, overview summary, snapshot entry, history charts, mobile PWA (completed 2011-03-03)
 - [x] **Phase 10: Goal Tracking** — goal fields, progress bar, projected completion, contribution rate, on-track indicator (completed 2011-03-03)
-- [ ] **Phase 11: Net Worth Tracker** — total net worth figure, net worth history chart over time, breakdown by account type
+- [x] **Phase 11: Net Worth Tracker** — total net worth figure, net worth history chart over time, breakdown by account type (completed 2026-03-03)
 
 ## Phase Details
 
@@ -121,4 +121,4 @@ Plans:
 | 8. Asset Data Layer | v1.2 | 2/2 | Complete | 2011-03-03 |
 | 9. Assets Tab UI | v1.2 | 4/4 | Complete | 2011-03-03 |
 | 10. Goal Tracking | 3/4 | In Progress|  | — |
-| 11. Net Worth Tracker | 1/2 | In Progress|  | — |
+| 11. Net Worth Tracker | 2/2 | Complete   | 2026-03-03 | — |
