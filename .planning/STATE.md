@@ -1,33 +1,33 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: Mobile + Log
+milestone: v1.2
+milestone_name: Assets Tracker
 status: unknown
-last_updated: "2026-02-25T17:55:41.942Z"
+last_updated: "2026-03-03T04:19:51.731Z"
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 10
-  completed_plans: 10
+  total_phases: 1
+  completed_phases: 0
+  total_plans: 2
+  completed_plans: 1
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-23)
+See: .planning/PROJECT.md (updated 2026-03-02)
 
 **Core value:** Every transaction logged in Excel instantly becomes a clear, beautiful visual — see where money goes without touching a spreadsheet.
-**Current focus:** v1.1 COMPLETE — all 7 phases shipped
+**Current focus:** v1.2 Assets Tracker — Phase 8: Asset Data Layer
 
 ## Current Position
 
-Phase: 7 of 7 (Log Tab) — COMPLETE
-Plan: 3 of 3 in current phase — COMPLETE
-Status: Phase 7 complete — 07-03 (App.tsx wiring + mobile sticky fix) complete. v1.1 milestone shipped.
-Last activity: 2026-02-25 — 07-03 completed: Log tab wired into App.tsx, four-filter AND pipeline, mobile sticky filter bar fix
+Phase: 8 — Asset Data Layer
+Plan: —
+Status: Roadmap created — ready to begin Phase 8 planning
+Last activity: 2026-03-02 — Roadmap created for v1.2 (Phases 8–11, 20 requirements mapped)
 
-Progress: [██████████] 100% (v1.1)
+Progress: [░░░░░░░░░░] 0% (v1.2)
 
 ## Performance Metrics
 
@@ -72,6 +72,7 @@ Progress: [██████████] 100% (v1.1)
 | Phase 07-log-tab P01 | 5 | 1 tasks | 1 files |
 | Phase 07-log-tab P02 | 10 | 2 tasks | 2 files |
 | Phase 07-log-tab P03 | 15 | 2 tasks | 2 files |
+| Phase 08-asset-data-layer P01 | 7 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -121,6 +122,8 @@ Recent decisions affecting current work:
 - [Phase 07-log-tab]: activeCategories empty Set means ALL pass in LogFilterBar (inverse of Dashboard FilterBar)
 - [Phase 07-log-tab]: overflow:hidden on .log-tab-outer breaks position:sticky on mobile; override to overflow:visible at <=640px so page body scrolls and sticky filter bar works
 - [Phase 07-log-tab]: Three-way nested ternary for activeTab in App.tsx (dashboard / budget / log)
+- [Phase 08-asset-data-layer]: Assets stored in separate userData/assets.json (not settings.json) — distinct data domain, avoids entangling with budget settings
+- [Phase 08-asset-data-layer]: crypto.randomUUID() used for ID generation in assets-store.ts — no uuid package dependency needed
 
 ### Pending Todos
 
@@ -132,6 +135,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-25
-Stopped at: Completed 07-03-PLAN.md — Log tab wired into App.tsx + mobile sticky fix. v1.1 milestone COMPLETE.
+Last session: 2026-03-02
+Stopped at: Roadmap created for v1.2 — Phases 8–11 defined, 20/20 requirements mapped. Ready to plan Phase 8.
 Resume file: None

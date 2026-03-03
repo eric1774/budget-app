@@ -3,85 +3,100 @@
 **Defined:** 2026-02-23
 **Core Value:** Every transaction I log in Excel instantly becomes a clear, beautiful visual — I can see where my money goes without touching a spreadsheet.
 
-## v1.1 Requirements
+## v1.2 Requirements
 
-### Local Network Server
+### Account Management
 
-- [x] **SRV-01**: Electron app starts a local HTTP server on a configurable port (default: 3737) when launched
-- [x] **SRV-02**: HTTP server serves the React app as a PWA to any browser on the same Wi-Fi network
-- [x] **SRV-03**: Server sends live data updates to connected clients via WebSocket when Budget.xlsx changes
-- [x] **SRV-04**: App displays the local network URL (e.g., `http://192.168.x.x:3737`) so user can open it on phone
+- [x] **ACCT-01**: User can add a new asset account with a name and type (Standard / Goal / Certificate)
+- [x] **ACCT-02**: User can edit an existing account's name and type
+- [x] **ACCT-03**: User can remove an account (with confirmation prompt)
+- [x] **ACCT-04**: User can record a balance snapshot for any account (amount + date + optional note)
+- [x] **ACCT-05**: User can edit or delete a previously recorded snapshot
 
-### PWA
+### Assets Tab Overview
 
-- [x] **PWA-01**: Web app includes a PWA manifest (name, icon, theme color) so it can be installed to phone home screen
-- [x] **PWA-02**: App works correctly in mobile browsers (Safari on iOS, Chrome on Android)
+- [ ] **OVER-01**: User sees a dedicated Assets tab in the main navigation
+- [ ] **OVER-02**: User sees total net assets (sum of all current account balances) as a summary figure
+- [ ] **OVER-03**: User sees account cards listing current balance, account type, and last-updated date
+- [ ] **OVER-04**: Assets tab and all account data is accessible in the PWA on mobile
 
-### Responsive UI
+### Account History
 
-- [x] **RESP-01**: Dashboard tab layout adapts to mobile screen widths (cards stack vertically, charts resize)
-- [x] **RESP-02**: Budget tab adapts to mobile (comparison table scrolls or reflows on small screens)
-- [x] **RESP-03**: Tab navigation is usable with touch (tap targets large enough, no hover-only interactions)
+- [ ] **HIST-01**: User can view a balance-over-time line chart for any individual account
+- [ ] **HIST-02**: User can view a per-period change bar chart for any individual account (change between snapshots by period)
 
-### Log Tab
+### Goal Tracking
 
-- [x] **LOG-01**: A "Log" tab appears in the tab bar next to Dashboard and Budget
-- [x] **LOG-02**: Log tab displays all Logbook transactions in a table with columns: Date, Description, Category, Income, Debit, Balance
-- [x] **LOG-03**: Log tab has a date range filter (same presets: this month, this year, custom)
-- [x] **LOG-04**: Log tab has a category filter (multi-select chips, same as Dashboard)
-- [x] **LOG-05**: Log tab has an income/expense toggle (all / income only / expenses only)
-- [x] **LOG-06**: Log tab has a searchable description filter — user can type to match descriptions (like Excel column filter)
+- [ ] **GOAL-01**: User can set a target amount and target date on a Goal-type account
+- [ ] **GOAL-02**: User sees a progress bar showing current balance vs target amount
+- [ ] **GOAL-03**: User sees a projected completion date calculated from average contribution rate
+- [ ] **GOAL-04**: User sees the required monthly and yearly contribution needed to hit the goal on time
+- [ ] **GOAL-05**: User sees an on-track / off-track status indicator based on expected vs actual progress
 
-### Sync
+### Certificate Tracking
 
-- [x] **SYNC-01**: Chokidar debounce is tuned for fast pickup (≤1s after file write) to minimize delay when OneDrive syncs edited file to disk
+- [ ] **CERT-01**: User can enter principal, annual interest rate, and maturity date for a Certificate-type account
+- [ ] **CERT-02**: User sees projected balance at maturity based on principal and rate
+- [ ] **CERT-03**: User can log an actual dividend payout (date + amount)
+- [ ] **CERT-04**: User sees a comparison of projected dividends vs actual payouts logged to date
+
+### Net Worth Tracker
+
+- [ ] **NW-01**: User sees a total net worth figure representing the sum of all asset account balances
+- [ ] **NW-02**: User sees a net worth history chart showing total assets over time (derived from all account snapshots)
+- [ ] **NW-03**: User sees a breakdown of net worth by account type (Standard / Goal / Certificate)
 
 ## Future Requirements
 
-### Enhancements
+### Potential v1.3+
 
-- **ENH-01**: Category drill-down view — spending over time for a single selected category
-- **ENH-02**: Export report as PDF or image
-- **ENH-03**: Credit card transaction filter (Credit column flag)
-- **ENH-04**: Monthly budget targets that vary by month
+- Category drill-down view — spending over time for a single selected category
+- Export report as PDF or image
+- Credit card transaction filter (Credit column flag)
+- Monthly budget targets that vary by month
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| OneDrive API / cloud backend | Local network only — desktop must be on same Wi-Fi |
-| Remote access away from home Wi-Fi | By design — no backend to host |
-| Native iOS/Android app | PWA covers mobile use case |
-| Write-back to Excel | App is read-only; Excel is the source of truth |
-| Multi-user / accounts | Personal tool, single user |
-| Balance column filtering in Log tab | Display only — filtering by balance not needed |
+| Pulling asset data from Excel | Manual snapshots are sufficient; avoids write-back complexity |
+| Bank/brokerage API integrations | App is local-only by design |
+| Multi-currency support | Single-currency personal tool |
+| Compound interest reinvestment modeling | Out of scope for v1.2; simple projected growth sufficient |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SRV-01 | Phase 5 | Complete |
-| SRV-02 | Phase 5 | Complete |
-| SRV-03 | Phase 5 | Complete |
-| SRV-04 | Phase 5 | Complete |
-| PWA-01 | Phase 6 | Complete |
-| PWA-02 | Phase 6 | Complete |
-| RESP-01 | Phase 6 | Complete |
-| RESP-02 | Phase 6 | Complete |
-| RESP-03 | Phase 6 | Complete |
-| LOG-01 | Phase 7 | Complete |
-| LOG-02 | Phase 7 | Complete |
-| LOG-03 | Phase 7 | Complete |
-| LOG-04 | Phase 7 | Complete |
-| LOG-05 | Phase 7 | Complete |
-| LOG-06 | Phase 7 | Complete |
-| SYNC-01 | Phase 5 | Complete |
+| ACCT-01 | Phase 8 | Complete |
+| ACCT-02 | Phase 8 | Complete |
+| ACCT-03 | Phase 8 | Complete |
+| ACCT-04 | Phase 8 | Complete |
+| ACCT-05 | Phase 8 | Complete |
+| OVER-01 | Phase 9 | Pending |
+| OVER-02 | Phase 9 | Pending |
+| OVER-03 | Phase 9 | Pending |
+| OVER-04 | Phase 9 | Pending |
+| HIST-01 | Phase 9 | Pending |
+| HIST-02 | Phase 9 | Pending |
+| GOAL-01 | Phase 10 | Pending |
+| GOAL-02 | Phase 10 | Pending |
+| GOAL-03 | Phase 10 | Pending |
+| GOAL-04 | Phase 10 | Pending |
+| GOAL-05 | Phase 10 | Pending |
+| CERT-01 | Phase 11 | Pending |
+| CERT-02 | Phase 11 | Pending |
+| CERT-03 | Phase 11 | Pending |
+| CERT-04 | Phase 11 | Pending |
+| NW-01 | Phase 12 | Pending |
+| NW-02 | Phase 12 | Pending |
+| NW-03 | Phase 12 | Pending |
 
 **Coverage:**
-- v1.1 requirements: 16 total
-- Mapped to phases: 16
+- v1.2 requirements: 23 total
+- Mapped to phases: 23
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-23*
-*Last updated: 2026-02-23 after roadmap creation (v1.1)*
+*Last updated: 2026-03-02 after v1.2 roadmap creation — all 20 requirements mapped to Phases 8–11*

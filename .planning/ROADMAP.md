@@ -114,7 +114,7 @@ Plans:
 | 5. Local Server + Sync | v1.1 | 3/3 | Complete | 2026-02-24 |
 | 6. PWA + Responsive UI | v1.1 | 4/4 | Complete | 2026-02-25 |
 | 7. Log Tab | v1.1 | 3/3 | Complete | 2026-02-25 |
-| 8. Asset Data Layer | v1.2 | 0/2 | Not started | — |
+| 8. Asset Data Layer | 1/2 | In Progress|  | — |
 | 9. Assets Tab UI | v1.2 | 0/? | Not started | — |
 | 10. Goal Tracking | v1.2 | 0/? | Not started | — |
 | 11. Certificate Tracking | v1.2 | 0/? | Not started | — |
