@@ -15,6 +15,16 @@ import {
   updateTransaction,
   deleteTransaction,
 } from './assets-store'
+import {
+  getGoals,
+  addGoal,
+  updateGoal,
+  deleteGoal,
+  setGoalTarget,
+  addContribution,
+  updateContribution,
+  deleteContribution,
+} from './goals-store'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -134,6 +144,17 @@ ipcMain.handle('assets:update-transaction', (_event, args: { accountId: string; 
 ipcMain.handle('assets:delete-transaction', (_event, args: { accountId: string; transactionId: string }) =>
   deleteTransaction(args.accountId, args.transactionId)
 )
+
+// ── Goal IPC ──────────────────────────────────────────────────────────────────
+
+ipcMain.handle('goals:get-all', () => getGoals())
+ipcMain.handle('goals:add', (_e, name: string) => addGoal(name))
+ipcMain.handle('goals:update', (_e, id: string, fields: { name?: string }) => updateGoal(id, fields))
+ipcMain.handle('goals:delete', (_e, id: string) => deleteGoal(id))
+ipcMain.handle('goals:set-target', (_e, id: string, targetAmount: number | null, targetDate: string | null) => setGoalTarget(id, targetAmount, targetDate))
+ipcMain.handle('goals:add-contribution', (_e, goalId: string, amount: number, date: string, note?: string) => addContribution(goalId, amount, date, note))
+ipcMain.handle('goals:update-contribution', (_e, goalId: string, contributionId: string, fields: { amount?: number; date?: string; note?: string }) => updateContribution(goalId, contributionId, fields))
+ipcMain.handle('goals:delete-contribution', (_e, goalId: string, contributionId: string) => deleteContribution(goalId, contributionId))
 
 app.whenReady().then(async () => {
   await startServer()
