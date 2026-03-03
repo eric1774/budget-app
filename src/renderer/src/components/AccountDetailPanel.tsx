@@ -1,6 +1,6 @@
 import {
-  LineChart, Line, BarChart, Bar,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
+  LineChart, Line,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts'
 import type { AssetAccount, Transaction } from '../../../shared/types'
 import { GlassCard } from './GlassCard'
@@ -48,13 +48,6 @@ export function AccountDetailPanel({ account, onClose, onTransactionChange }: Ac
     running += t.type === 'deposit' ? t.amount : -t.amount
     return { date: t.date, balance: running }
   })
-
-  // Bar chart: per-transaction amount (positive for deposit, negative for withdrawal)
-  const barData = sorted.map(t => ({
-    date: t.date,
-    amount: t.type === 'deposit' ? t.amount : -t.amount,
-    type: t.type,
-  }))
 
   // Transaction log: descending by date
   const descSorted = [...(account.transactions ?? [])].sort((a, b) => b.date.localeCompare(a.date))
@@ -134,40 +127,6 @@ export function AccountDetailPanel({ account, onClose, onTransactionChange }: Ac
                 activeDot={{ r: 5 }}
               />
             </LineChart>
-          </ResponsiveContainer>
-
-          {/* Per-transaction Bar Chart */}
-          <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 8, marginTop: 16 }}>
-            Transactions
-          </div>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={barData} margin={{ top: 4, right: 12, left: 12, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-              <XAxis
-                dataKey="date"
-                tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
-                tickFormatter={(v: string) => v.slice(5)}
-              />
-              <YAxis
-                tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
-                tickFormatter={fmtCAD}
-                width={80}
-              />
-              <Tooltip
-                contentStyle={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}
-                labelStyle={{ color: 'var(--text-muted)', fontSize: 12 }}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                formatter={((value: number) => [fmtCAD(Math.abs(value)), value >= 0 ? 'Deposit' : 'Withdrawal']) as any}
-              />
-              <Bar dataKey="amount" radius={[3, 3, 0, 0]}>
-                {barData.map((entry, index) => (
-                  <Cell
-                    key={index}
-                    fill={entry.type === 'deposit' ? 'var(--color-accent)' : 'var(--color-expense)'}
-                  />
-                ))}
-              </Bar>
-            </BarChart>
           </ResponsiveContainer>
 
           {/* Transaction Log */}
