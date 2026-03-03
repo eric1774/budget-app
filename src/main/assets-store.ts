@@ -8,7 +8,19 @@ const ASSETS_PATH = join(app.getPath('userData'), 'assets.json')
 
 function readAssets(): AssetsData {
   if (!existsSync(ASSETS_PATH)) return { accounts: [] }
-  try { return JSON.parse(readFileSync(ASSETS_PATH, 'utf-8')) }
+  try {
+    const data = JSON.parse(readFileSync(ASSETS_PATH, 'utf-8')) as AssetsData
+    // Migrate accounts from old snapshot model (no transactions array)
+    let migrated = false
+    for (const account of data.accounts) {
+      if (!Array.isArray(account.transactions)) {
+        account.transactions = []
+        migrated = true
+      }
+    }
+    if (migrated) writeAssets(data)
+    return data
+  }
   catch { return { accounts: [] } }
 }
 

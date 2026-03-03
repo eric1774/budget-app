@@ -26,13 +26,13 @@ const cadFormatter = new Intl.NumberFormat('en-CA', {
 })
 
 function accountBalance(account: AssetAccount): number {
-  return account.transactions.reduce((sum, t) => {
+  return (account.transactions ?? []).reduce((sum, t) => {
     return t.type === 'deposit' ? sum + t.amount : sum - t.amount
   }, 0)
 }
 
 function lastTransactionDate(account: AssetAccount): string | null {
-  if (account.transactions.length === 0) return null
+  if ((account.transactions ?? []).length === 0) return null
   return account.transactions.reduce((best, t) =>
     t.date.localeCompare(best) > 0 ? t.date : best
   , account.transactions[0].date)
@@ -178,7 +178,7 @@ export function AssetsTab({ onAccountSelect, selectedAccountId }: AssetsTabProps
 
                   {/* Balance */}
                   <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>
-                    {account.transactions.length > 0 ? cadFormatter.format(balance) : (
+                    {(account.transactions ?? []).length > 0 ? cadFormatter.format(balance) : (
                       <span style={{ color: 'var(--text-muted)' }}>No data</span>
                     )}
                   </div>
