@@ -1,12 +1,12 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
+milestone: v1.0
 milestone_name: Mobile + Log
-status: complete
-last_updated: "2026-02-25T17:15:00Z"
+status: unknown
+last_updated: "2026-02-25T17:55:41.942Z"
 progress:
-  total_phases: 7
-  completed_phases: 7
+  total_phases: 3
+  completed_phases: 3
   total_plans: 10
   completed_plans: 10
 ---

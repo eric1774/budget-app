@@ -41,3 +41,31 @@ export interface ServerInfo {
   ip: string    // e.g. "192.168.1.42"
   port: number  // actual port in use (3737 or next free)
 }
+
+// ── Asset Accounts ─────────────────────────────────────────────────────────
+
+export type AccountType = 'Standard' | 'Goal' | 'Certificate'
+
+export interface BalanceSnapshot {
+  id: string          // UUID v4
+  accountId: string   // parent account id
+  amount: number      // balance in dollars (positive)
+  date: string        // ISO date string "YYYY-MM-DD"
+  note?: string       // optional free-text note
+  createdAt: string   // ISO datetime string
+  updatedAt: string   // ISO datetime string
+}
+
+export interface AssetAccount {
+  id: string          // UUID v4
+  name: string        // display name, e.g. "TFSA"
+  type: AccountType
+  snapshots: BalanceSnapshot[]
+  createdAt: string   // ISO datetime string
+  updatedAt: string   // ISO datetime string
+}
+
+// Root structure written to assets.json
+export interface AssetsData {
+  accounts: AssetAccount[]
+}
