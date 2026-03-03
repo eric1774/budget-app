@@ -6,6 +6,15 @@ import type { ParseResponse, BudgetMap } from '../shared/types'
 import { getStoredFilePath, setStoredFilePath, getBudgets, setBudget } from './store'
 import { startWatcher, stopWatcher } from './watcher'
 import { startServer, stopServer, getServerInfo, setLastSnapshot } from './server'
+import {
+  getAccounts,
+  addAccount,
+  updateAccount,
+  deleteAccount,
+  addSnapshot,
+  updateSnapshot,
+  deleteSnapshot,
+} from './assets-store'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -84,6 +93,47 @@ ipcMain.handle('restart-server', async () => {
   mainWindow?.webContents.send('server-info', info)
   return info
 })
+
+// ── Asset Account IPC ──────────────────────────────────────────────────────
+
+// Returns all AssetAccount objects (with nested snapshots)
+ipcMain.handle('assets:get-accounts', () => getAccounts())
+
+// Creates a new account. Args: { name: string, type: AccountType }
+// Returns: AssetAccount
+ipcMain.handle('assets:add-account', (_event, args: { name: string; type: import('../shared/types').AccountType }) =>
+  addAccount(args.name, args.type)
+)
+
+// Renames or changes type. Args: { id: string, name?: string, type?: AccountType }
+// Returns: AssetAccount | null
+ipcMain.handle('assets:update-account', (_event, args: { id: string; name?: string; type?: import('../shared/types').AccountType }) =>
+  updateAccount(args.id, { name: args.name, type: args.type })
+)
+
+// Deletes account and all its snapshots. Args: { id: string }
+// Returns: boolean
+ipcMain.handle('assets:delete-account', (_event, args: { id: string }) =>
+  deleteAccount(args.id)
+)
+
+// Adds a snapshot. Args: { accountId: string, amount: number, date: string, note?: string }
+// Returns: BalanceSnapshot | null
+ipcMain.handle('assets:add-snapshot', (_event, args: { accountId: string; amount: number; date: string; note?: string }) =>
+  addSnapshot(args.accountId, { amount: args.amount, date: args.date, note: args.note })
+)
+
+// Edits a snapshot. Args: { accountId: string, snapshotId: string, amount?: number, date?: string, note?: string }
+// Returns: BalanceSnapshot | null
+ipcMain.handle('assets:update-snapshot', (_event, args: { accountId: string; snapshotId: string; amount?: number; date?: string; note?: string }) =>
+  updateSnapshot(args.accountId, args.snapshotId, { amount: args.amount, date: args.date, note: args.note })
+)
+
+// Deletes a snapshot. Args: { accountId: string, snapshotId: string }
+// Returns: boolean
+ipcMain.handle('assets:delete-snapshot', (_event, args: { accountId: string; snapshotId: string }) =>
+  deleteSnapshot(args.accountId, args.snapshotId)
+)
 
 app.whenReady().then(async () => {
   await startServer()
