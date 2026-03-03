@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import type { Goal } from '../../../shared/types'
 import { GlassCard } from './GlassCard'
 import { AddGoalModal, SetTargetModal, DeleteGoalModal } from './GoalModals'
+import { GoalDetailView } from './GoalDetailView'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -33,11 +34,14 @@ type ModalState =
 
 interface GoalsTabProps {
   onGoalSelect: (goal: Goal | null) => void
+  selectedGoalId: string | null
 }
 
-export function GoalsTab({ onGoalSelect }: GoalsTabProps): JSX.Element {
+export function GoalsTab({ onGoalSelect, selectedGoalId }: GoalsTabProps): JSX.Element {
   const [goals, setGoals] = useState<Goal[]>([])
   const [modal, setModal] = useState<ModalState>(null)
+
+  const selectedGoal: Goal | null = goals.find((g) => g.id === selectedGoalId) ?? null
 
   const reloadGoals = useCallback(async () => {
     try {
@@ -51,6 +55,10 @@ export function GoalsTab({ onGoalSelect }: GoalsTabProps): JSX.Element {
   useEffect(() => {
     reloadGoals()
   }, [reloadGoals])
+
+  if (selectedGoal) {
+    return <GoalDetailView goal={selectedGoal} onBack={() => onGoalSelect(null)} onReload={reloadGoals} />
+  }
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px', overflowY: 'auto' }}>

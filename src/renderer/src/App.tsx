@@ -720,6 +720,7 @@ export default function App(): JSX.Element {
       ) : activeTab === 'goals' ? (
         <GoalsTab
           onGoalSelect={(goal) => setSelectedGoalId(goal?.id ?? null)}
+          selectedGoalId={selectedGoalId}
         />
       ) : (
         <AssetsTab
