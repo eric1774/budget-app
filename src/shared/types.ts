@@ -44,7 +44,7 @@ export interface ServerInfo {
 
 // ── Asset Accounts ─────────────────────────────────────────────────────────
 
-export type AccountType = 'Standard' | 'Goal' | 'Certificate'
+export type AccountType = 'Checkings' | 'Savings' | 'Retirement' | 'Hard Asset' | 'Investing' | 'Goal'
 
 export interface Transaction {
   id: string                        // UUID v4
@@ -60,9 +60,33 @@ export interface AssetAccount {
   type: AccountType
   transactions: Transaction[]
   createdAt: string   // ISO datetime string
+  syncedWithDashboard?: boolean  // if true, balance is sourced from dashboard
 }
 
 // Root structure written to assets.json
 export interface AssetsData {
   accounts: AssetAccount[]
+}
+
+// ── Goal Tracking ────────────────────────────────────────────────────────────
+
+export interface GoalContribution {
+  id: string          // UUID v4
+  amount: number      // positive = deposit, negative = withdrawal
+  date: string        // ISO date "YYYY-MM-DD"
+  note?: string
+}
+
+export interface Goal {
+  id: string                    // UUID v4
+  name: string
+  targetAmount?: number         // optional — goal can exist without a target
+  targetDate?: string           // optional — ISO date "YYYY-MM-DD"
+  contributions: GoalContribution[]
+  createdAt: string             // ISO datetime string
+}
+
+// Root structure written to goals.json
+export interface GoalsData {
+  goals: Goal[]
 }

@@ -77,16 +77,22 @@ Plans:
 - [ ] 09-04-PLAN.md — Human verify checkpoint (Electron + mobile PWA)
 
 ### Phase 10: Goal Tracking
-**Goal**: Goal-type accounts show progress toward a target and tell the user whether they are on track
+**Goal**: Goals are a dedicated tab with their own data domain — users can create goals, log contributions, set targets, and see whether they're on track
 **Depends on**: Phase 9 (account cards must exist before goal UI layer can be added)
 **Requirements**: GOAL-01, GOAL-02, GOAL-03, GOAL-04, GOAL-05
 **Success Criteria** (what must be TRUE):
-  1. User can set a target amount and target date on a Goal account and the values persist
-  2. A progress bar on the Goal account card shows current balance as a percentage of the target amount
-  3. A projected completion date is displayed, calculated from the average contribution rate across snapshots
+  1. User can set a target amount and target date on a Goal and the values persist
+  2. A progress bar shows current balance as a percentage of the target amount
+  3. A projected completion date is displayed, calculated from the average contribution rate
   4. Required monthly and yearly contribution amounts to hit the goal on time are displayed
   5. An on-track / off-track status indicator is visible, based on expected vs actual balance at the current date
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 10-01-PLAN.md — Goal types + goals-store.ts CRUD + IPC handler registration (8 goals: channels)
+- [ ] 10-02-PLAN.md — GoalsTab shell + nav integration + goal list + Add/SetTarget/Delete modals
+- [ ] 10-03-PLAN.md — GoalDetailView with progress bar, projections, on-track badge, chart, contribution log
+- [ ] 10-04-PLAN.md — Human verify checkpoint (Electron app)
 
 ### Phase 11: Certificate Tracking
 **Goal**: Certificate-type accounts display projected growth and let the user log actual dividend payouts and compare them to projections
@@ -120,8 +126,8 @@ Plans:
 | 5. Local Server + Sync | v1.1 | 3/3 | Complete | 2026-02-24 |
 | 6. PWA + Responsive UI | v1.1 | 4/4 | Complete | 2026-02-25 |
 | 7. Log Tab | v1.1 | 3/3 | Complete | 2026-02-25 |
-| 8. Asset Data Layer | 2/2 | Complete   | 2026-03-03 | — |
-| 9. Assets Tab UI | 4/4 | Complete   | 2026-03-03 | — |
-| 10. Goal Tracking | v1.2 | 0/? | Not started | — |
+| 8. Asset Data Layer | v1.2 | 2/2 | Complete | 2026-03-03 |
+| 9. Assets Tab UI | v1.2 | 4/4 | Complete | 2026-03-03 |
+| 10. Goal Tracking | v1.2 | 0/4 | Not started | — |
 | 11. Certificate Tracking | v1.2 | 0/? | Not started | — |
 | 12. Net Worth Tracker | v1.2 | 0/? | Not started | — |
