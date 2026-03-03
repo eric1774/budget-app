@@ -22,8 +22,8 @@
 
 ### Account History
 
-- [ ] **HIST-01**: User can view a balance-over-time line chart for any individual account
-- [ ] **HIST-02**: User can view a per-period change bar chart for any individual account (change between snapshots by period)
+- [x] **HIST-01**: User can view a balance-over-time line chart for any individual account
+- [x] **HIST-02**: User can view a per-period change bar chart for any individual account (change between snapshots by period)
 
 ### Goal Tracking
 
@@ -77,8 +77,8 @@
 | OVER-02 | Phase 9 | Complete |
 | OVER-03 | Phase 9 | Complete |
 | OVER-04 | Phase 9 | Complete |
-| HIST-01 | Phase 9 | Pending |
-| HIST-02 | Phase 9 | Pending |
+| HIST-01 | Phase 9 | Complete |
+| HIST-02 | Phase 9 | Complete |
 | GOAL-01 | Phase 10 | Pending |
 | GOAL-02 | Phase 10 | Pending |
 | GOAL-03 | Phase 10 | Pending |
