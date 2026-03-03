@@ -15,10 +15,10 @@
 
 ### Assets Tab Overview
 
-- [ ] **OVER-01**: User sees a dedicated Assets tab in the main navigation
-- [ ] **OVER-02**: User sees total net assets (sum of all current account balances) as a summary figure
-- [ ] **OVER-03**: User sees account cards listing current balance, account type, and last-updated date
-- [ ] **OVER-04**: Assets tab and all account data is accessible in the PWA on mobile
+- [x] **OVER-01**: User sees a dedicated Assets tab in the main navigation
+- [x] **OVER-02**: User sees total net assets (sum of all current account balances) as a summary figure
+- [x] **OVER-03**: User sees account cards listing current balance, account type, and last-updated date
+- [x] **OVER-04**: Assets tab and all account data is accessible in the PWA on mobile
 
 ### Account History
 
@@ -73,10 +73,10 @@
 | ACCT-03 | Phase 8 | Complete |
 | ACCT-04 | Phase 8 | Complete |
 | ACCT-05 | Phase 8 | Complete |
-| OVER-01 | Phase 9 | Pending |
-| OVER-02 | Phase 9 | Pending |
-| OVER-03 | Phase 9 | Pending |
-| OVER-04 | Phase 9 | Pending |
+| OVER-01 | Phase 9 | Complete |
+| OVER-02 | Phase 9 | Complete |
+| OVER-03 | Phase 9 | Complete |
+| OVER-04 | Phase 9 | Complete |
 | HIST-01 | Phase 9 | Pending |
 | HIST-02 | Phase 9 | Pending |
 | GOAL-01 | Phase 10 | Pending |

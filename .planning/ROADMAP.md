@@ -121,7 +121,7 @@ Plans:
 | 6. PWA + Responsive UI | v1.1 | 4/4 | Complete | 2026-02-25 |
 | 7. Log Tab | v1.1 | 3/3 | Complete | 2026-02-25 |
 | 8. Asset Data Layer | 2/2 | Complete   | 2026-03-03 | — |
-| 9. Assets Tab UI | v1.2 | 0/? | Not started | — |
+| 9. Assets Tab UI | 1/4 | In Progress|  | — |
 | 10. Goal Tracking | v1.2 | 0/? | Not started | — |
 | 11. Certificate Tracking | v1.2 | 0/? | Not started | — |
 | 12. Net Worth Tracker | v1.2 | 0/? | Not started | — |
