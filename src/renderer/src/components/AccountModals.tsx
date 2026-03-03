@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { AccountType, AssetAccount, BalanceSnapshot } from '../../../shared/types'
+import type { AccountType, AssetAccount, Transaction } from '../../../shared/types'
 
 const overlayStyle: React.CSSProperties = {
   position: 'fixed',
@@ -240,7 +240,7 @@ export function DeleteAccountModal({ account, onClose, onDeleted }: DeleteAccoun
       <div style={modalStyle}>
         <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)' }}>Delete Account</div>
         <div style={{ color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.5 }}>
-          Delete &ldquo;{account.name}&rdquo;? This will also delete all {account.snapshots.length} snapshot(s). This cannot be undone.
+          Delete &ldquo;{account.name}&rdquo;? This will also delete all {account.transactions.length} transaction(s). This cannot be undone.
         </div>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button style={cancelBtn} onClick={onClose}>Cancel</button>
@@ -253,15 +253,16 @@ export function DeleteAccountModal({ account, onClose, onDeleted }: DeleteAccoun
   )
 }
 
-// ── 4. AddSnapshotModal ─────────────────────────────────────────────────────
+// ── 4. AddTransactionModal ──────────────────────────────────────────────────
 
-interface AddSnapshotModalProps {
+interface AddTransactionModalProps {
   accountId: string
   onClose: () => void
   onSaved: () => void
 }
 
-export function AddSnapshotModal({ accountId, onClose, onSaved }: AddSnapshotModalProps): JSX.Element {
+export function AddTransactionModal({ accountId, onClose, onSaved }: AddTransactionModalProps): JSX.Element {
+  const [txType, setTxType] = useState<'deposit' | 'withdrawal'>('deposit')
   const [amount, setAmount] = useState('')
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
   const [note, setNote] = useState('')
@@ -271,8 +272,8 @@ export function AddSnapshotModal({ accountId, onClose, onSaved }: AddSnapshotMod
   async function handleSubmit(e: React.FormEvent): Promise<void> {
     e.preventDefault()
     const parsedAmount = parseFloat(amount)
-    if (isNaN(parsedAmount) || parsedAmount < 0) {
-      setError('Please enter a valid amount (0 or more)')
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      setError('Please enter a positive amount')
       return
     }
     if (!date) {
@@ -281,8 +282,9 @@ export function AddSnapshotModal({ accountId, onClose, onSaved }: AddSnapshotMod
     }
     setSaving(true)
     try {
-      await window.electronAPI.invoke('assets:add-snapshot', {
+      await window.electronAPI.invoke('assets:add-transaction', {
         accountId,
+        type: txType,
         amount: parsedAmount,
         date,
         note: note || undefined,
@@ -293,10 +295,40 @@ export function AddSnapshotModal({ accountId, onClose, onSaved }: AddSnapshotMod
     }
   }
 
+  const radioStyle: React.CSSProperties = {
+    display: 'flex',
+    gap: 16,
+    alignItems: 'center',
+  }
+
   return (
     <div style={overlayStyle} onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <form style={modalStyle} onSubmit={handleSubmit}>
-        <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)' }}>Add Snapshot</div>
+        <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)' }}>Add Transaction</div>
+
+        <div>
+          <label style={labelStyle}>Type</label>
+          <div style={radioStyle}>
+            <label style={{ color: 'var(--text-primary)', fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <input
+                type="radio"
+                value="deposit"
+                checked={txType === 'deposit'}
+                onChange={() => setTxType('deposit')}
+              />
+              Deposit
+            </label>
+            <label style={{ color: 'var(--text-primary)', fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <input
+                type="radio"
+                value="withdrawal"
+                checked={txType === 'withdrawal'}
+                onChange={() => setTxType('withdrawal')}
+              />
+              Withdrawal
+            </label>
+          </div>
+        </div>
 
         <div>
           <label style={labelStyle}>Amount</label>
@@ -304,7 +336,7 @@ export function AddSnapshotModal({ accountId, onClose, onSaved }: AddSnapshotMod
             style={inputStyle}
             type="number"
             step="0.01"
-            min="0"
+            min="0.01"
             value={amount}
             onChange={(e) => { setAmount(e.target.value); setError('') }}
             placeholder="0.00"
@@ -338,7 +370,7 @@ export function AddSnapshotModal({ accountId, onClose, onSaved }: AddSnapshotMod
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button type="button" style={cancelBtn} onClick={onClose}>Cancel</button>
           <button type="submit" style={primaryBtn} disabled={saving}>
-            {saving ? 'Adding…' : 'Add Snapshot'}
+            {saving ? 'Adding…' : 'Add Transaction'}
           </button>
         </div>
       </form>
@@ -346,27 +378,28 @@ export function AddSnapshotModal({ accountId, onClose, onSaved }: AddSnapshotMod
   )
 }
 
-// ── 5. EditSnapshotModal ────────────────────────────────────────────────────
+// ── 5. EditTransactionModal ─────────────────────────────────────────────────
 
-interface EditSnapshotModalProps {
+interface EditTransactionModalProps {
   accountId: string
-  snapshot: BalanceSnapshot
+  transaction: Transaction
   onClose: () => void
   onSaved: () => void
 }
 
-export function EditSnapshotModal({ accountId, snapshot, onClose, onSaved }: EditSnapshotModalProps): JSX.Element {
-  const [amount, setAmount] = useState(snapshot.amount.toString())
-  const [date, setDate] = useState(snapshot.date)
-  const [note, setNote] = useState(snapshot.note ?? '')
+export function EditTransactionModal({ accountId, transaction, onClose, onSaved }: EditTransactionModalProps): JSX.Element {
+  const [txType, setTxType] = useState<'deposit' | 'withdrawal'>(transaction.type)
+  const [amount, setAmount] = useState(transaction.amount.toString())
+  const [date, setDate] = useState(transaction.date)
+  const [note, setNote] = useState(transaction.note ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
   async function handleSubmit(e: React.FormEvent): Promise<void> {
     e.preventDefault()
     const parsedAmount = parseFloat(amount)
-    if (isNaN(parsedAmount) || parsedAmount < 0) {
-      setError('Please enter a valid amount (0 or more)')
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      setError('Please enter a positive amount')
       return
     }
     if (!date) {
@@ -375,9 +408,10 @@ export function EditSnapshotModal({ accountId, snapshot, onClose, onSaved }: Edi
     }
     setSaving(true)
     try {
-      await window.electronAPI.invoke('assets:update-snapshot', {
+      await window.electronAPI.invoke('assets:update-transaction', {
         accountId,
-        snapshotId: snapshot.id,
+        transactionId: transaction.id,
+        type: txType,
         amount: parsedAmount,
         date,
         note: note || undefined,
@@ -388,10 +422,40 @@ export function EditSnapshotModal({ accountId, snapshot, onClose, onSaved }: Edi
     }
   }
 
+  const radioStyle: React.CSSProperties = {
+    display: 'flex',
+    gap: 16,
+    alignItems: 'center',
+  }
+
   return (
     <div style={overlayStyle} onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <form style={modalStyle} onSubmit={handleSubmit}>
-        <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)' }}>Edit Snapshot</div>
+        <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)' }}>Edit Transaction</div>
+
+        <div>
+          <label style={labelStyle}>Type</label>
+          <div style={radioStyle}>
+            <label style={{ color: 'var(--text-primary)', fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <input
+                type="radio"
+                value="deposit"
+                checked={txType === 'deposit'}
+                onChange={() => setTxType('deposit')}
+              />
+              Deposit
+            </label>
+            <label style={{ color: 'var(--text-primary)', fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <input
+                type="radio"
+                value="withdrawal"
+                checked={txType === 'withdrawal'}
+                onChange={() => setTxType('withdrawal')}
+              />
+              Withdrawal
+            </label>
+          </div>
+        </div>
 
         <div>
           <label style={labelStyle}>Amount</label>
@@ -399,7 +463,7 @@ export function EditSnapshotModal({ accountId, snapshot, onClose, onSaved }: Edi
             style={inputStyle}
             type="number"
             step="0.01"
-            min="0"
+            min="0.01"
             value={amount}
             onChange={(e) => { setAmount(e.target.value); setError('') }}
           />
@@ -439,25 +503,22 @@ export function EditSnapshotModal({ accountId, snapshot, onClose, onSaved }: Edi
   )
 }
 
-// ── 6. DeleteSnapshotModal ──────────────────────────────────────────────────
+// ── 6. DeleteTransactionModal ───────────────────────────────────────────────
 
-interface DeleteSnapshotModalProps {
+interface DeleteTransactionModalProps {
   accountId: string
-  snapshot: BalanceSnapshot
+  transactionId: string
   onClose: () => void
   onDeleted: () => void
 }
 
-export function DeleteSnapshotModal({ accountId, snapshot, onClose, onDeleted }: DeleteSnapshotModalProps): JSX.Element {
+export function DeleteTransactionModal({ accountId, transactionId, onClose, onDeleted }: DeleteTransactionModalProps): JSX.Element {
   const [deleting, setDeleting] = useState(false)
 
   async function handleDelete(): Promise<void> {
     setDeleting(true)
     try {
-      await window.electronAPI.invoke('assets:delete-snapshot', {
-        accountId,
-        snapshotId: snapshot.id,
-      })
+      await window.electronAPI.invoke('assets:delete-transaction', { accountId, transactionId })
       onDeleted()
     } finally {
       setDeleting(false)
@@ -467,9 +528,9 @@ export function DeleteSnapshotModal({ accountId, snapshot, onClose, onDeleted }:
   return (
     <div style={overlayStyle} onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <div style={modalStyle}>
-        <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)' }}>Delete Snapshot</div>
+        <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)' }}>Delete Transaction</div>
         <div style={{ color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.5 }}>
-          Delete snapshot from {snapshot.date} (${snapshot.amount.toLocaleString()})? This cannot be undone.
+          Delete this transaction? This cannot be undone.
         </div>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button style={cancelBtn} onClick={onClose}>Cancel</button>

@@ -1,14 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { AssetAccount, BalanceSnapshot } from '../../../shared/types'
+import type { AssetAccount } from '../../../shared/types'
 import { GlassCard } from './GlassCard'
 import { AccountDetailPanel } from './AccountDetailPanel'
 import {
   AddAccountModal,
   EditAccountModal,
   DeleteAccountModal,
-  AddSnapshotModal,
-  EditSnapshotModal,
-  DeleteSnapshotModal,
 } from './AccountModals'
 
 interface AssetsTabProps {
@@ -20,9 +17,6 @@ type ModalState =
   | { kind: 'add-account' }
   | { kind: 'edit-account'; account: AssetAccount }
   | { kind: 'delete-account'; account: AssetAccount }
-  | { kind: 'add-snapshot'; accountId: string }
-  | { kind: 'edit-snapshot'; accountId: string; snapshot: BalanceSnapshot }
-  | { kind: 'delete-snapshot'; accountId: string; snapshot: BalanceSnapshot }
   | null
 
 const cadFormatter = new Intl.NumberFormat('en-CA', {
@@ -31,9 +25,17 @@ const cadFormatter = new Intl.NumberFormat('en-CA', {
   maximumFractionDigits: 0,
 })
 
-function getLatestSnapshot(account: AssetAccount): BalanceSnapshot | null {
-  if (account.snapshots.length === 0) return null
-  return account.snapshots.reduce((best, s) => (s.date.localeCompare(best.date) > 0 ? s : best))
+function accountBalance(account: AssetAccount): number {
+  return account.transactions.reduce((sum, t) => {
+    return t.type === 'deposit' ? sum + t.amount : sum - t.amount
+  }, 0)
+}
+
+function lastTransactionDate(account: AssetAccount): string | null {
+  if (account.transactions.length === 0) return null
+  return account.transactions.reduce((best, t) =>
+    t.date.localeCompare(best) > 0 ? t.date : best
+  , account.transactions[0].date)
 }
 
 const primaryBtn: React.CSSProperties = {
@@ -85,14 +87,7 @@ export function AssetsTab({ onAccountSelect, selectedAccountId }: AssetsTabProps
 
   const selectedAccount = accounts.find(a => a.id === selectedAccountId) ?? null
 
-  const totalNetAssets = accounts.reduce((sum, account) => {
-    const latest = getLatestSnapshot(account)
-    return sum + (latest ? latest.amount : 0)
-  }, 0)
-
-  const sortedSnapshots = selectedAccount
-    ? [...selectedAccount.snapshots].sort((a, b) => b.date.localeCompare(a.date))
-    : []
+  const totalNetAssets = accounts.reduce((sum, account) => sum + accountBalance(account), 0)
 
   return (
     <div className="assets-tab-outer">
@@ -122,7 +117,8 @@ export function AssetsTab({ onAccountSelect, selectedAccountId }: AssetsTabProps
       ) : (
         <div className="assets-account-grid">
           {accounts.map((account) => {
-            const latest = getLatestSnapshot(account)
+            const balance = accountBalance(account)
+            const lastDate = lastTransactionDate(account)
             const isSelected = account.id === selectedAccountId
             const isHovered = account.id === hoveredId
             const borderColor = isSelected || isHovered ? 'var(--color-accent)' : 'var(--border-accent)'
@@ -145,14 +141,14 @@ export function AssetsTab({ onAccountSelect, selectedAccountId }: AssetsTabProps
                     onClick={(e) => { e.stopPropagation(); setModal({ kind: 'edit-account', account }) }}
                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 14, padding: '2px 4px' }}
                   >
-                    ✏
+                    &#9999;
                   </button>
                   <button
                     title="Delete account"
                     onClick={(e) => { e.stopPropagation(); setModal({ kind: 'delete-account', account }) }}
                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 14, padding: '2px 4px' }}
                   >
-                    ✕
+                    &times;
                   </button>
                 </div>
 
@@ -182,16 +178,16 @@ export function AssetsTab({ onAccountSelect, selectedAccountId }: AssetsTabProps
 
                   {/* Balance */}
                   <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>
-                    {latest ? cadFormatter.format(latest.amount) : (
+                    {account.transactions.length > 0 ? cadFormatter.format(balance) : (
                       <span style={{ color: 'var(--text-muted)' }}>No data</span>
                     )}
                   </div>
 
-                  {/* Last updated */}
+                  {/* Last transaction */}
                   <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                    {latest
-                      ? `Updated ${new Date(latest.date + 'T00:00:00').toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })}`
-                      : 'No snapshots'}
+                    {lastDate
+                      ? `Updated ${new Date(lastDate + 'T00:00:00').toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                      : 'No transactions'}
                   </div>
                 </GlassCard>
               </div>
@@ -200,76 +196,16 @@ export function AssetsTab({ onAccountSelect, selectedAccountId }: AssetsTabProps
         </div>
       )}
 
-      {/* Selected account: Add Snapshot button + snapshot list */}
+      {/* Selected account detail panel */}
       {selectedAccount && (
-        <>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
-            <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: 15 }}>
-              Snapshots — {selectedAccount.name}
-            </div>
-            <button
-              style={primaryBtn}
-              onClick={() => setModal({ kind: 'add-snapshot', accountId: selectedAccount.id })}
-            >
-              + Add Snapshot
-            </button>
-          </div>
-
-          {/* Snapshot list */}
-          {sortedSnapshots.length === 0 ? (
-            <div style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 8 }}>
-              No snapshots yet. Add one to start tracking.
-            </div>
-          ) : (
-            <ul style={{ listStyle: 'none', margin: '8px 0 0', padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {sortedSnapshots.map((snapshot) => (
-                <li
-                  key={snapshot.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 6,
-                    padding: '8px 12px',
-                    fontSize: 13,
-                    color: 'var(--text-primary)',
-                  }}
-                >
-                  <span>
-                    {snapshot.date} &mdash; ${snapshot.amount.toLocaleString()}
-                    {snapshot.note ? ` · ${snapshot.note}` : ''}
-                  </span>
-                  <div style={{ display: 'flex', gap: 4 }}>
-                    <button
-                      title="Edit snapshot"
-                      onClick={() => setModal({ kind: 'edit-snapshot', accountId: selectedAccount.id, snapshot })}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 13, padding: '2px 4px' }}
-                    >
-                      ✏
-                    </button>
-                    <button
-                      title="Delete snapshot"
-                      onClick={() => setModal({ kind: 'delete-snapshot', accountId: selectedAccount.id, snapshot })}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 13, padding: '2px 4px' }}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          <AccountDetailPanel
-            account={selectedAccount}
-            onClose={() => onAccountSelect(null)}
-          />
-        </>
+        <AccountDetailPanel
+          account={selectedAccount}
+          onClose={() => onAccountSelect(null)}
+          onTransactionChange={reloadAccounts}
+        />
       )}
 
-      {/* Modals */}
+      {/* Account Modals */}
       {modal?.kind === 'add-account' && (
         <AddAccountModal onClose={() => setModal(null)} onSaved={() => { setModal(null); reloadAccounts() }} />
       )}
@@ -278,15 +214,6 @@ export function AssetsTab({ onAccountSelect, selectedAccountId }: AssetsTabProps
       )}
       {modal?.kind === 'delete-account' && (
         <DeleteAccountModal account={modal.account} onClose={() => setModal(null)} onDeleted={() => { setModal(null); reloadAccounts() }} />
-      )}
-      {modal?.kind === 'add-snapshot' && (
-        <AddSnapshotModal accountId={modal.accountId} onClose={() => setModal(null)} onSaved={() => { setModal(null); reloadAccounts() }} />
-      )}
-      {modal?.kind === 'edit-snapshot' && (
-        <EditSnapshotModal accountId={modal.accountId} snapshot={modal.snapshot} onClose={() => setModal(null)} onSaved={() => { setModal(null); reloadAccounts() }} />
-      )}
-      {modal?.kind === 'delete-snapshot' && (
-        <DeleteSnapshotModal accountId={modal.accountId} snapshot={modal.snapshot} onClose={() => setModal(null)} onDeleted={() => { setModal(null); reloadAccounts() }} />
       )}
     </div>
   )
