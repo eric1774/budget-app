@@ -13,9 +13,11 @@ import { BalanceChart } from './components/BalanceChart'
 import { BudgetTab } from './components/BudgetTab'
 import { LogTab } from './components/LogTab'
 import { AssetsTab } from './components/AssetsTab'
+import { GoalsTab } from './components/GoalsTab'
 import { LogFilterBar } from './components/LogFilterBar'
 import type { LogFilterState } from './components/LogFilterBar'
 import { DEFAULT_LOG_FILTER } from './components/LogFilterBar'
+import { SAVINGS_CATEGORIES } from './config'
 import './index.css'
 
 // --- Helpers ---
@@ -33,7 +35,7 @@ function reviveDates(result: ParseResult): ParseResult {
 // --- Types ---
 
 type Status = 'welcome' | 'loading' | 'loaded' | 'error'
-type ActiveTab = 'dashboard' | 'budget' | 'log' | 'assets'
+type ActiveTab = 'dashboard' | 'budget' | 'log' | 'goals' | 'assets'
 
 interface BannerState {
   type: 'warning' | 'error' | 'success'
@@ -146,6 +148,7 @@ export default function App(): JSX.Element {
   })
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard')
   const [selectedAssetAccountId, setSelectedAssetAccountId] = useState<string | null>(null)
+  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null)
   const [logFilterState, setLogFilterState] = useState<LogFilterState>(DEFAULT_LOG_FILTER)
   const [budgetMap, setBudgetMap] = useState<BudgetMap>({})
   const [serverInfo, setServerInfo] = useState<ServerInfo | null>(null)
@@ -154,6 +157,42 @@ export default function App(): JSX.Element {
   const [wsState, setWsState] = useState<WsState | null>(null)
   // Timestamp of last parse error for the "Last updated X min ago" stale data badge
   const [parseErrorBadgeAt, setParseErrorBadgeAt] = useState<Date | null>(null)
+
+  // Map dashboard filterState date preset to log filter date fields
+  const dashboardDateToLogDate = useCallback((fs: FilterState): Pick<LogFilterState, 'datePreset' | 'selectedMonthYear'> => {
+    if (fs.datePreset === 'this-month') {
+      return { datePreset: 'this-month', selectedMonthYear: null }
+    }
+    if (fs.datePreset === 'last-month') {
+      const now = new Date()
+      const y = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear()
+      const m = now.getMonth() === 0 ? 12 : now.getMonth()
+      return { datePreset: 'specific-month', selectedMonthYear: `${y}-${String(m).padStart(2, '0')}` }
+    }
+    return { datePreset: 'all', selectedMonthYear: null }
+  }, [])
+
+  // Navigate to Log tab with pre-applied filters from a dashboard card/chart click
+  const navigateToLog = useCallback((overrides: Partial<LogFilterState>) => {
+    setLogFilterState({ ...DEFAULT_LOG_FILTER, ...overrides })
+    setActiveTab('log')
+  }, [])
+
+  const handleSummaryCardClick = useCallback((cardType: 'income' | 'expenses' | 'savings') => {
+    const datePart = dashboardDateToLogDate(filterState)
+    if (cardType === 'income') {
+      navigateToLog({ ...datePart, incomeExpense: 'income' })
+    } else if (cardType === 'expenses') {
+      navigateToLog({ ...datePart, incomeExpense: 'expenses' })
+    } else {
+      navigateToLog({ ...datePart, incomeExpense: 'expenses', activeCategories: new Set(SAVINGS_CATEGORIES) })
+    }
+  }, [filterState, dashboardDateToLogDate, navigateToLog])
+
+  const handleCategoryDoubleClick = useCallback((category: string) => {
+    const datePart = dashboardDateToLogDate(filterState)
+    navigateToLog({ ...datePart, incomeExpense: 'expenses', activeCategories: new Set([category]) })
+  }, [filterState, dashboardDateToLogDate, navigateToLog])
 
   // Show a success banner that auto-dismisses after 2 seconds
   const showSuccessBanner = useCallback((message: string) => {
@@ -570,6 +609,12 @@ export default function App(): JSX.Element {
           Log
         </button>
         <button
+          className={`tab-btn${activeTab === 'goals' ? ' tab-btn--active' : ''}`}
+          onClick={() => { setActiveTab('goals'); setSelectedGoalId(null) }}
+        >
+          Goals
+        </button>
+        <button
           className={`tab-btn${activeTab === 'assets' ? ' tab-btn--active' : ''}`}
           onClick={() => setActiveTab('assets')}
         >
@@ -641,13 +686,13 @@ export default function App(): JSX.Element {
           />
           {/* Dashboard body */}
           <main className="dashboard-main">
-            <SummaryCards transactions={filteredTransactions} />
+            <SummaryCards transactions={filteredTransactions} onCardClick={handleSummaryCardClick} />
 
             {/* Charts */}
             <MonthlyChart transactions={filteredTransactions} />
 
             <div className="charts-row">
-              <CategoryBreakdownChart transactions={filteredTransactions} />
+              <CategoryBreakdownChart transactions={filteredTransactions} onCategoryDoubleClick={handleCategoryDoubleClick} />
               <BalanceChart transactions={filteredTransactions} />
             </div>
           </main>
@@ -672,10 +717,17 @@ export default function App(): JSX.Element {
             totalCount={parseResult?.transactions.length ?? 0}
           />
         </div>
+      ) : activeTab === 'goals' ? (
+        <GoalsTab
+          onGoalSelect={(goal) => setSelectedGoalId(goal?.id ?? null)}
+        />
       ) : (
         <AssetsTab
           onAccountSelect={(account) => setSelectedAssetAccountId(account?.id ?? null)}
           selectedAccountId={selectedAssetAccountId}
+          dashboardBalance={filteredTransactions.length > 0
+            ? filteredTransactions[filteredTransactions.length - 1].balance
+            : undefined}
         />
       )}
     </div>
