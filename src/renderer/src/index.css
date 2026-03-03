@@ -267,3 +267,25 @@ html, body, #root {
     gap: 8px;
   }
 }
+
+/* ── Assets Tab ─────────────────────────────────────────── */
+.assets-tab-outer {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.assets-account-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .assets-account-grid {
+    grid-template-columns: 1fr;
+  }
+}

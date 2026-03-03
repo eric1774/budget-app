@@ -12,6 +12,7 @@ import { CategoryBreakdownChart } from './components/CategoryBreakdownChart'
 import { BalanceChart } from './components/BalanceChart'
 import { BudgetTab } from './components/BudgetTab'
 import { LogTab } from './components/LogTab'
+import { AssetsTab } from './components/AssetsTab'
 import { LogFilterBar } from './components/LogFilterBar'
 import type { LogFilterState } from './components/LogFilterBar'
 import { DEFAULT_LOG_FILTER } from './components/LogFilterBar'
@@ -32,7 +33,7 @@ function reviveDates(result: ParseResult): ParseResult {
 // --- Types ---
 
 type Status = 'welcome' | 'loading' | 'loaded' | 'error'
-type ActiveTab = 'dashboard' | 'budget' | 'log'
+type ActiveTab = 'dashboard' | 'budget' | 'log' | 'assets'
 
 interface BannerState {
   type: 'warning' | 'error' | 'success'
@@ -138,12 +139,13 @@ export default function App(): JSX.Element {
   const [banner, setBanner] = useState<BannerState | null>(null)
   const [filePath, setFilePath] = useState<string | null>(null)
   const [filterState, setFilterState] = useState<FilterState>({
-    datePreset: 'this-year',
+    datePreset: 'this-month',
     customFrom: '',
     customTo: '',
     activeCategories: new Set<string>(),
   })
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard')
+  const [selectedAssetAccountId, setSelectedAssetAccountId] = useState<string | null>(null)
   const [logFilterState, setLogFilterState] = useState<LogFilterState>(DEFAULT_LOG_FILTER)
   const [budgetMap, setBudgetMap] = useState<BudgetMap>({})
   const [serverInfo, setServerInfo] = useState<ServerInfo | null>(null)
@@ -567,6 +569,12 @@ export default function App(): JSX.Element {
         >
           Log
         </button>
+        <button
+          className={`tab-btn${activeTab === 'assets' ? ' tab-btn--active' : ''}`}
+          onClick={() => setActiveTab('assets')}
+        >
+          Assets
+        </button>
       </nav>
 
       {/* Offline badge — browser mode only, when disconnected */}
@@ -651,7 +659,7 @@ export default function App(): JSX.Element {
             categories={(parseResult?.categories ?? []).filter(c => c !== 'Income')}
           />
         </main>
-      ) : (
+      ) : activeTab === 'log' ? (
         <div className="log-tab-outer">
           <LogFilterBar
             filterState={logFilterState}
@@ -664,6 +672,11 @@ export default function App(): JSX.Element {
             totalCount={parseResult?.transactions.length ?? 0}
           />
         </div>
+      ) : (
+        <AssetsTab
+          onAccountSelect={(account) => setSelectedAssetAccountId(account?.id ?? null)}
+          selectedAccountId={selectedAssetAccountId}
+        />
       )}
     </div>
   )
