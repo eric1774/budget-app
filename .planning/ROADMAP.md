@@ -128,6 +128,6 @@ Plans:
 | 7. Log Tab | v1.1 | 3/3 | Complete | 2026-02-25 |
 | 8. Asset Data Layer | v1.2 | 2/2 | Complete | 2026-03-03 |
 | 9. Assets Tab UI | v1.2 | 4/4 | Complete | 2026-03-03 |
-| 10. Goal Tracking | 2/4 | In Progress|  | — |
+| 10. Goal Tracking | 3/4 | In Progress|  | — |
 | 11. Certificate Tracking | v1.2 | 0/? | Not started | — |
 | 12. Net Worth Tracker | v1.2 | 0/? | Not started | — |

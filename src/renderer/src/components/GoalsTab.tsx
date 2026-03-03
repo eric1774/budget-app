@@ -45,8 +45,10 @@ export function GoalsTab({ onGoalSelect, selectedGoalId }: GoalsTabProps): JSX.E
 
   const reloadGoals = useCallback(async () => {
     try {
-      const data = await window.electronAPI.invoke('goals:get-all')
-      setGoals(Array.isArray(data) ? data : [])
+      if (typeof window !== 'undefined' && window.electronAPI) {
+        const data = await window.electronAPI.invoke('goals:get-all')
+        setGoals(Array.isArray(data) ? data : [])
+      }
     } catch {
       setGoals([])
     }

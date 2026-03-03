@@ -78,22 +78,28 @@ const labelStyle: React.CSSProperties = {
 
 interface AddGoalModalProps {
   onClose: () => void
-  onAdd: (name: string) => void
+  onAdd: (name: string) => Promise<void>
 }
 
 export function AddGoalModal({ onClose, onAdd }: AddGoalModalProps): JSX.Element {
   const [name, setName] = useState('')
   const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
 
-  function handleSubmit(e: React.FormEvent): void {
+  async function handleSubmit(e: React.FormEvent): Promise<void> {
     e.preventDefault()
     const trimmed = name.trim()
     if (!trimmed) {
       setError('Goal name is required')
       return
     }
-    onAdd(trimmed)
-    onClose()
+    setSaving(true)
+    try {
+      await onAdd(trimmed)
+    } catch {
+      setError('Failed to add goal. Please try again.')
+      setSaving(false)
+    }
   }
 
   return (
@@ -116,7 +122,9 @@ export function AddGoalModal({ onClose, onAdd }: AddGoalModalProps): JSX.Element
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button type="button" style={cancelBtn} onClick={onClose}>Cancel</button>
-          <button type="submit" style={primaryBtn}>Add Goal</button>
+          <button type="submit" style={{ ...primaryBtn, opacity: saving ? 0.6 : 1 }} disabled={saving}>
+            {saving ? 'Adding...' : 'Add Goal'}
+          </button>
         </div>
       </form>
     </div>
