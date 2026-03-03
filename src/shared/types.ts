@@ -46,23 +46,20 @@ export interface ServerInfo {
 
 export type AccountType = 'Standard' | 'Goal' | 'Certificate'
 
-export interface BalanceSnapshot {
-  id: string          // UUID v4
-  accountId: string   // parent account id
-  amount: number      // balance in dollars (positive)
-  date: string        // ISO date string "YYYY-MM-DD"
-  note?: string       // optional free-text note
-  createdAt: string   // ISO datetime string
-  updatedAt: string   // ISO datetime string
+export interface Transaction {
+  id: string                        // UUID v4
+  type: 'deposit' | 'withdrawal'
+  amount: number                    // always positive
+  date: string                      // ISO date "YYYY-MM-DD"
+  note?: string
 }
 
 export interface AssetAccount {
   id: string          // UUID v4
   name: string        // display name, e.g. "TFSA"
   type: AccountType
-  snapshots: BalanceSnapshot[]
+  transactions: Transaction[]
   createdAt: string   // ISO datetime string
-  updatedAt: string   // ISO datetime string
 }
 
 // Root structure written to assets.json

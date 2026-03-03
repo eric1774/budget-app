@@ -2,7 +2,7 @@ import { app } from 'electron'
 import { join } from 'path'
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs'
 import { randomUUID } from 'crypto'
-import type { AssetsData, AssetAccount, BalanceSnapshot, AccountType } from '../shared/types'
+import type { AssetsData, AssetAccount, Transaction, AccountType } from '../shared/types'
 
 const ASSETS_PATH = join(app.getPath('userData'), 'assets.json')
 
@@ -17,6 +17,13 @@ function writeAssets(data: AssetsData): void {
   writeFileSync(ASSETS_PATH, JSON.stringify(data, null, 2), 'utf-8')
 }
 
+// Running sum of all transactions: deposits add, withdrawals subtract
+function accountBalance(account: AssetAccount): number {
+  return account.transactions.reduce((sum, t) => {
+    return t.type === 'deposit' ? sum + t.amount : sum - t.amount
+  }, 0)
+}
+
 // ── Account CRUD ────────────────────────────────────────────────────────────
 
 export function getAccounts(): AssetAccount[] {
@@ -25,14 +32,12 @@ export function getAccounts(): AssetAccount[] {
 
 export function addAccount(name: string, type: AccountType): AssetAccount {
   const data = readAssets()
-  const now = new Date().toISOString()
   const account: AssetAccount = {
     id: randomUUID(),
     name: name.trim(),
     type,
-    snapshots: [],
-    createdAt: now,
-    updatedAt: now,
+    transactions: [],
+    createdAt: new Date().toISOString(),
   }
   data.accounts.push(account)
   writeAssets(data)
@@ -45,7 +50,6 @@ export function updateAccount(id: string, fields: { name?: string; type?: Accoun
   if (!account) return null
   if (fields.name !== undefined) account.name = fields.name.trim()
   if (fields.type !== undefined) account.type = fields.type
-  account.updatedAt = new Date().toISOString()
   writeAssets(data)
   return account
 }
@@ -59,59 +63,58 @@ export function deleteAccount(id: string): boolean {
   return true
 }
 
-// ── Snapshot CRUD ────────────────────────────────────────────────────────────
+// ── Transaction CRUD ─────────────────────────────────────────────────────────
 
-export function addSnapshot(
+export function addTransaction(
   accountId: string,
-  fields: { amount: number; date: string; note?: string }
-): BalanceSnapshot | null {
+  type: 'deposit' | 'withdrawal',
+  amount: number,
+  date: string,
+  note?: string
+): Transaction | null {
   const data = readAssets()
   const account = data.accounts.find(a => a.id === accountId)
   if (!account) return null
-  const now = new Date().toISOString()
-  const snapshot: BalanceSnapshot = {
+  const transaction: Transaction = {
     id: randomUUID(),
-    accountId,
-    amount: fields.amount,
-    date: fields.date,
-    note: fields.note,
-    createdAt: now,
-    updatedAt: now,
+    type,
+    amount,
+    date,
+    note,
   }
-  account.snapshots.push(snapshot)
-  account.updatedAt = now
+  account.transactions.push(transaction)
   writeAssets(data)
-  return snapshot
+  return transaction
 }
 
-export function updateSnapshot(
+export function updateTransaction(
   accountId: string,
-  snapshotId: string,
-  fields: { amount?: number; date?: string; note?: string }
-): BalanceSnapshot | null {
+  transactionId: string,
+  fields: { type?: 'deposit' | 'withdrawal'; amount?: number; date?: string; note?: string }
+): Transaction | null {
   const data = readAssets()
   const account = data.accounts.find(a => a.id === accountId)
   if (!account) return null
-  const snapshot = account.snapshots.find(s => s.id === snapshotId)
-  if (!snapshot) return null
-  if (fields.amount !== undefined) snapshot.amount = fields.amount
-  if (fields.date !== undefined) snapshot.date = fields.date
-  if (fields.note !== undefined) snapshot.note = fields.note
-  const now = new Date().toISOString()
-  snapshot.updatedAt = now
-  account.updatedAt = now
+  const transaction = account.transactions.find(t => t.id === transactionId)
+  if (!transaction) return null
+  if (fields.type !== undefined) transaction.type = fields.type
+  if (fields.amount !== undefined) transaction.amount = fields.amount
+  if (fields.date !== undefined) transaction.date = fields.date
+  if (fields.note !== undefined) transaction.note = fields.note
   writeAssets(data)
-  return snapshot
+  return transaction
 }
 
-export function deleteSnapshot(accountId: string, snapshotId: string): boolean {
+export function deleteTransaction(accountId: string, transactionId: string): boolean {
   const data = readAssets()
   const account = data.accounts.find(a => a.id === accountId)
   if (!account) return false
-  const before = account.snapshots.length
-  account.snapshots = account.snapshots.filter(s => s.id !== snapshotId)
-  if (account.snapshots.length === before) return false
-  account.updatedAt = new Date().toISOString()
+  const before = account.transactions.length
+  account.transactions = account.transactions.filter(t => t.id !== transactionId)
+  if (account.transactions.length === before) return false
   writeAssets(data)
   return true
 }
+
+// Export helper for use in IPC or other modules
+export { accountBalance }
