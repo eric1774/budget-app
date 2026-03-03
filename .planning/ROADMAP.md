@@ -33,7 +33,7 @@ Full archive: `.planning/milestones/v1.1-ROADMAP.md`
 
 ### v1.2 Assets Tracker (Phases 8–11)
 
-- [ ] **Phase 8: Asset Data Layer** — assets.json schema, IPC channels, account + snapshot CRUD persistence
+- [x] **Phase 8: Asset Data Layer** — assets.json schema, IPC channels, account + snapshot CRUD persistence (completed 2026-03-03)
 - [ ] **Phase 9: Assets Tab UI** — tab navigation, account cards, overview summary, snapshot entry, history charts, mobile PWA
 - [ ] **Phase 10: Goal Tracking** — goal fields, progress bar, projected completion, contribution rate, on-track indicator
 - [ ] **Phase 11: Certificate Tracking** — certificate fields, projected growth, dividend payout log, projected vs actual comparison
@@ -68,7 +68,13 @@ Plans:
   4. Tapping an account card shows a balance-over-time line chart for that account
   5. Tapping an account card shows a per-period change bar chart for that account
   6. The Assets tab and all account data load correctly in the mobile PWA at port 3737
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 09-01-PLAN.md — AssetsTab shell + nav tab + account cards + net assets total
+- [ ] 09-02-PLAN.md — AccountDetailPanel with balance line chart + period-change bar chart
+- [ ] 09-03-PLAN.md — Account/Snapshot CRUD modals wired into AssetsTab
+- [ ] 09-04-PLAN.md — Human verify checkpoint (Electron + mobile PWA)
 
 ### Phase 10: Goal Tracking
 **Goal**: Goal-type accounts show progress toward a target and tell the user whether they are on track
@@ -114,7 +120,7 @@ Plans:
 | 5. Local Server + Sync | v1.1 | 3/3 | Complete | 2026-02-24 |
 | 6. PWA + Responsive UI | v1.1 | 4/4 | Complete | 2026-02-25 |
 | 7. Log Tab | v1.1 | 3/3 | Complete | 2026-02-25 |
-| 8. Asset Data Layer | 1/2 | In Progress|  | — |
+| 8. Asset Data Layer | 2/2 | Complete   | 2026-03-03 | — |
 | 9. Assets Tab UI | v1.2 | 0/? | Not started | — |
 | 10. Goal Tracking | v1.2 | 0/? | Not started | — |
 | 11. Certificate Tracking | v1.2 | 0/? | Not started | — |
