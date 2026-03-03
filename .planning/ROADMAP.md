@@ -2,30 +2,30 @@
 
 ## Milestones
 
-- ✅ **v1.0 MVP** — Phases 1–4 (shipped 2026-02-22)
-- ✅ **v1.1 Mobile + Log** — Phases 5–7 (shipped 2026-02-25)
-- 🔄 **v1.2 Assets Tracker** — Phases 8–12 (started 2026-03-02)
+- ✅ **v1.0 MVP** — Phases 1–4 (shipped 2011-02-22)
+- ✅ **v1.1 Mobile + Log** — Phases 5–7 (shipped 2011-02-25)
+- 🔄 **v1.2 Assets Tracker** — Phases 8–12 (started 2011-03-02)
 
 ## Phases
 
 <details>
-<summary>✅ v1.0 MVP (Phases 1–4) — SHIPPED 2026-02-22</summary>
+<summary>✅ v1.0 MVP (Phases 1–4) — SHIPPED 2011-02-22</summary>
 
-- [x] Phase 1: Data Foundation (3/3 plans) — completed 2026-02-22
-- [x] Phase 2: Core Dashboard (3/3 plans) — completed 2026-02-22
-- [x] Phase 3: Filters & Controls (3/3 plans) — completed 2026-02-22
-- [x] Phase 4: Budget Configuration (3/3 plans) — completed 2026-02-22
+- [x] Phase 1: Data Foundation (3/3 plans) — completed 2011-02-22
+- [x] Phase 2: Core Dashboard (3/3 plans) — completed 2011-02-22
+- [x] Phase 3: Filters & Controls (3/3 plans) — completed 2011-02-22
+- [x] Phase 4: Budget Configuration (3/3 plans) — completed 2011-02-22
 
 Full archive: `.planning/milestones/v1.0-ROADMAP.md`
 
 </details>
 
 <details>
-<summary>✅ v1.1 Mobile + Log (Phases 5–7) — SHIPPED 2026-02-25</summary>
+<summary>✅ v1.1 Mobile + Log (Phases 5–7) — SHIPPED 2011-02-25</summary>
 
-- [x] Phase 5: Local Server + Sync (3/3 plans) — completed 2026-02-24
-- [x] Phase 6: PWA + Responsive UI (4/4 plans) — completed 2026-02-25
-- [x] Phase 7: Log Tab (3/3 plans) — completed 2026-02-25
+- [x] Phase 5: Local Server + Sync (3/3 plans) — completed 2011-02-24
+- [x] Phase 6: PWA + Responsive UI (4/4 plans) — completed 2011-02-25
+- [x] Phase 7: Log Tab (3/3 plans) — completed 2011-02-25
 
 Full archive: `.planning/milestones/v1.1-ROADMAP.md`
 
@@ -33,11 +33,10 @@ Full archive: `.planning/milestones/v1.1-ROADMAP.md`
 
 ### v1.2 Assets Tracker (Phases 8–11)
 
-- [x] **Phase 8: Asset Data Layer** — assets.json schema, IPC channels, account + snapshot CRUD persistence (completed 2026-03-03)
-- [x] **Phase 9: Assets Tab UI** — tab navigation, account cards, overview summary, snapshot entry, history charts, mobile PWA (completed 2026-03-03)
-- [ ] **Phase 10: Goal Tracking** — goal fields, progress bar, projected completion, contribution rate, on-track indicator
-- [ ] **Phase 11: Certificate Tracking** — certificate fields, projected growth, dividend payout log, projected vs actual comparison
-- [ ] **Phase 12: Net Worth Tracker** — total net worth figure, net worth history chart over time, breakdown by account type
+- [x] **Phase 8: Asset Data Layer** — assets.json schema, IPC channels, account + snapshot CRUD persistence (completed 2011-03-03)
+- [x] **Phase 9: Assets Tab UI** — tab navigation, account cards, overview summary, snapshot entry, history charts, mobile PWA (completed 2011-03-03)
+- [x] **Phase 10: Goal Tracking** — goal fields, progress bar, projected completion, contribution rate, on-track indicator (completed 2011-03-03)
+- [ ] **Phase 11: Net Worth Tracker** — total net worth figure, net worth history chart over time, breakdown by account type
 
 ## Phase Details
 
@@ -94,18 +93,7 @@ Plans:
 - [ ] 10-03-PLAN.md — GoalDetailView with progress bar, projections, on-track badge, chart, contribution log
 - [ ] 10-04-PLAN.md — Human verify checkpoint (Electron app)
 
-### Phase 11: Certificate Tracking
-**Goal**: Certificate-type accounts display projected growth and let the user log actual dividend payouts and compare them to projections
-**Depends on**: Phase 9 (account cards must exist before certificate UI layer can be added)
-**Requirements**: CERT-01, CERT-02, CERT-03, CERT-04
-**Success Criteria** (what must be TRUE):
-  1. User can enter principal, annual interest rate, and maturity date on a Certificate account and the values persist
-  2. A projected balance at maturity is displayed based on principal and rate
-  3. User can log a dividend payout (date + amount) against a Certificate account
-  4. A comparison view shows projected cumulative dividends vs actual payouts logged to date
-**Plans**: TBD
-
-### Phase 12: Net Worth Tracker
+### Phase 11: Net Worth Tracker
 **Goal**: Users can see their total net worth, how it has grown over time, and how it breaks down across account types
 **Depends on**: Phase 9 (account data must exist), Phases 10 & 11 (all account types populated)
 **Requirements**: NW-01, NW-02, NW-03
@@ -113,21 +101,24 @@ Plans:
   1. A total net worth figure is displayed showing the sum of all current asset account balances
   2. A net worth history chart shows total assets over time, derived from all account snapshots combined
   3. A breakdown shows how net worth is split across Standard, Goal, and Certificate account types
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 11-01-PLAN.md — NetWorthSection component (total figure + history line chart + breakdown pie chart) wired into AssetsTab
+- [ ] 11-02-PLAN.md — Human verify checkpoint (Electron app + mobile PWA)
 
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 1. Data Foundation | v1.0 | 3/3 | Complete | 2026-02-22 |
-| 2. Core Dashboard | v1.0 | 3/3 | Complete | 2026-02-22 |
-| 3. Filters & Controls | v1.0 | 3/3 | Complete | 2026-02-22 |
-| 4. Budget Configuration | v1.0 | 3/3 | Complete | 2026-02-22 |
-| 5. Local Server + Sync | v1.1 | 3/3 | Complete | 2026-02-24 |
-| 6. PWA + Responsive UI | v1.1 | 4/4 | Complete | 2026-02-25 |
-| 7. Log Tab | v1.1 | 3/3 | Complete | 2026-02-25 |
-| 8. Asset Data Layer | v1.2 | 2/2 | Complete | 2026-03-03 |
-| 9. Assets Tab UI | v1.2 | 4/4 | Complete | 2026-03-03 |
+| 1. Data Foundation | v1.0 | 3/3 | Complete | 2011-02-22 |
+| 2. Core Dashboard | v1.0 | 3/3 | Complete | 2011-02-22 |
+| 3. Filters & Controls | v1.0 | 3/3 | Complete | 2011-02-22 |
+| 4. Budget Configuration | v1.0 | 3/3 | Complete | 2011-02-22 |
+| 5. Local Server + Sync | v1.1 | 3/3 | Complete | 2011-02-24 |
+| 6. PWA + Responsive UI | v1.1 | 4/4 | Complete | 2011-02-25 |
+| 7. Log Tab | v1.1 | 3/3 | Complete | 2011-02-25 |
+| 8. Asset Data Layer | v1.2 | 2/2 | Complete | 2011-03-03 |
+| 9. Assets Tab UI | v1.2 | 4/4 | Complete | 2011-03-03 |
 | 10. Goal Tracking | 3/4 | In Progress|  | — |
-| 11. Certificate Tracking | v1.2 | 0/? | Not started | — |
-| 12. Net Worth Tracker | v1.2 | 0/? | Not started | — |
+| 11. Net Worth Tracker | v1.2 | 0/2 | Not started | — |
