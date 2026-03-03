@@ -11,9 +11,9 @@ import {
   addAccount,
   updateAccount,
   deleteAccount,
-  addSnapshot,
-  updateSnapshot,
-  deleteSnapshot,
+  addTransaction,
+  updateTransaction,
+  deleteTransaction,
 } from './assets-store'
 
 let mainWindow: BrowserWindow | null = null
@@ -96,7 +96,7 @@ ipcMain.handle('restart-server', async () => {
 
 // ── Asset Account IPC ──────────────────────────────────────────────────────
 
-// Returns all AssetAccount objects (with nested snapshots)
+// Returns all AssetAccount objects (with nested transactions)
 ipcMain.handle('assets:get-accounts', () => getAccounts())
 
 // Creates a new account. Args: { name: string, type: AccountType }
@@ -111,28 +111,28 @@ ipcMain.handle('assets:update-account', (_event, args: { id: string; name?: stri
   updateAccount(args.id, { name: args.name, type: args.type })
 )
 
-// Deletes account and all its snapshots. Args: { id: string }
+// Deletes account and all its transactions. Args: { id: string }
 // Returns: boolean
 ipcMain.handle('assets:delete-account', (_event, args: { id: string }) =>
   deleteAccount(args.id)
 )
 
-// Adds a snapshot. Args: { accountId: string, amount: number, date: string, note?: string }
-// Returns: BalanceSnapshot | null
-ipcMain.handle('assets:add-snapshot', (_event, args: { accountId: string; amount: number; date: string; note?: string }) =>
-  addSnapshot(args.accountId, { amount: args.amount, date: args.date, note: args.note })
+// Adds a transaction. Args: { accountId: string, type: 'deposit'|'withdrawal', amount: number, date: string, note?: string }
+// Returns: Transaction | null
+ipcMain.handle('assets:add-transaction', (_event, args: { accountId: string; type: 'deposit' | 'withdrawal'; amount: number; date: string; note?: string }) =>
+  addTransaction(args.accountId, args.type, args.amount, args.date, args.note)
 )
 
-// Edits a snapshot. Args: { accountId: string, snapshotId: string, amount?: number, date?: string, note?: string }
-// Returns: BalanceSnapshot | null
-ipcMain.handle('assets:update-snapshot', (_event, args: { accountId: string; snapshotId: string; amount?: number; date?: string; note?: string }) =>
-  updateSnapshot(args.accountId, args.snapshotId, { amount: args.amount, date: args.date, note: args.note })
+// Edits a transaction. Args: { accountId: string, transactionId: string, type?: ..., amount?: number, date?: string, note?: string }
+// Returns: Transaction | null
+ipcMain.handle('assets:update-transaction', (_event, args: { accountId: string; transactionId: string; type?: 'deposit' | 'withdrawal'; amount?: number; date?: string; note?: string }) =>
+  updateTransaction(args.accountId, args.transactionId, { type: args.type, amount: args.amount, date: args.date, note: args.note })
 )
 
-// Deletes a snapshot. Args: { accountId: string, snapshotId: string }
+// Deletes a transaction. Args: { accountId: string, transactionId: string }
 // Returns: boolean
-ipcMain.handle('assets:delete-snapshot', (_event, args: { accountId: string; snapshotId: string }) =>
-  deleteSnapshot(args.accountId, args.snapshotId)
+ipcMain.handle('assets:delete-transaction', (_event, args: { accountId: string; transactionId: string }) =>
+  deleteTransaction(args.accountId, args.transactionId)
 )
 
 app.whenReady().then(async () => {
