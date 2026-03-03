@@ -121,4 +121,4 @@ Plans:
 | 8. Asset Data Layer | v1.2 | 2/2 | Complete | 2011-03-03 |
 | 9. Assets Tab UI | v1.2 | 4/4 | Complete | 2011-03-03 |
 | 10. Goal Tracking | 3/4 | In Progress|  | — |
-| 11. Net Worth Tracker | v1.2 | 0/2 | Not started | — |
+| 11. Net Worth Tracker | 1/2 | In Progress|  | — |

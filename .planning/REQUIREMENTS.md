@@ -42,9 +42,9 @@
 
 ### Net Worth Tracker
 
-- [ ] **NW-01**: User sees a total net worth figure representing the sum of all asset account balances
-- [ ] **NW-02**: User sees a net worth history chart showing total assets over time (derived from all account snapshots)
-- [ ] **NW-03**: User sees a breakdown of net worth by account type (Standard / Goal / Certificate)
+- [x] **NW-01**: User sees a total net worth figure representing the sum of all asset account balances
+- [x] **NW-02**: User sees a net worth history chart showing total assets over time (derived from all account snapshots)
+- [x] **NW-03**: User sees a breakdown of net worth by account type (Standard / Goal / Certificate)
 
 ## Future Requirements
 
@@ -88,9 +88,9 @@
 | CERT-02 | Phase 11 | Pending |
 | CERT-03 | Phase 11 | Pending |
 | CERT-04 | Phase 11 | Pending |
-| NW-01 | Phase 12 | Pending |
-| NW-02 | Phase 12 | Pending |
-| NW-03 | Phase 12 | Pending |
+| NW-01 | Phase 12 | Complete |
+| NW-02 | Phase 12 | Complete |
+| NW-03 | Phase 12 | Complete |
 
 **Coverage:**
 - v1.2 requirements: 23 total
