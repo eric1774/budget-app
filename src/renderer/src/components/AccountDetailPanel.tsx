@@ -40,7 +40,7 @@ type ModalState =
 export function AccountDetailPanel({ account, onClose, onTransactionChange }: AccountDetailPanelProps): JSX.Element {
   const [modal, setModal] = useState<ModalState>(null)
 
-  const sorted = [...account.transactions].sort((a, b) => a.date.localeCompare(b.date))
+  const sorted = [...(account.transactions ?? [])].sort((a, b) => a.date.localeCompare(b.date))
 
   // Running balance line chart data (ascending by date)
   let running = 0
@@ -57,7 +57,7 @@ export function AccountDetailPanel({ account, onClose, onTransactionChange }: Ac
   }))
 
   // Transaction log: descending by date
-  const descSorted = [...account.transactions].sort((a, b) => b.date.localeCompare(a.date))
+  const descSorted = [...(account.transactions ?? [])].sort((a, b) => b.date.localeCompare(a.date))
 
   function handleSuccess(): void {
     setModal(null)
@@ -96,7 +96,7 @@ export function AccountDetailPanel({ account, onClose, onTransactionChange }: Ac
         </div>
       </div>
 
-      {account.transactions.length === 0 ? (
+      {(account.transactions ?? []).length === 0 ? (
         <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
           No transactions yet. Add a deposit or withdrawal to get started.
         </p>
