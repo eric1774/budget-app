@@ -223,16 +223,16 @@ export function NetWorthSection({ accounts, dashboardBalance }: NetWorthSectionP
             No balances to display
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={240}>
-            <PieChart width={320} height={240} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+          <ResponsiveContainer width="100%" height={280}>
+            <PieChart margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
               <Pie
                 data={breakdown}
                 dataKey="value"
                 nameKey="type"
                 cx="50%"
-                cy="45%"
-                innerRadius={50}
-                outerRadius={90}
+                cy="42%"
+                innerRadius={45}
+                outerRadius={75}
               >
                 {breakdown.map((entry) => (
                   <Cell key={entry.type} fill={entry.color} />
