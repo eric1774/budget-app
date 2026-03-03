@@ -7,10 +7,13 @@ import {
   EditAccountModal,
   DeleteAccountModal,
 } from './AccountModals'
+import * as api from '../api'
+import { NetWorthSection } from './NetWorthSection'
 
 interface AssetsTabProps {
   onAccountSelect: (account: AssetAccount | null) => void
   selectedAccountId: string | null
+  dashboardBalance?: number
 }
 
 type ModalState =
@@ -22,7 +25,8 @@ type ModalState =
 const cadFormatter = new Intl.NumberFormat('en-CA', {
   style: 'currency',
   currency: 'CAD',
-  maximumFractionDigits: 0,
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
 })
 
 function accountBalance(account: AssetAccount): number {
@@ -49,55 +53,36 @@ const primaryBtn: React.CSSProperties = {
   cursor: 'pointer',
 }
 
-export function AssetsTab({ onAccountSelect, selectedAccountId }: AssetsTabProps): JSX.Element {
+export function AssetsTab({ onAccountSelect, selectedAccountId, dashboardBalance }: AssetsTabProps): JSX.Element {
   const [accounts, setAccounts] = useState<AssetAccount[]>([])
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [modal, setModal] = useState<ModalState>(null)
 
   const reloadAccounts = useCallback(async () => {
     try {
-      if (typeof window !== 'undefined' && window.electronAPI) {
-        const data = await window.electronAPI.invoke('assets:get-accounts')
-        setAccounts((data as AssetAccount[]) ?? [])
-      }
+      const data = await api.getAccounts()
+      setAccounts((data as AssetAccount[]) ?? [])
     } catch { /* ignore */ }
   }, [])
 
   useEffect(() => {
     let cancelled = false
-
-    async function loadAccounts(): Promise<void> {
-      if (typeof window !== 'undefined' && window.electronAPI) {
-        const result = await window.electronAPI.invoke('assets:get-accounts')
-        if (!cancelled) setAccounts((result as AssetAccount[]) ?? [])
-      } else {
-        try {
-          const r = await fetch('/api/assets/accounts')
-          const data = await r.json()
-          if (!cancelled) setAccounts((data as AssetAccount[]) ?? [])
-        } catch {
-          if (!cancelled) setAccounts([])
-        }
-      }
-    }
-
-    loadAccounts()
+    api.getAccounts()
+      .then((data) => { if (!cancelled) setAccounts((data as AssetAccount[]) ?? []) })
+      .catch(() => { if (!cancelled) setAccounts([]) })
     return () => { cancelled = true }
   }, [])
 
   const selectedAccount = accounts.find(a => a.id === selectedAccountId) ?? null
 
-  const totalNetAssets = accounts.reduce((sum, account) => sum + accountBalance(account), 0)
+  const getDisplayBalance = (account: AssetAccount): number => {
+    if (account.syncedWithDashboard && dashboardBalance !== undefined) return dashboardBalance
+    return accountBalance(account)
+  }
 
   return (
     <div className="assets-tab-outer">
-      {/* Net Assets summary card */}
-      <GlassCard style={{ padding: 24 }}>
-        <div style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 8 }}>Total Net Assets</div>
-        <div style={{ color: 'var(--color-accent)', fontSize: 32, fontWeight: 700 }}>
-          {cadFormatter.format(totalNetAssets)}
-        </div>
-      </GlassCard>
+      <NetWorthSection accounts={accounts} dashboardBalance={dashboardBalance} />
 
       {/* Add Account button */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
@@ -117,7 +102,8 @@ export function AssetsTab({ onAccountSelect, selectedAccountId }: AssetsTabProps
       ) : (
         <div className="assets-account-grid">
           {accounts.map((account) => {
-            const balance = accountBalance(account)
+            const balance = getDisplayBalance(account)
+            const isSynced = account.syncedWithDashboard && dashboardBalance !== undefined
             const lastDate = lastTransactionDate(account)
             const isSelected = account.id === selectedAccountId
             const isHovered = account.id === hoveredId
@@ -178,16 +164,25 @@ export function AssetsTab({ onAccountSelect, selectedAccountId }: AssetsTabProps
 
                   {/* Balance */}
                   <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>
-                    {(account.transactions ?? []).length > 0 ? cadFormatter.format(balance) : (
-                      <span style={{ color: 'var(--text-muted)' }}>No data</span>
-                    )}
+                    {isSynced
+                      ? cadFormatter.format(balance)
+                      : (account.transactions ?? []).length > 0
+                        ? cadFormatter.format(balance)
+                        : account.syncedWithDashboard
+                          ? <span style={{ color: 'var(--text-muted)' }}>Load a file</span>
+                          : <span style={{ color: 'var(--text-muted)' }}>No data</span>
+                    }
                   </div>
 
-                  {/* Last transaction */}
+                  {/* Last transaction / sync indicator */}
                   <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                    {lastDate
-                      ? `Updated ${new Date(lastDate + 'T00:00:00').toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })}`
-                      : 'No transactions'}
+                    {isSynced
+                      ? 'Synced with Dashboard'
+                      : account.syncedWithDashboard && dashboardBalance === undefined
+                        ? 'Syncs when file is loaded'
+                        : lastDate
+                          ? `Updated ${new Date(lastDate + 'T00:00:00').toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                          : 'No transactions'}
                   </div>
                 </GlassCard>
               </div>
