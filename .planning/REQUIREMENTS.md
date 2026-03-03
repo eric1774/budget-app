@@ -27,11 +27,11 @@
 
 ### Goal Tracking
 
-- [ ] **GOAL-01**: User can set a target amount and target date on a Goal-type account
-- [ ] **GOAL-02**: User sees a progress bar showing current balance vs target amount
-- [ ] **GOAL-03**: User sees a projected completion date calculated from average contribution rate
-- [ ] **GOAL-04**: User sees the required monthly and yearly contribution needed to hit the goal on time
-- [ ] **GOAL-05**: User sees an on-track / off-track status indicator based on expected vs actual progress
+- [x] **GOAL-01**: User can set a target amount and target date on a Goal-type account
+- [x] **GOAL-02**: User sees a progress bar showing current balance vs target amount
+- [x] **GOAL-03**: User sees a projected completion date calculated from average contribution rate
+- [x] **GOAL-04**: User sees the required monthly and yearly contribution needed to hit the goal on time
+- [x] **GOAL-05**: User sees an on-track / off-track status indicator based on expected vs actual progress
 
 ### Certificate Tracking
 
@@ -79,11 +79,11 @@
 | OVER-04 | Phase 9 | Complete |
 | HIST-01 | Phase 9 | Complete |
 | HIST-02 | Phase 9 | Complete |
-| GOAL-01 | Phase 10 | Pending |
-| GOAL-02 | Phase 10 | Pending |
-| GOAL-03 | Phase 10 | Pending |
-| GOAL-04 | Phase 10 | Pending |
-| GOAL-05 | Phase 10 | Pending |
+| GOAL-01 | Phase 10 | Complete |
+| GOAL-02 | Phase 10 | Complete |
+| GOAL-03 | Phase 10 | Complete |
+| GOAL-04 | Phase 10 | Complete |
+| GOAL-05 | Phase 10 | Complete |
 | CERT-01 | Phase 11 | Pending |
 | CERT-02 | Phase 11 | Pending |
 | CERT-03 | Phase 11 | Pending |
