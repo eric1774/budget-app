@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { AssetAccount, BalanceSnapshot } from '../../../shared/types'
 import { GlassCard } from './GlassCard'
+import { AccountDetailPanel } from './AccountDetailPanel'
 
 interface AssetsTabProps {
   onAccountSelect: (account: AssetAccount | null) => void
@@ -43,6 +44,8 @@ export function AssetsTab({ onAccountSelect, selectedAccountId }: AssetsTabProps
     loadAccounts()
     return () => { cancelled = true }
   }, [])
+
+  const selectedAccount = accounts.find(a => a.id === selectedAccountId) ?? null
 
   const totalNetAssets = accounts.reduce((sum, account) => {
     const latest = getLatestSnapshot(account)
@@ -125,6 +128,13 @@ export function AssetsTab({ onAccountSelect, selectedAccountId }: AssetsTabProps
             )
           })}
         </div>
+      )}
+
+      {selectedAccount && (
+        <AccountDetailPanel
+          account={selectedAccount}
+          onClose={() => onAccountSelect(null)}
+        />
       )}
     </div>
   )
