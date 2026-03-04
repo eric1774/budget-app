@@ -4,12 +4,11 @@ import type { ServerInfo } from '../../../shared/types'
 
 interface Props {
   serverInfo: ServerInfo | null
-  lastSyncedAt: Date | null          // updated by parent on each successful file-changed
+  lastSyncedAt: Date | null
   onRestart: () => Promise<void>
 }
 
 export function ServerToolbar({ serverInfo, lastSyncedAt, onRestart }: Props): JSX.Element | null {
-  // Only render inside Electron (window.electronAPI present)
   if (typeof window === 'undefined' || !window.electronAPI) return null
 
   const [showQR, setShowQR] = useState(false)
@@ -17,7 +16,6 @@ export function ServerToolbar({ serverInfo, lastSyncedAt, onRestart }: Props): J
   const [restarting, setRestarting] = useState(false)
   const qrRef = useRef<HTMLDivElement>(null)
 
-  // Generate QR code data URL whenever serverInfo.url changes
   useEffect(() => {
     if (!serverInfo?.url) return
     QRCode.toDataURL(serverInfo.url, { width: 200, margin: 2 })
@@ -25,10 +23,9 @@ export function ServerToolbar({ serverInfo, lastSyncedAt, onRestart }: Props): J
       .catch(() => {})
   }, [serverInfo?.url])
 
-  // Close QR popup on outside click
   useEffect(() => {
     if (!showQR) return
-    const handler = (e: MouseEvent) => {
+    const handler = (e: MouseEvent): void => {
       if (qrRef.current && !qrRef.current.contains(e.target as Node)) {
         setShowQR(false)
       }
@@ -42,14 +39,12 @@ export function ServerToolbar({ serverInfo, lastSyncedAt, onRestart }: Props): J
     try { await onRestart() } finally { setRestarting(false) }
   }, [onRestart])
 
-  // Relative time string — "just now", "1 min ago", "2 min ago", etc.
   const [relTime, setRelTime] = useState('–')
   useEffect(() => {
     const update = (): void => {
       if (!lastSyncedAt) { setRelTime('–'); return }
-      const diffMs = Date.now() - lastSyncedAt.getTime()
-      const mins = Math.floor(diffMs / 60000)
-      setRelTime(mins === 0 ? 'just now' : `${mins} min ago`)
+      const mins = Math.floor((Date.now() - lastSyncedAt.getTime()) / 60000)
+      setRelTime(mins === 0 ? 'just now' : `${mins}m ago`)
     }
     update()
     const id = setInterval(update, 30000)
@@ -57,32 +52,27 @@ export function ServerToolbar({ serverInfo, lastSyncedAt, onRestart }: Props): J
   }, [lastSyncedAt])
 
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: 10,
-      padding: '6px 16px',
-      background: 'rgba(255,255,255,0.04)',
-      borderBottom: '1px solid rgba(255,255,255,0.06)',
-      fontSize: 12,
-      color: 'var(--text-muted)',
-      position: 'relative',
-    }}>
+    <div className="server-toolbar">
+      {/* Online dot */}
+      <span className={`status-dot ${serverInfo ? 'status-dot--online' : 'status-dot--offline'}`} />
+
       {/* URL + QR toggle */}
       {serverInfo ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ color: 'var(--text-muted)' }}>Network:</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, position: 'relative' }}>
+          <span style={{ color: 'var(--text-muted)' }}>Network</span>
+          <span style={{ color: 'var(--border)', userSelect: 'none' }}>·</span>
           <button
             onClick={() => setShowQR((v) => !v)}
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
-              color: 'var(--color-accent)', fontSize: 12, fontFamily: 'monospace',
-              padding: 0, textDecoration: 'underline dotted',
+              color: 'var(--accent)', fontSize: 11, fontFamily: 'monospace',
+              padding: 0,
             }}
             title="Click to show QR code"
           >
             {serverInfo.url}
           </button>
+
           {/* QR popup */}
           {showQR && qrDataUrl && (
             <div
@@ -90,20 +80,21 @@ export function ServerToolbar({ serverInfo, lastSyncedAt, onRestart }: Props): J
               style={{
                 position: 'absolute',
                 top: '100%',
-                left: 16,
+                left: 0,
                 zIndex: 1000,
                 background: '#fff',
-                borderRadius: 8,
-                padding: 12,
-                boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+                borderRadius: 12,
+                padding: 14,
+                marginTop: 8,
+                boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                gap: 6,
+                gap: 8,
               }}
             >
-              <img src={qrDataUrl} alt="QR code" width={200} height={200} />
-              <span style={{ color: '#333', fontSize: 11, fontFamily: 'monospace' }}>{serverInfo.url}</span>
+              <img src={qrDataUrl} alt="QR code for mobile access" width={200} height={200} />
+              <span style={{ color: '#555', fontSize: 11, fontFamily: 'monospace' }}>{serverInfo.url}</span>
             </div>
           )}
         </div>
@@ -112,27 +103,33 @@ export function ServerToolbar({ serverInfo, lastSyncedAt, onRestart }: Props): J
       )}
 
       {/* Sync timestamp */}
-      <span style={{ marginLeft: 'auto', color: 'var(--text-muted)', opacity: 0.7 }}>
-        Last synced: {relTime}
-      </span>
+      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5 }}>
+          <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+        <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>
+          Synced {relTime}
+        </span>
+      </div>
 
       {/* Restart button */}
       <button
         onClick={handleRestart}
         disabled={restarting}
+        className="btn-ghost"
         style={{
           padding: '3px 10px',
           fontSize: 11,
           cursor: restarting ? 'not-allowed' : 'pointer',
-          background: 'rgba(255,255,255,0.06)',
-          color: 'var(--text-muted)',
-          border: '1px solid rgba(255,255,255,0.10)',
-          borderRadius: 4,
           opacity: restarting ? 0.5 : 1,
         }}
         title="Restart local server"
       >
-        {restarting ? 'Restarting…' : '↺ Restart'}
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+        </svg>
+        {restarting ? 'Restarting…' : 'Restart'}
       </button>
     </div>
   )

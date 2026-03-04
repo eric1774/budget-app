@@ -10,22 +10,23 @@ interface BalanceChartProps {
 type ChartType = 'line' | 'bar'
 
 const fmt = (v: number): string =>
-  new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 }).format(v)
+  new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v)
 
 const btnStyle = (active: boolean): React.CSSProperties => ({
   width: 28,
   height: 28,
-  border: 'none',
-  borderRadius: 6,
+  border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
+  borderRadius: 7,
   cursor: 'pointer',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  background: active ? 'var(--color-accent)' : 'rgba(255,255,255,0.08)',
+  background: active ? 'var(--accent-dim)' : 'var(--bg-elevated)',
   padding: 0,
+  transition: 'background 150ms ease, border-color 150ms ease',
 })
 
-const iconFill = (active: boolean): string => (active ? '#1a1d23' : 'var(--text-muted)')
+const iconFill = (active: boolean): string => (active ? 'var(--accent)' : 'var(--text-muted)')
 
 export function BalanceChart({ transactions }: BalanceChartProps): JSX.Element {
   const [chartType, setChartType] = useState<ChartType>('line')

@@ -1,10 +1,11 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts'
 import type { Transaction } from '../../../shared/types'
 import { GlassCard } from './GlassCard'
 
 interface CategoryBreakdownChartProps {
   transactions: Transaction[]
+  onCategoryDoubleClick?: (category: string) => void
 }
 
 type ChartType = 'bar' | 'pie'
@@ -12,25 +13,38 @@ type ChartType = 'bar' | 'pie'
 const COLORS = ['#20c8a0', '#06b6d4', '#818cf8', '#fb923c', '#f472b6', '#a78bfa', '#34d399', '#60a5fa']
 
 const fmt = (v: number): string =>
-  new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 }).format(v)
+  new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v)
 
 const btnStyle = (active: boolean): React.CSSProperties => ({
   width: 28,
   height: 28,
-  border: 'none',
-  borderRadius: 6,
+  border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
+  borderRadius: 7,
   cursor: 'pointer',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  background: active ? 'var(--color-accent)' : 'rgba(255,255,255,0.08)',
+  background: active ? 'var(--accent-dim)' : 'var(--bg-elevated)',
   padding: 0,
+  transition: 'background 150ms ease, border-color 150ms ease',
 })
 
-const iconFill = (active: boolean): string => (active ? '#1a1d23' : 'var(--text-muted)')
+const iconFill = (active: boolean): string => (active ? 'var(--accent)' : 'var(--text-muted)')
 
-export function CategoryBreakdownChart({ transactions }: CategoryBreakdownChartProps): JSX.Element {
+export function CategoryBreakdownChart({ transactions, onCategoryDoubleClick }: CategoryBreakdownChartProps): JSX.Element {
   const [chartType, setChartType] = useState<ChartType>('bar')
+  const lastClickRef = useRef<{ category: string; time: number } | null>(null)
+
+  const handleCategoryClick = (category: string): void => {
+    if (!onCategoryDoubleClick) return
+    const now = Date.now()
+    if (lastClickRef.current && lastClickRef.current.category === category && now - lastClickRef.current.time < 350) {
+      onCategoryDoubleClick(category)
+      lastClickRef.current = null
+    } else {
+      lastClickRef.current = { category, time: now }
+    }
+  }
 
   const catMap = new Map<string, number>()
   for (const t of transactions) {
@@ -47,6 +61,7 @@ export function CategoryBreakdownChart({ transactions }: CategoryBreakdownChartP
   const tooltipStyle = {
     contentStyle: { background: 'rgba(30,34,45,0.95)', border: '1px solid var(--border-accent)', borderRadius: 8, fontSize: 12 },
     labelStyle: { color: 'var(--text-primary)', marginBottom: 4 },
+    itemStyle: { color: '#ffffff' },
   }
 
   return (
@@ -88,13 +103,13 @@ export function CategoryBreakdownChart({ transactions }: CategoryBreakdownChartP
           <ResponsiveContainer width="100%" height={chartHeight}>
             <BarChart data={data} layout="vertical" margin={{ top: 4, right: 16, bottom: 4, left: 0 }}>
               <XAxis type="number" tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} tick={{ fill: 'var(--text-muted)', fontSize: 10 }} axisLine={false} tickLine={false} />
-              <YAxis type="category" dataKey="category" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} tickLine={false} width={110} />
+              <YAxis type="category" dataKey="category" tick={{ fill: 'var(--text-muted)', fontSize: 10 }} axisLine={false} tickLine={false} width={90} />
               <Tooltip
                 {...tooltipStyle}
                 formatter={(value: number) => [fmt(value), 'Spent YTD']}
                 cursor={{ fill: 'rgba(255,255,255,0.04)' }}
               />
-              <Bar dataKey="total" barSize={barSize} radius={[0, 4, 4, 0]}>
+              <Bar dataKey="total" barSize={barSize} radius={[0, 4, 4, 0]} onClick={(entry) => handleCategoryClick(entry.category)} style={{ cursor: onCategoryDoubleClick ? 'pointer' : undefined }}>
                 {data.map((_, index) => (
                   <Cell key={index} fill={COLORS[index % COLORS.length]} />
                 ))}
@@ -111,6 +126,8 @@ export function CategoryBreakdownChart({ transactions }: CategoryBreakdownChartP
                 cx="50%"
                 cy="50%"
                 outerRadius={100}
+                onClick={(entry) => handleCategoryClick(entry.category)}
+                style={{ cursor: onCategoryDoubleClick ? 'pointer' : undefined }}
               >
                 {data.map((_, index) => (
                   <Cell key={index} fill={COLORS[index % COLORS.length]} />

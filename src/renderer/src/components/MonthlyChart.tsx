@@ -20,25 +20,28 @@ interface MonthlyChartProps {
 type ChartType = 'bar' | 'line'
 
 const fmt = (v: number): string =>
-  new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 }).format(v)
+  new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v)
 
 const btnStyle = (active: boolean): React.CSSProperties => ({
   width: 28,
   height: 28,
-  border: 'none',
-  borderRadius: 6,
+  border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
+  borderRadius: 7,
   cursor: 'pointer',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  background: active ? 'var(--color-accent)' : 'rgba(255,255,255,0.08)',
+  background: active ? 'var(--accent-dim)' : 'var(--bg-elevated)',
   padding: 0,
+  transition: 'background 150ms ease, border-color 150ms ease',
 })
 
-const iconFill = (active: boolean): string => (active ? '#1a1d23' : 'var(--text-muted)')
+const iconFill = (active: boolean): string => (active ? 'var(--accent)' : 'var(--text-muted)')
 
 export function MonthlyChart({ transactions }: MonthlyChartProps): JSX.Element {
   const [chartType, setChartType] = useState<ChartType>('bar')
+
+  const EXPENSE_EXCLUDE = new Set(['SAVINGS!', 'House Fund', 'Retirement'])
 
   // Group by YYYY-MM
   const monthMap = new Map<string, { income: number; expense: number; label: string }>()
@@ -48,7 +51,7 @@ export function MonthlyChart({ transactions }: MonthlyChartProps): JSX.Element {
     if (!monthMap.has(key)) monthMap.set(key, { income: 0, expense: 0, label })
     const entry = monthMap.get(key)!
     entry.income += t.income
-    entry.expense += t.debit
+    if (!EXPENSE_EXCLUDE.has(t.category)) entry.expense += t.debit
   }
   const data = Array.from(monthMap.entries())
     .sort(([a], [b]) => a.localeCompare(b))

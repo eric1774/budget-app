@@ -515,9 +515,13 @@ export default function App(): JSX.Element {
         {banner && (
           <Banner {...banner} onDismiss={() => setBanner(null)} />
         )}
-        <h1 style={{ color: 'var(--color-accent)', fontSize: 28, fontWeight: 700 }}>Budget Dashboard</h1>
-        <p style={{ color: 'var(--text-muted)' }}>Select your Budget.xlsx file to get started.</p>
-        <button style={styles.button} onClick={handleSelectFile}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--accent)', boxShadow: '0 0 12px var(--accent-glow)' }} />
+          <h1 style={{ color: 'var(--text-primary)', fontSize: 22, fontWeight: 600, letterSpacing: '0.01em' }}>Budget Dashboard</h1>
+        </div>
+        <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 24 }}>Select your Budget.xlsx file to get started.</p>
+        <button className="btn-primary" onClick={handleSelectFile}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           Select File
         </button>
       </div>
@@ -558,23 +562,23 @@ export default function App(): JSX.Element {
 
   // Loaded state — full dashboard with tab navigation
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-app)' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-base)' }}>
       {banner && <Banner {...banner} onDismiss={() => setBanner(null)} />}
 
       {/* Slim header */}
       <header className="app-header">
-        <span style={{ fontWeight: 600, fontSize: 16, color: 'var(--color-accent)', letterSpacing: '0.02em' }}>
-          Budget Dashboard
-        </span>
+        <div className="app-header__brand">
+          <div className="app-header__logo-dot" />
+          <span className="app-header__title">Budget</span>
+        </div>
         <span className="app-header__filepath">
           {filePath ?? ''}
         </span>
-        <button
-          style={{ padding: '4px 12px', fontSize: 12, cursor: 'pointer', background: 'rgba(255,255,255,0.08)', color: 'var(--text-primary)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6, whiteSpace: 'nowrap' }}
-          onClick={handleSelectFile}
-        >
-          Change File
-        </button>
+        <div className="app-header__actions">
+          <button className="btn-ghost" onClick={handleSelectFile}>
+            Change File
+          </button>
+        </div>
       </header>
 
       {/* Server toolbar — only renders inside Electron */}
@@ -585,11 +589,12 @@ export default function App(): JSX.Element {
       />
 
       {/* Tab navigation */}
-      <nav style={{ display: 'flex', gap: 0, borderBottom: '1px solid rgba(255,255,255,0.06)', width: '100%' }}>
+      <nav className="tab-nav">
         <button
           className={`tab-btn${activeTab === 'dashboard' ? ' tab-btn--active' : ''}`}
           onClick={() => setActiveTab('dashboard')}
         >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
           Dashboard
         </button>
         <button
@@ -597,6 +602,7 @@ export default function App(): JSX.Element {
           onClick={() => setActiveTab('budget')}
           style={{ position: 'relative' }}
         >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           Budget
           {isAnyOverBudget && (
             <span className="budget-tab-badge" aria-label="Some categories over budget" />
@@ -606,18 +612,21 @@ export default function App(): JSX.Element {
           className={`tab-btn${activeTab === 'log' ? ' tab-btn--active' : ''}`}
           onClick={() => setActiveTab('log')}
         >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
           Log
         </button>
         <button
           className={`tab-btn${activeTab === 'goals' ? ' tab-btn--active' : ''}`}
           onClick={() => { setActiveTab('goals'); setSelectedGoalId(null) }}
         >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
           Goals
         </button>
         <button
           className={`tab-btn${activeTab === 'assets' ? ' tab-btn--active' : ''}`}
           onClick={() => setActiveTab('assets')}
         >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
           Assets
         </button>
       </nav>
@@ -628,15 +637,19 @@ export default function App(): JSX.Element {
           position: 'fixed',
           bottom: 16,
           left: 16,
-          background: 'rgba(60,60,60,0.85)',
-          border: '1px solid rgba(255,255,255,0.15)',
-          borderRadius: 6,
-          padding: '4px 10px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          background: 'rgba(15,22,35,0.92)',
+          border: '1px solid var(--border)',
+          borderRadius: 8,
+          padding: '6px 12px',
           fontSize: 11,
           color: 'var(--text-muted)',
           zIndex: 999,
-          letterSpacing: '0.04em',
+          backdropFilter: 'blur(12px)',
         }}>
+          <span className="status-dot status-dot--offline" />
           Offline
         </div>
       )}
@@ -647,15 +660,20 @@ export default function App(): JSX.Element {
           position: 'fixed',
           bottom: 16,
           right: 16,
-          background: 'rgba(255,200,0,0.15)',
-          border: '1px solid rgba(255,200,0,0.4)',
-          borderRadius: 6,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          background: 'rgba(15,22,35,0.92)',
+          border: '1px solid rgba(251,191,36,0.3)',
+          borderRadius: 8,
           padding: '6px 12px',
-          fontSize: 12,
-          color: '#ffd166',
+          fontSize: 11,
+          color: 'var(--warning)',
           zIndex: 999,
+          backdropFilter: 'blur(12px)',
         }}>
-          Reconnecting...
+          <span className="status-dot status-dot--warn" />
+          Reconnecting…
         </div>
       )}
 
@@ -665,15 +683,20 @@ export default function App(): JSX.Element {
           position: 'fixed',
           bottom: wsState === 'reconnecting' ? 52 : 16,
           right: 16,
-          background: 'rgba(139,0,0,0.5)',
-          border: '1px solid rgba(255,100,100,0.4)',
-          borderRadius: 6,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          background: 'rgba(15,22,35,0.92)',
+          border: '1px solid rgba(248,113,113,0.3)',
+          borderRadius: 8,
           padding: '6px 12px',
-          fontSize: 12,
-          color: '#ff8585',
+          fontSize: 11,
+          color: 'var(--expense)',
           zIndex: 999,
+          backdropFilter: 'blur(12px)',
         }}>
-          Last updated {formatRelTime(parseErrorBadgeAt)} ⚠️
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Last updated {formatRelTime(parseErrorBadgeAt)}
         </div>
       )}
 
@@ -684,7 +707,6 @@ export default function App(): JSX.Element {
             allCategories={parseResult?.categories ?? []}
             onChange={setFilterState}
           />
-          {/* Dashboard body */}
           <main className="dashboard-main">
             <SummaryCards transactions={filteredTransactions} onCardClick={handleSummaryCardClick} />
 

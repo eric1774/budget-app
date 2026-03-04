@@ -1,236 +1,316 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ── IBM Plex Sans — financial, trustworthy, professional ── */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+
 :root {
-  --bg-app: #1a1d23;
-  --bg-card: rgba(36, 40, 50, 0.85);
-  --border-accent: rgba(32, 200, 160, 0.55);
-  --glow-accent: rgba(32, 200, 160, 0.25);
-  --text-primary: #e8eaf0;
-  --text-muted: #8a8fa8;
-  --color-income: #22c55e;
-  --color-expense: #ef4444;
-  --color-balance: #06b6d4;
-  --color-accent: #20c8a0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* Base surfaces */
+  --bg-base:     #080B10;
+  --bg-surface:  #0F1623;
+  --bg-elevated: #161D2E;
+  --bg-overlay:  rgba(15, 22, 35, 0.97);
+
+  /* Borders */
+  --border:        rgba(255, 255, 255, 0.07);
+  --border-subtle: rgba(255, 255, 255, 0.04);
+
+  /* Accent — teal */
+  --accent:      #2DD4BF;
+  --accent-dim:  rgba(45, 212, 191, 0.10);
+  --accent-glow: rgba(45, 212, 191, 0.18);
+
+  /* Semantic colors */
+  --income:  #34D399;
+  --expense: #F87171;
+  --balance: #60A5FA;
+  --warning: #FBBF24;
+  --savings: #A78BFA;
+
+  /* Text */
+  --text-primary:   #E6EDF3;
+  --text-secondary: #8B9BB4;
+  --text-muted:     #4B5568;
+
+  /* Legacy aliases (keep for backward compat) */
+  --bg-app:         var(--bg-base);
+  --bg-card:        rgba(15, 22, 35, 0.92);
+  --border-accent:  var(--border);
+  --glow-accent:    var(--accent-glow);
+  --color-accent:   var(--accent);
+  --color-income:   var(--income);
+  --color-expense:  var(--expense);
+  --color-balance:  var(--balance);
+
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
 }
 
 html, body, #root {
   height: 100%;
-  background-color: var(--bg-app);
+  background-color: var(--bg-base);
   color: var(--text-primary);
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Remove default scrollbar theming so dark bg shows behind scrollbar track */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--bg-app); }
-::-webkit-scrollbar-thumb { background: #3a3f52; border-radius: 3px; }
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.10); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
 
-/* ── Smooth transitions ── */
+/* ── Focus ring ── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
 
-/* Chart containers fade + subtle scale on data change */
+/* ── Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* ── Transitions ── */
 .chart-container {
   transition: opacity 200ms ease, transform 200ms ease;
 }
 
-/* Category chips transition background/color when toggling */
 .filter-chip {
-  transition: background 150ms ease, color 150ms ease, opacity 150ms ease;
+  transition: background 150ms ease, color 150ms ease, border-color 150ms ease, opacity 150ms ease;
 }
 
-/* Date preset segment buttons */
 .preset-segment {
   transition: background 150ms ease, color 150ms ease;
 }
 
-/* Chart type icon buttons */
 .chart-type-btn {
-  transition: background 120ms ease;
+  transition: background 120ms ease, color 120ms ease;
 }
 
-/* Filter bar slide-in on mount */
 .filter-bar {
-  animation: filterBarFadeIn 200ms ease forwards;
+  animation: filterBarFadeIn 180ms ease forwards;
 }
 
 @keyframes filterBarFadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
+  from { opacity: 0; transform: translateY(-3px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Tab navigation ── */
+/* ── App Header ── */
+.app-header {
+  padding: 0 24px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-base);
+  flex-shrink: 0;
+}
+
+.app-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-header__logo-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+  flex-shrink: 0;
+}
+
+.app-header__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0.01em;
+}
+
+.app-header__filepath {
+  font-size: 11px;
+  color: var(--text-muted);
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.app-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Tab Navigation ── */
+.tab-nav {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  width: 100%;
+  background: var(--bg-base);
+  flex-shrink: 0;
+  padding: 0 4px;
+}
+
 .tab-btn {
-  padding: 10px 24px;
+  position: relative;
+  padding: 0 20px;
+  height: 44px;
   background: none;
   border: none;
-  border-bottom: 2px solid transparent;
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
+  font-family: inherit;
   cursor: pointer;
-  transition: color 150ms ease, border-color 150ms ease;
-  min-height: 44px;        /* 44px minimum tap target per Apple HIG / WCAG */
-  flex: 1;                 /* stretch tabs to fill full nav width on mobile */
-}
-.tab-btn:hover { color: var(--text-primary); }
-.tab-btn--active {
-  color: var(--color-accent);
-  border-bottom-color: var(--color-accent);
+  transition: color 150ms ease;
+  min-height: 44px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
 }
 
-/* Red dot badge on Budget tab when any category over budget */
+.tab-btn:hover {
+  color: var(--text-secondary);
+}
+
+.tab-btn--active {
+  color: var(--accent);
+}
+
+/* Sliding indicator */
+.tab-btn--active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 12px;
+  right: 12px;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px 2px 0 0;
+}
+
+/* Red dot badge */
 .budget-tab-badge {
   position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 7px;
-  height: 7px;
+  top: 8px;
+  right: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: var(--color-expense);
+  background: var(--expense);
+  box-shadow: 0 0 6px rgba(248,113,113,0.6);
 }
 
-/* Remove number input spinner arrows */
+/* ── Buttons ── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  background: var(--accent);
+  color: #080B10;
+  border: none;
+  border-radius: 8px;
+  transition: opacity 150ms ease, transform 150ms ease;
+  white-space: nowrap;
+}
+.btn-primary:hover { opacity: 0.88; }
+.btn-primary:active { transform: scale(0.98); }
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  background: rgba(255,255,255,0.06);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
+  white-space: nowrap;
+}
+.btn-ghost:hover {
+  background: rgba(255,255,255,0.10);
+  color: var(--text-primary);
+  border-color: rgba(255,255,255,0.14);
+}
+
+/* ── Number input ── */
 .budget-input::-webkit-inner-spin-button,
 .budget-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .budget-input { -moz-appearance: textfield; }
 
-/* ── Mobile responsive layout ── */
-
-/* Budget tab summary cards — wrap on medium screens */
-.budget-summary-cards {
-  flex-wrap: wrap;
-}
-.budget-summary-cards > * {
-  flex: 1 1 calc(50% - 8px);
-  min-width: 120px;
+/* ── Dashboard Layout ── */
+.dashboard-main {
+  flex: 1;
+  width: 100%;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
 }
 
 .summary-cards {
-  display: flex;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  width: 100%;
 }
 
 .charts-row {
   display: flex;
-  gap: 24px;
+  gap: 16px;
 }
 .charts-row > * { flex: 1; min-width: 0; }
 
-.app-header {
-  padding: 12px 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-.app-header__filepath {
-  font-size: 12px;
-  color: var(--text-muted);
-  max-width: 400px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.dashboard-main {
-  flex: 1;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-@media (max-width: 640px) {
-  .filter-bar {
-    padding: 8px 12px !important;
-    gap: 8px;
-  }
-
-  .summary-cards {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
-  .summary-cards > *:last-child {
-    grid-column: 1 / -1;
-  }
-
-  .charts-row {
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .charts-row > * {
-    height: 200px;
-  }
-
-  .app-header {
-    padding: 10px 16px;
-  }
-  .app-header__filepath {
-    display: none;
-  }
-
-  .dashboard-main {
-    padding: 12px;
-    gap: 16px;
-  }
-
-  .tab-btn {
-    font-size: 13px;
-    padding: 10px 8px;
-  }
-
-  /* Budget summary cards: stack to single column */
-  .budget-summary-cards {
-    flex-direction: column;
-  }
-  .budget-summary-cards > * {
-    flex: none;
-    width: 100%;
-  }
-
-  /* Budget main: tighten gap */
-  .budget-main {
-    gap: 14px;
-  }
-
-  /* Budget tab outer padding */
-  .budget-tab-outer {
-    padding: 16px 12px;
-  }
-
-  /* Filter chip minimum tap target */
-  .filter-chip,
-  .preset-segment {
-    min-height: 36px;
-    display: inline-flex;
-    align-items: center;
-  }
-}
-
-/* ── Log Tab ── */
-
-/* Filter bar: sticky so it stays visible while scrolling the table */
-.log-filter-bar {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: var(--bg-app);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  padding: 10px 16px;
+/* ── Filter Bar ── */
+.filter-bar-wrap {
+  background: rgba(15, 22, 35, 0.60);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 10px 24px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  flex-shrink: 0;
 }
 
-/* Hide the scrollbar track on the chip row (WebKit) */
-.log-category-chips::-webkit-scrollbar {
-  height: 0;
-  width: 0;
+/* ── Log Tab ── */
+.log-filter-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bg-base);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 10px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
-/* Log tab outer container: fills remaining height so table scrolls internally */
+.log-category-chips::-webkit-scrollbar { height: 0; width: 0; }
+
 .log-tab-outer {
   flex: 1;
   display: flex;
@@ -239,36 +319,7 @@ html, body, #root {
   min-height: 0;
 }
 
-/* Chip transition (reuse existing .filter-chip class for chips rendered in LogFilterBar) */
-
-@media (max-width: 640px) {
-  .log-filter-bar {
-    padding: 8px 12px;
-    /* Re-assert sticky so it sticks to the viewport on mobile.
-       On mobile the page body scrolls (log-tab-outer height is unconstrained),
-       so we need position: sticky relative to the scroll root, not a clipped
-       overflow:hidden ancestor. */
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-
-  /* Allow the log tab outer to grow naturally on mobile so the page body
-     scrolls — this is required for position:sticky to work on the filter bar.
-     (overflow:hidden on a parent breaks sticky in all browsers.) */
-  .log-tab-outer {
-    overflow: visible;
-    min-height: 0;
-  }
-
-  /* On mobile, the first row (controls) wraps so search goes below toggles */
-  .log-filter-bar > div:first-child {
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-}
-
-/* ── Assets Tab ─────────────────────────────────────────── */
+/* ── Assets Tab ── */
 .assets-tab-outer {
   flex: 1;
   overflow-y: auto;
@@ -281,11 +332,204 @@ html, body, #root {
 .assets-account-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+  gap: 14px;
 }
 
-@media (max-width: 640px) {
-  .assets-account-grid {
-    grid-template-columns: 1fr;
+/* ── Budget Tab ── */
+.budget-tab-outer {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.budget-main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.budget-summary-cards {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.budget-summary-cards > * {
+  flex: 1 1 calc(33% - 8px);
+  min-width: 120px;
+}
+
+/* ── Clickable summary cards ── */
+.summary-card-clickable:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4), 0 1px 3px rgba(0,0,0,0.3) !important;
+}
+
+/* ── Progress bar ── */
+.progress-bar-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 400ms ease;
+}
+
+/* ── Server toolbar ── */
+.server-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 20px;
+  background: rgba(8, 11, 16, 0.6);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 11px;
+  color: var(--text-muted);
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* ── Status badges ── */
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-dot--online  { background: var(--income); box-shadow: 0 0 6px rgba(52,211,153,0.5); }
+.status-dot--offline { background: var(--text-muted); }
+.status-dot--warn    { background: var(--warning); }
+
+/* ── Category pill ── */
+.cat-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+/* ── Chip row scrollable ── */
+.chip-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+/* ── Responsive — Tablet ── */
+@media (max-width: 900px) {
+  .summary-cards {
+    grid-template-columns: repeat(3, 1fr);
   }
+  .summary-cards > *:nth-child(4),
+  .summary-cards > *:nth-child(5) {
+    flex: 1 1 calc(50% - 6px);
+  }
+}
+
+/* ── Responsive — Mobile ── */
+@media (max-width: 640px) {
+  .app-header {
+    padding: 0 14px;
+    height: 48px;
+  }
+  .app-header__filepath {
+    display: none;
+  }
+
+  .tab-btn {
+    font-size: 12px;
+    padding: 0 10px;
+    gap: 4px;
+  }
+  .tab-btn--active::after {
+    left: 6px;
+    right: 6px;
+  }
+
+  .dashboard-main {
+    padding: 14px;
+    gap: 14px;
+  }
+
+  .summary-cards {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .summary-cards > *:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .charts-row {
+    flex-direction: column;
+    gap: 14px;
+  }
+  .charts-row > * {
+    height: 200px;
+  }
+
+  .filter-bar-wrap {
+    padding: 8px 14px;
+    gap: 6px;
+  }
+
+  .chip-row {
+    gap: 4px;
+  }
+
+  .filter-chip,
+  .preset-segment {
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .budget-summary-cards {
+    flex-direction: column;
+  }
+  .budget-summary-cards > * {
+    flex: none;
+    width: 100%;
+  }
+
+  .budget-main { gap: 14px; }
+
+  .budget-tab-outer { padding: 14px; }
+
+  .log-filter-bar { padding: 8px 14px; }
+
+  .log-filter-bar > div:first-child {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .log-tab-outer {
+    overflow: visible;
+    min-height: 0;
+  }
+
+  .log-filter-bar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+
+  .assets-tab-outer { padding: 14px; }
+
+  .assets-account-grid { grid-template-columns: 1fr; }
+
+  .server-toolbar { padding: 4px 14px; }
 }

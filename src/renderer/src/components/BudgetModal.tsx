@@ -34,7 +34,9 @@ export function BudgetModal({ categories, monthKey, budgets, onBudgetChange, onC
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0,0,0,0.7)',
+        background: 'rgba(0,0,0,0.65)',
+        backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
         zIndex: 1000,
         display: 'flex',
         alignItems: 'center',
@@ -44,41 +46,42 @@ export function BudgetModal({ categories, monthKey, budgets, onBudgetChange, onC
       <GlassCard
         style={{
           width: '100%',
-          maxWidth: 480,
+          maxWidth: 440,
           maxHeight: '80vh',
           display: 'flex',
           flexDirection: 'column',
           margin: '0 16px',
+          borderRadius: 16,
         }}
       >
         {/* Modal header */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '16px 20px',
-            borderBottom: '1px solid rgba(255,255,255,0.08)',
-            flexShrink: 0,
-          }}
-        >
-          <span style={{ fontWeight: 600, fontSize: 15, color: 'var(--text-primary)' }}>
-            Edit Budgets — {formatMonthLabel(monthKey)}
-          </span>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '16px 20px',
+          borderBottom: '1px solid var(--border)',
+          flexShrink: 0,
+        }}>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: 15, color: 'var(--text-primary)' }}>Edit Budgets</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{formatMonthLabel(monthKey)}</div>
+          </div>
           <button
             onClick={onClose}
             aria-label="Close"
             style={{
-              background: 'none',
-              border: 'none',
+              width: 30, height: 30,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'var(--bg-elevated)',
+              border: '1px solid var(--border)',
               cursor: 'pointer',
               color: 'var(--text-muted)',
-              fontSize: 20,
-              lineHeight: 1,
-              padding: '0 4px',
+              fontSize: 16,
+              borderRadius: 8,
             }}
           >
-            ×
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
 
@@ -91,11 +94,11 @@ export function BudgetModal({ categories, monthKey, budgets, onBudgetChange, onC
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                padding: '10px 0',
-                borderBottom: '1px solid rgba(255,255,255,0.06)',
+                padding: '9px 0',
+                borderBottom: '1px solid var(--border-subtle)',
               }}
             >
-              <span style={{ color: 'var(--text-primary)', fontSize: 14 }}>{category}</span>
+              <span style={{ color: 'var(--text-primary)', fontSize: 13 }}>{category}</span>
               <input
                 type="number"
                 min="0"
@@ -105,14 +108,16 @@ export function BudgetModal({ categories, monthKey, budgets, onBudgetChange, onC
                 value={budgets[category] ? budgets[category] : ''}
                 onChange={(e) => handleInputChange(category, e.target.value)}
                 style={{
-                  width: 120,
-                  background: 'rgba(255,255,255,0.08)',
-                  border: '1px solid rgba(255,255,255,0.15)',
+                  width: 110,
+                  background: 'var(--bg-elevated)',
+                  border: '1px solid var(--border)',
                   color: 'var(--text-primary)',
-                  borderRadius: 6,
+                  borderRadius: 8,
                   padding: '6px 10px',
-                  fontSize: 14,
+                  fontSize: 13,
                   textAlign: 'right',
+                  fontFamily: 'inherit',
+                  outline: 'none',
                 }}
               />
             </div>
