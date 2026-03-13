@@ -57,6 +57,32 @@ export function deleteGoal(id: string): boolean {
   return true
 }
 
+export function setGoalDividendRate(id: string, dividendRate: number | null): Goal | null {
+  const data = readGoals()
+  const goal = data.goals.find(g => g.id === id)
+  if (!goal) return null
+  if (dividendRate === null) {
+    delete goal.dividendRate
+  } else {
+    goal.dividendRate = dividendRate
+  }
+  writeGoals(data)
+  return goal
+}
+
+export function setGoalStartingAmount(id: string, startingAmount: number | null): Goal | null {
+  const data = readGoals()
+  const goal = data.goals.find(g => g.id === id)
+  if (!goal) return null
+  if (startingAmount === null) {
+    delete goal.startingAmount
+  } else {
+    goal.startingAmount = startingAmount
+  }
+  writeGoals(data)
+  return goal
+}
+
 export function setGoalTarget(
   id: string,
   targetAmount: number | null,

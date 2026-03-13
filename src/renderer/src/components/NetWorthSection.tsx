@@ -1,4 +1,4 @@
-import type { AssetAccount } from '../../../shared/types'
+import type { AssetAccount, Mortgage } from '../../../shared/types'
 import { GlassCard } from './GlassCard'
 import {
   PieChart,
@@ -16,6 +16,7 @@ import {
 interface NetWorthSectionProps {
   accounts: AssetAccount[]
   dashboardBalance?: number
+  mortgages?: Mortgage[]
 }
 
 const cadFormatter = new Intl.NumberFormat('en-CA', {
@@ -44,13 +45,21 @@ const TYPE_COLORS: Record<string, string> = {
   'Hard Asset': '#e05a5a',
   Investing: '#a78bfa',
   Goal: '#34d399',
+  Mortgage: '#f97316',
 }
 
-export function NetWorthSection({ accounts, dashboardBalance }: NetWorthSectionProps): JSX.Element {
-  const totalNetWorth = accounts.reduce(
+export function NetWorthSection({ accounts, dashboardBalance, mortgages = [] }: NetWorthSectionProps): JSX.Element {
+  const accountsTotal = accounts.reduce(
     (sum, a) => sum + getDisplayBalance(a, dashboardBalance),
     0,
   )
+
+  // Mortgage equity = market value - principal balance
+  const totalEquity = mortgages.reduce((sum, m) => sum + (m.marketValue - m.principalBalance), 0)
+  const totalLiabilities = mortgages.reduce((sum, m) => sum + m.principalBalance, 0)
+
+  // Net worth = account balances + mortgage equity (equity already excludes liability)
+  const totalNetWorth = accountsTotal + totalEquity
 
   // --- NW-02: Monthly history ---
   // Collect all YYYY-MM values from all transactions
@@ -124,6 +133,10 @@ export function NetWorthSection({ accounts, dashboardBalance }: NetWorthSectionP
       typeMap[acct.type] = (typeMap[acct.type] ?? 0) + bal
     }
   }
+  // Include mortgage equity in the breakdown
+  if (totalEquity > 0) {
+    typeMap['Mortgage'] = (typeMap['Mortgage'] ?? 0) + totalEquity
+  }
   const breakdown = Object.entries(typeMap).map(([type, value]) => ({
     type,
     value,
@@ -134,15 +147,28 @@ export function NetWorthSection({ accounts, dashboardBalance }: NetWorthSectionP
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* NW-01: Total net worth */}
-      <GlassCard style={{ padding: 24 }}>
-        <div style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 8 }}>
-          Total Net Worth
-        </div>
-        <div style={{ color: 'var(--color-accent)', fontSize: 32, fontWeight: 700 }}>
-          {cadFormatter.format(totalNetWorth)}
-        </div>
-      </GlassCard>
+      {/* NW-01: Total net worth + Total liabilities side by side */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <GlassCard style={{ padding: 24 }}>
+          <div style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 8 }}>
+            Total Net Worth
+          </div>
+          <div style={{ color: 'var(--color-accent)', fontSize: 32, fontWeight: 700 }}>
+            {cadFormatter.format(totalNetWorth)}
+          </div>
+        </GlassCard>
+
+        {totalLiabilities > 0 && (
+          <GlassCard style={{ padding: 24 }}>
+            <div style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 8 }}>
+              Total Liabilities
+            </div>
+            <div style={{ color: '#ef4444', fontSize: 32, fontWeight: 700 }}>
+              {cadFormatter.format(totalLiabilities)}
+            </div>
+          </GlassCard>
+        )}
+      </div>
 
       {/* NW-02: Monthly history line chart */}
       <GlassCard style={{ padding: 24 }}>
@@ -223,22 +249,24 @@ export function NetWorthSection({ accounts, dashboardBalance }: NetWorthSectionP
             No balances to display
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
+          <ResponsiveContainer width="100%" height={340}>
+            <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
               <Pie
                 data={breakdown}
                 dataKey="value"
                 nameKey="type"
                 cx="50%"
-                cy="42%"
-                innerRadius={45}
-                outerRadius={75}
+                cy={110}
+                innerRadius={40}
+                outerRadius={68}
               >
                 {breakdown.map((entry) => (
                   <Cell key={entry.type} fill={entry.color} />
                 ))}
               </Pie>
               <Legend
+                verticalAlign="bottom"
+                wrapperStyle={{ paddingTop: 12, fontSize: 12, lineHeight: '20px' }}
                 formatter={(value: string) => {
                   const entry = breakdown.find((b) => b.type === value)
                   return `${value}: ${entry ? cadFormatter.format(entry.value) : ''}`

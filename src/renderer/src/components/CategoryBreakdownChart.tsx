@@ -16,17 +16,11 @@ const fmt = (v: number): string =>
   new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v)
 
 const btnStyle = (active: boolean): React.CSSProperties => ({
-  width: 28,
-  height: 28,
   border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
-  borderRadius: 7,
+  borderRadius: 8,
   cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
   background: active ? 'var(--accent-dim)' : 'var(--bg-elevated)',
   padding: 0,
-  transition: 'background 150ms ease, border-color 150ms ease',
 })
 
 const iconFill = (active: boolean): string => (active ? 'var(--accent)' : 'var(--text-muted)')
@@ -75,9 +69,10 @@ export function CategoryBreakdownChart({ transactions, onCategoryDoubleClick }: 
             className="chart-type-btn"
             style={btnStyle(chartType === 'bar')}
             onClick={() => setChartType('bar')}
-            title="Bar chart"
+            aria-label="Bar chart view"
+            aria-pressed={chartType === 'bar'}
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill={iconFill(chartType === 'bar')}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill={iconFill(chartType === 'bar')} aria-hidden="true">
               <rect x="1" y="9" width="3" height="6" />
               <rect x="6" y="5" width="3" height="10" />
               <rect x="11" y="2" width="3" height="13" />
@@ -87,9 +82,10 @@ export function CategoryBreakdownChart({ transactions, onCategoryDoubleClick }: 
             className="chart-type-btn"
             style={btnStyle(chartType === 'pie')}
             onClick={() => setChartType('pie')}
-            title="Pie chart"
+            aria-label="Pie chart view"
+            aria-pressed={chartType === 'pie'}
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill={iconFill(chartType === 'pie')}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill={iconFill(chartType === 'pie')} aria-hidden="true">
               <path d="M8 8 L8 1 A7 7 0 0 1 15 8 Z" />
               <circle cx="8" cy="8" r="7" fill="none" stroke={iconFill(chartType === 'pie')} strokeWidth="1.5" />
             </svg>

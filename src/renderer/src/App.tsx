@@ -64,34 +64,19 @@ const bannerBg: Record<BannerState['type'], string> = {
 function Banner({ type, message, dismissible, onDismiss }: BannerProps): JSX.Element {
   return (
     <div
-      style={{
-        backgroundColor: bannerBg[type],
-        color: bannerColors[type],
-        padding: '10px 16px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        fontFamily: 'sans-serif',
-        fontSize: 14,
-        borderBottom: `2px solid ${bannerColors[type]}`,
-      }}
+      className={`app-banner app-banner--${type}`}
+      role="alert"
+      style={{ position: 'relative', top: 0, left: 0, transform: 'none', borderRadius: 0, maxWidth: '100%', animation: 'none' }}
     >
       <span>{message}</span>
       {dismissible && (
         <button
+          className="btn-icon"
           onClick={onDismiss}
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: bannerColors[type],
-            fontWeight: 'bold',
-            fontSize: 16,
-            marginLeft: 12,
-          }}
-          aria-label="Dismiss"
+          aria-label="Dismiss notification"
+          style={{ color: bannerColors[type], width: 32, height: 32, minWidth: 32, minHeight: 32 }}
         >
-          ×
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       )}
     </div>
@@ -589,45 +574,60 @@ export default function App(): JSX.Element {
       />
 
       {/* Tab navigation */}
-      <nav className="tab-nav">
+      <nav className="tab-nav" role="tablist" aria-label="Main navigation">
         <button
+          role="tab"
+          aria-selected={activeTab === 'dashboard'}
+          aria-controls="panel-dashboard"
           className={`tab-btn${activeTab === 'dashboard' ? ' tab-btn--active' : ''}`}
           onClick={() => setActiveTab('dashboard')}
         >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          Dashboard
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span className="tab-label">Dashboard</span>
         </button>
         <button
+          role="tab"
+          aria-selected={activeTab === 'budget'}
+          aria-controls="panel-budget"
           className={`tab-btn${activeTab === 'budget' ? ' tab-btn--active' : ''}`}
           onClick={() => setActiveTab('budget')}
           style={{ position: 'relative' }}
         >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          Budget
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <span className="tab-label">Budget</span>
           {isAnyOverBudget && (
-            <span className="budget-tab-badge" aria-label="Some categories over budget" />
+            <span className="budget-tab-badge" role="status" aria-label="Some categories over budget" />
           )}
         </button>
         <button
+          role="tab"
+          aria-selected={activeTab === 'log'}
+          aria-controls="panel-log"
           className={`tab-btn${activeTab === 'log' ? ' tab-btn--active' : ''}`}
           onClick={() => setActiveTab('log')}
         >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-          Log
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          <span className="tab-label">Log</span>
         </button>
         <button
+          role="tab"
+          aria-selected={activeTab === 'goals'}
+          aria-controls="panel-goals"
           className={`tab-btn${activeTab === 'goals' ? ' tab-btn--active' : ''}`}
           onClick={() => { setActiveTab('goals'); setSelectedGoalId(null) }}
         >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-          Goals
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+          <span className="tab-label">Goals</span>
         </button>
         <button
+          role="tab"
+          aria-selected={activeTab === 'assets'}
+          aria-controls="panel-assets"
           className={`tab-btn${activeTab === 'assets' ? ' tab-btn--active' : ''}`}
           onClick={() => setActiveTab('assets')}
         >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-          Assets
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          <span className="tab-label">Assets</span>
         </button>
       </nav>
 
@@ -701,7 +701,7 @@ export default function App(): JSX.Element {
       )}
 
       {activeTab === 'dashboard' ? (
-        <>
+        <div id="panel-dashboard" role="tabpanel" aria-labelledby="tab-dashboard" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
           <FilterBar
             filterState={filterState}
             allCategories={parseResult?.categories ?? []}
@@ -709,25 +709,22 @@ export default function App(): JSX.Element {
           />
           <main className="dashboard-main">
             <SummaryCards transactions={filteredTransactions} onCardClick={handleSummaryCardClick} />
-
-            {/* Charts */}
             <MonthlyChart transactions={filteredTransactions} />
-
             <div className="charts-row">
               <CategoryBreakdownChart transactions={filteredTransactions} onCategoryDoubleClick={handleCategoryDoubleClick} />
               <BalanceChart transactions={filteredTransactions} />
             </div>
           </main>
-        </>
+        </div>
       ) : activeTab === 'budget' ? (
-        <main className="budget-tab-outer" style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
+        <main id="panel-budget" role="tabpanel" aria-labelledby="tab-budget" className="budget-tab-outer">
           <BudgetTab
             transactions={parseResult?.transactions ?? []}
             categories={(parseResult?.categories ?? []).filter(c => c !== 'Income')}
           />
         </main>
       ) : activeTab === 'log' ? (
-        <div className="log-tab-outer">
+        <div id="panel-log" role="tabpanel" aria-labelledby="tab-log" className="log-tab-outer">
           <LogFilterBar
             filterState={logFilterState}
             allCategories={parseResult?.categories ?? []}
@@ -740,18 +737,22 @@ export default function App(): JSX.Element {
           />
         </div>
       ) : activeTab === 'goals' ? (
-        <GoalsTab
-          onGoalSelect={(goal) => setSelectedGoalId(goal?.id ?? null)}
-          selectedGoalId={selectedGoalId}
-        />
+        <div id="panel-goals" role="tabpanel" aria-labelledby="tab-goals" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+          <GoalsTab
+            onGoalSelect={(goal) => setSelectedGoalId(goal?.id ?? null)}
+            selectedGoalId={selectedGoalId}
+          />
+        </div>
       ) : (
-        <AssetsTab
-          onAccountSelect={(account) => setSelectedAssetAccountId(account?.id ?? null)}
-          selectedAccountId={selectedAssetAccountId}
-          dashboardBalance={filteredTransactions.length > 0
-            ? filteredTransactions[filteredTransactions.length - 1].balance
-            : undefined}
-        />
+        <div id="panel-assets" role="tabpanel" aria-labelledby="tab-assets" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+          <AssetsTab
+            onAccountSelect={(account) => setSelectedAssetAccountId(account?.id ?? null)}
+            selectedAccountId={selectedAssetAccountId}
+            dashboardBalance={filteredTransactions.length > 0
+              ? filteredTransactions[filteredTransactions.length - 1].balance
+              : undefined}
+          />
+        </div>
       )}
     </div>
   )

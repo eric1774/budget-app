@@ -13,17 +13,11 @@ const fmt = (v: number): string =>
   new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v)
 
 const btnStyle = (active: boolean): React.CSSProperties => ({
-  width: 28,
-  height: 28,
   border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
-  borderRadius: 7,
+  borderRadius: 8,
   cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
   background: active ? 'var(--accent-dim)' : 'var(--bg-elevated)',
   padding: 0,
-  transition: 'background 150ms ease, border-color 150ms ease',
 })
 
 const iconFill = (active: boolean): string => (active ? 'var(--accent)' : 'var(--text-muted)')
@@ -73,9 +67,10 @@ export function BalanceChart({ transactions }: BalanceChartProps): JSX.Element {
             className="chart-type-btn"
             style={btnStyle(chartType === 'line')}
             onClick={() => setChartType('line')}
-            title="Line chart"
+            aria-label="Line chart view"
+            aria-pressed={chartType === 'line'}
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke={iconFill(chartType === 'line')} strokeWidth="2">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke={iconFill(chartType === 'line')} strokeWidth="2" aria-hidden="true">
               <polyline points="1,13 5,8 9,10 15,3" />
             </svg>
           </button>
@@ -83,9 +78,10 @@ export function BalanceChart({ transactions }: BalanceChartProps): JSX.Element {
             className="chart-type-btn"
             style={btnStyle(chartType === 'bar')}
             onClick={() => setChartType('bar')}
-            title="Bar chart"
+            aria-label="Bar chart view"
+            aria-pressed={chartType === 'bar'}
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill={iconFill(chartType === 'bar')}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill={iconFill(chartType === 'bar')} aria-hidden="true">
               <rect x="1" y="9" width="3" height="6" />
               <rect x="6" y="5" width="3" height="10" />
               <rect x="11" y="2" width="3" height="13" />

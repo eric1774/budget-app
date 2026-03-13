@@ -63,36 +63,22 @@ export function FilterBar({ filterState, allCategories, onChange }: FilterBarPro
   return (
     <div className="filter-bar filter-bar-wrap">
       {/* Top row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
 
         {/* Segmented date control */}
-        <div style={{
-          display: 'flex',
-          borderRadius: 8,
-          overflow: 'hidden',
-          border: '1px solid var(--border)',
-          background: 'rgba(255,255,255,0.03)',
-        }}>
+        <div className="date-preset-group">
           {DATE_PRESETS.map((preset, i) => {
             const isActive = datePreset === preset.key
             return (
               <button
                 key={preset.key}
-                className="preset-segment"
+                className={`preset-segment${isActive ? ' preset-segment--active' : ''}`}
                 onClick={() => handlePresetClick(preset.key)}
                 style={{
-                  padding: '5px 12px',
-                  fontSize: 12,
                   fontWeight: isActive ? 600 : 400,
-                  fontFamily: 'inherit',
-                  cursor: 'pointer',
                   background: isActive ? 'var(--accent)' : 'transparent',
                   color: isActive ? '#080B10' : 'var(--text-muted)',
-                  border: 'none',
                   borderRight: i < DATE_PRESETS.length - 1 ? '1px solid var(--border)' : 'none',
-                  whiteSpace: 'nowrap',
-                  transition: 'background 150ms ease, color 150ms ease',
-                  minHeight: 34,
                 }}
               >
                 {preset.label}
@@ -141,10 +127,8 @@ export function FilterBar({ filterState, allCategories, onChange }: FilterBarPro
 
         {/* Summary */}
         <span style={{
-          marginLeft: 'auto',
           fontSize: 11,
           color: 'var(--text-muted)',
-          whiteSpace: 'nowrap',
           letterSpacing: '0.02em',
         }}>
           {summaryText}

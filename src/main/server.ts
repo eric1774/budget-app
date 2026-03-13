@@ -7,6 +7,36 @@ import { WebSocketServer, WebSocket } from 'ws'
 import { app } from 'electron'
 import { is } from '@electron-toolkit/utils'
 import type { ServerInfo, ParseResponse } from '../shared/types'
+import { getBudgets, setBudget } from './store'
+import {
+  getAccounts,
+  addAccount,
+  updateAccount,
+  deleteAccount,
+  addTransaction,
+  updateTransaction,
+  deleteTransaction,
+} from './assets-store'
+import {
+  getGoals,
+  addGoal,
+  deleteGoal,
+  setGoalTarget,
+  setGoalDividendRate,
+  setGoalStartingAmount,
+  addContribution,
+  deleteContribution,
+} from './goals-store'
+import {
+  getMortgages,
+  addMortgage,
+  updateMortgage,
+  deleteMortgage,
+  getMortgagePayments,
+  addMortgagePayment,
+  updateMortgagePayment,
+  deleteMortgagePayment,
+} from './mortgage-store'
 
 // --- LAN IP detection ---
 function getLanIp(): string {
@@ -51,6 +81,21 @@ const MIME: Record<string, string> = {
   '.woff2': 'font/woff2',
 }
 
+// --- Body reader helper ---
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function readBody(req: IncomingMessage, res: ServerResponse, cb: (body: any) => void): void {
+  let raw = ''
+  req.on('data', (chunk) => { raw += chunk.toString() })
+  req.on('end', () => {
+    try {
+      cb(JSON.parse(raw))
+    } catch {
+      res.writeHead(400, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'Invalid JSON' }))
+    }
+  })
+}
+
 // --- Server state ---
 let httpServer: ReturnType<typeof createHttpServer> | null = null
 let wss: WebSocketServer | null = null
@@ -84,6 +129,273 @@ export async function startServer(): Promise<ServerInfo> {
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify(lastSnapshot))
       }
+      return
+    }
+
+    // REST endpoint: GET /api/budgets — returns full BudgetMap
+    if (urlPath === '/api/budgets' && req.method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify(getBudgets()))
+      return
+    }
+
+    // REST endpoint: PUT /api/budgets — updates a single budget entry
+    if (urlPath === '/api/budgets' && req.method === 'PUT') {
+      let body = ''
+      req.on('data', (chunk) => { body += chunk.toString() })
+      req.on('end', () => {
+        try {
+          const { monthKey, category, amount } = JSON.parse(body)
+          setBudget(monthKey, category, amount)
+          res.writeHead(200, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ success: true }))
+        } catch {
+          res.writeHead(400, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'Invalid request' }))
+        }
+      })
+      return
+    }
+
+    // ── Assets REST API ───────────────────────────────────────────────────────
+
+    // GET /api/assets/accounts
+    if (urlPath === '/api/assets/accounts' && req.method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify(getAccounts()))
+      return
+    }
+
+    // POST /api/assets/accounts
+    if (urlPath === '/api/assets/accounts' && req.method === 'POST') {
+      readBody(req, res, (body) => {
+        const result = addAccount(body.name, body.type)
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify(result))
+      })
+      return
+    }
+
+    // PUT /api/assets/accounts/:id
+    const accountMatch = urlPath.match(/^\/api\/assets\/accounts\/([^/]+)$/)
+    if (accountMatch && req.method === 'PUT') {
+      const id = accountMatch[1]
+      readBody(req, res, (body) => {
+        const result = updateAccount(id, { name: body.name, type: body.type })
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify(result))
+      })
+      return
+    }
+
+    // DELETE /api/assets/accounts/:id
+    if (accountMatch && req.method === 'DELETE') {
+      const id = accountMatch[1]
+      const result = deleteAccount(id)
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify(result))
+      return
+    }
+
+    // POST /api/assets/accounts/:accountId/transactions
+    const txBaseMatch = urlPath.match(/^\/api\/assets\/accounts\/([^/]+)\/transactions$/)
+    if (txBaseMatch && req.method === 'POST') {
+      const accountId = txBaseMatch[1]
+      readBody(req, res, (body) => {
+        const result = addTransaction(accountId, body.type, body.amount, body.date, body.note)
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify(result))
+      })
+      return
+    }
+
+    // PUT /api/assets/accounts/:accountId/transactions/:transactionId
+    const txMatch = urlPath.match(/^\/api\/assets\/accounts\/([^/]+)\/transactions\/([^/]+)$/)
+    if (txMatch && req.method === 'PUT') {
+      const [, accountId, transactionId] = txMatch
+      readBody(req, res, (body) => {
+        const result = updateTransaction(accountId, transactionId, { type: body.type, amount: body.amount, date: body.date, note: body.note })
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify(result))
+      })
+      return
+    }
+
+    // DELETE /api/assets/accounts/:accountId/transactions/:transactionId
+    if (txMatch && req.method === 'DELETE') {
+      const [, accountId, transactionId] = txMatch
+      const result = deleteTransaction(accountId, transactionId)
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify(result))
+      return
+    }
+
+    // ── Goals REST API ────────────────────────────────────────────────────────
+
+    // GET /api/goals
+    if (urlPath === '/api/goals' && req.method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify(getGoals()))
+      return
+    }
+
+    // POST /api/goals
+    if (urlPath === '/api/goals' && req.method === 'POST') {
+      readBody(req, res, (body) => {
+        const result = addGoal(body.name)
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify(result))
+      })
+      return
+    }
+
+    // DELETE /api/goals/:id
+    const goalMatch = urlPath.match(/^\/api\/goals\/([^/]+)$/)
+    if (goalMatch && req.method === 'DELETE') {
+      const id = goalMatch[1]
+      const result = deleteGoal(id)
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify(result))
+      return
+    }
+
+    // PUT /api/goals/:id/target
+    const goalTargetMatch = urlPath.match(/^\/api\/goals\/([^/]+)\/target$/)
+    if (goalTargetMatch && req.method === 'PUT') {
+      const id = goalTargetMatch[1]
+      readBody(req, res, (body) => {
+        const result = setGoalTarget(id, body.targetAmount, body.targetDate)
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify(result))
+      })
+      return
+    }
+
+    // PUT /api/goals/:id/dividend-rate
+    const goalDividendMatch = urlPath.match(/^\/api\/goals\/([^/]+)\/dividend-rate$/)
+    if (goalDividendMatch && req.method === 'PUT') {
+      const id = goalDividendMatch[1]
+      readBody(req, res, (body) => {
+        const result = setGoalDividendRate(id, body.dividendRate)
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify(result))
+      })
+      return
+    }
+
+    // PUT /api/goals/:id/starting-amount
+    const goalStartingMatch = urlPath.match(/^\/api\/goals\/([^/]+)\/starting-amount$/)
+    if (goalStartingMatch && req.method === 'PUT') {
+      const id = goalStartingMatch[1]
+      readBody(req, res, (body) => {
+        const result = setGoalStartingAmount(id, body.startingAmount)
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify(result))
+      })
+      return
+    }
+
+    // POST /api/goals/:goalId/contributions
+    const contribBaseMatch = urlPath.match(/^\/api\/goals\/([^/]+)\/contributions$/)
+    if (contribBaseMatch && req.method === 'POST') {
+      const goalId = contribBaseMatch[1]
+      readBody(req, res, (body) => {
+        const result = addContribution(goalId, body.amount, body.date, body.note)
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify(result))
+      })
+      return
+    }
+
+    // DELETE /api/goals/:goalId/contributions/:contributionId
+    const contribMatch = urlPath.match(/^\/api\/goals\/([^/]+)\/contributions\/([^/]+)$/)
+    if (contribMatch && req.method === 'DELETE') {
+      const [, goalId, contributionId] = contribMatch
+      const result = deleteContribution(goalId, contributionId)
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify(result))
+      return
+    }
+
+    // ── Mortgages REST API ──────────────────────────────────────────────────
+
+    // GET /api/mortgages
+    if (urlPath === '/api/mortgages' && req.method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify(getMortgages()))
+      return
+    }
+
+    // POST /api/mortgages
+    if (urlPath === '/api/mortgages' && req.method === 'POST') {
+      readBody(req, res, (body) => {
+        const result = addMortgage(body.name, body.marketValue, body.principalBalance)
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify(result))
+      })
+      return
+    }
+
+    // GET /api/mortgages/:id/payments
+    const mortgagePaymentsBase = urlPath.match(/^\/api\/mortgages\/([^/]+)\/payments$/)
+    if (mortgagePaymentsBase && req.method === 'GET') {
+      const mortgageId = mortgagePaymentsBase[1]
+      const result = getMortgagePayments(mortgageId)
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify(result))
+      return
+    }
+
+    // POST /api/mortgages/:id/payments
+    if (mortgagePaymentsBase && req.method === 'POST') {
+      const mortgageId = mortgagePaymentsBase[1]
+      readBody(req, res, (body) => {
+        const result = addMortgagePayment(mortgageId, body.date, body.principal, body.interest, body.escrow, body.note)
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify(result))
+      })
+      return
+    }
+
+    // PUT /api/mortgages/:id/payments/:pid
+    const mortgagePaymentMatch = urlPath.match(/^\/api\/mortgages\/([^/]+)\/payments\/([^/]+)$/)
+    if (mortgagePaymentMatch && req.method === 'PUT') {
+      const [, mortgageId, paymentId] = mortgagePaymentMatch
+      readBody(req, res, (body) => {
+        const result = updateMortgagePayment(mortgageId, paymentId, { date: body.date, principal: body.principal, interest: body.interest, escrow: body.escrow, note: body.note })
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify(result))
+      })
+      return
+    }
+
+    // DELETE /api/mortgages/:id/payments/:pid
+    if (mortgagePaymentMatch && req.method === 'DELETE') {
+      const [, mortgageId, paymentId] = mortgagePaymentMatch
+      const result = deleteMortgagePayment(mortgageId, paymentId)
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify(result))
+      return
+    }
+
+    // PUT /api/mortgages/:id
+    const mortgageMatch = urlPath.match(/^\/api\/mortgages\/([^/]+)$/)
+    if (mortgageMatch && req.method === 'PUT') {
+      const id = mortgageMatch[1]
+      readBody(req, res, (body) => {
+        const result = updateMortgage(id, { name: body.name, marketValue: body.marketValue, principalBalance: body.principalBalance })
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify(result))
+      })
+      return
+    }
+
+    // DELETE /api/mortgages/:id
+    if (mortgageMatch && req.method === 'DELETE') {
+      const id = mortgageMatch[1]
+      const result = deleteMortgage(id)
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify(result))
       return
     }
 

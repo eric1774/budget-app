@@ -3,6 +3,7 @@ import type { Goal } from '../../../shared/types'
 import { GlassCard } from './GlassCard'
 import { AddGoalModal, SetTargetModal, DeleteGoalModal } from './GoalModals'
 import { GoalDetailView } from './GoalDetailView'
+import * as api from '../api'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -14,7 +15,7 @@ const cadFormatter = new Intl.NumberFormat('en-CA', {
 })
 
 function goalBalance(goal: Goal): number {
-  return goal.contributions.reduce((sum, c) => sum + c.amount, 0)
+  return (goal.startingAmount ?? 0) + goal.contributions.reduce((sum, c) => sum + c.amount, 0)
 }
 
 function goalProgress(goal: Goal): number {
@@ -45,10 +46,8 @@ export function GoalsTab({ onGoalSelect, selectedGoalId }: GoalsTabProps): JSX.E
 
   const reloadGoals = useCallback(async () => {
     try {
-      if (typeof window !== 'undefined' && window.electronAPI) {
-        const data = await window.electronAPI.invoke('goals:get-all')
-        setGoals(Array.isArray(data) ? data : [])
-      }
+      const data = await api.getGoals()
+      setGoals(Array.isArray(data) ? data as Goal[] : [])
     } catch {
       setGoals([])
     }
@@ -67,19 +66,8 @@ export function GoalsTab({ onGoalSelect, selectedGoalId }: GoalsTabProps): JSX.E
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--text-primary)' }}>Goals</h2>
-        <button
-          style={{
-            background: 'var(--color-accent)',
-            color: '#1a1d23',
-            border: 'none',
-            borderRadius: 6,
-            padding: '8px 16px',
-            fontWeight: 600,
-            fontSize: 14,
-            cursor: 'pointer',
-          }}
-          onClick={() => setModal({ kind: 'add' })}
-        >
+        <button className="btn-primary" onClick={() => setModal({ kind: 'add' })}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Add Goal
         </button>
       </div>
@@ -97,7 +85,7 @@ export function GoalsTab({ onGoalSelect, selectedGoalId }: GoalsTabProps): JSX.E
           No goals yet. Add your first goal to get started.
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto', padding: '2px 0' }}>
           {goals.map((goal) => {
             const balance = goalBalance(goal)
             const progress = goalProgress(goal)
@@ -106,8 +94,8 @@ export function GoalsTab({ onGoalSelect, selectedGoalId }: GoalsTabProps): JSX.E
             return (
               <div
                 key={goal.id}
+                className="goal-card"
                 onClick={() => onGoalSelect(goal)}
-                style={{ cursor: 'pointer' }}
               >
                 <GlassCard>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
@@ -169,20 +157,12 @@ export function GoalsTab({ onGoalSelect, selectedGoalId }: GoalsTabProps): JSX.E
                         Set Goal
                       </button>
                       <button
-                        style={{
-                          background: 'rgba(239,68,68,0.12)',
-                          color: '#ef4444',
-                          border: '1px solid rgba(239,68,68,0.25)',
-                          borderRadius: 6,
-                          padding: '5px 8px',
-                          fontSize: 14,
-                          cursor: 'pointer',
-                          lineHeight: 1,
-                        }}
+                        className="btn-icon btn-icon--danger"
                         onClick={() => setModal({ kind: 'delete', goal })}
                         aria-label={`Delete ${goal.name}`}
+                        style={{ width: 36, height: 36, minWidth: 36, minHeight: 36 }}
                       >
-                        &times;
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                       </button>
                     </div>
                   </div>
@@ -198,7 +178,7 @@ export function GoalsTab({ onGoalSelect, selectedGoalId }: GoalsTabProps): JSX.E
         <AddGoalModal
           onClose={() => setModal(null)}
           onAdd={async (name) => {
-            await window.electronAPI.invoke('goals:add', name)
+            await api.addGoal(name)
             await reloadGoals()
             setModal(null)
           }}
@@ -209,7 +189,7 @@ export function GoalsTab({ onGoalSelect, selectedGoalId }: GoalsTabProps): JSX.E
           goal={modal.goal}
           onClose={() => setModal(null)}
           onSave={async (amt, date) => {
-            await window.electronAPI.invoke('goals:set-target', modal.goal.id, amt, date)
+            await api.setGoalTarget(modal.goal.id, amt, date)
             await reloadGoals()
             setModal(null)
           }}
@@ -220,7 +200,7 @@ export function GoalsTab({ onGoalSelect, selectedGoalId }: GoalsTabProps): JSX.E
           goal={modal.goal}
           onClose={() => setModal(null)}
           onConfirm={async () => {
-            await window.electronAPI.invoke('goals:delete', modal.goal.id)
+            await api.deleteGoal(modal.goal.id)
             await reloadGoals()
             setModal(null)
           }}

@@ -68,6 +68,31 @@ export interface AssetsData {
   accounts: AssetAccount[]
 }
 
+// ── Mortgage Tracking ─────────────────────────────────────────────────────────
+
+export interface MortgagePayment {
+  id: string
+  date: string        // ISO "YYYY-MM-DD"
+  principal: number
+  interest: number
+  escrow: number
+  note?: string
+  createdAt: string
+}
+
+export interface Mortgage {
+  id: string              // UUID v4
+  name: string            // e.g. "Primary Home"
+  marketValue: number     // current home market value
+  principalBalance: number // remaining mortgage principal (liability)
+  payments: MortgagePayment[]
+  createdAt: string       // ISO datetime string
+}
+
+export interface MortgagesData {
+  mortgages: Mortgage[]
+}
+
 // ── Goal Tracking ────────────────────────────────────────────────────────────
 
 export interface GoalContribution {
@@ -82,6 +107,8 @@ export interface Goal {
   name: string
   targetAmount?: number         // optional — goal can exist without a target
   targetDate?: string           // optional — ISO date "YYYY-MM-DD"
+  startingAmount?: number       // initial balance before any contributions (excluded from stats)
+  dividendRate?: number         // annual dividend/interest rate as a percentage (e.g. 4.5 = 4.5%)
   contributions: GoalContribution[]
   createdAt: string             // ISO datetime string
 }

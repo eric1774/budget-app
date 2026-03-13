@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { AccountType, AssetAccount, Transaction } from '../../../shared/types'
+import * as api from '../api'
 
 const overlayStyle: React.CSSProperties = {
   position: 'fixed',
@@ -33,6 +34,12 @@ const inputStyle: React.CSSProperties = {
   fontSize: 14,
   width: '100%',
   boxSizing: 'border-box',
+}
+
+const selectStyle: React.CSSProperties = {
+  ...inputStyle,
+  colorScheme: 'dark',
+  background: '#1e2128',
 }
 
 const primaryBtn: React.CSSProperties = {
@@ -83,7 +90,7 @@ interface AddAccountModalProps {
 
 export function AddAccountModal({ onClose, onSaved }: AddAccountModalProps): JSX.Element {
   const [name, setName] = useState('')
-  const [type, setType] = useState<AccountType>('Standard')
+  const [type, setType] = useState<AccountType>('Checkings')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -95,7 +102,7 @@ export function AddAccountModal({ onClose, onSaved }: AddAccountModalProps): JSX
     }
     setSaving(true)
     try {
-      await window.electronAPI.invoke('assets:add-account', { name: name.trim(), type })
+      await api.addAccount(name.trim(), type)
       onSaved()
     } finally {
       setSaving(false)
@@ -123,13 +130,16 @@ export function AddAccountModal({ onClose, onSaved }: AddAccountModalProps): JSX
         <div>
           <label style={labelStyle}>Account Type</label>
           <select
-            style={inputStyle}
+            style={selectStyle}
             value={type}
             onChange={(e) => setType(e.target.value as AccountType)}
           >
-            <option value="Standard">Standard</option>
+            <option value="Checkings">Checkings</option>
+            <option value="Savings">Savings</option>
+            <option value="Retirement">Retirement</option>
+            <option value="Hard Asset">Hard Asset</option>
+            <option value="Investing">Investing</option>
             <option value="Goal">Goal</option>
-            <option value="Certificate">Certificate</option>
           </select>
         </div>
 
@@ -166,7 +176,7 @@ export function EditAccountModal({ account, onClose, onSaved }: EditAccountModal
     }
     setSaving(true)
     try {
-      await window.electronAPI.invoke('assets:update-account', { id: account.id, name: name.trim(), type })
+      await api.updateAccount(account.id, name.trim(), type)
       onSaved()
     } finally {
       setSaving(false)
@@ -193,13 +203,16 @@ export function EditAccountModal({ account, onClose, onSaved }: EditAccountModal
         <div>
           <label style={labelStyle}>Account Type</label>
           <select
-            style={inputStyle}
+            style={selectStyle}
             value={type}
             onChange={(e) => setType(e.target.value as AccountType)}
           >
-            <option value="Standard">Standard</option>
+            <option value="Checkings">Checkings</option>
+            <option value="Savings">Savings</option>
+            <option value="Retirement">Retirement</option>
+            <option value="Hard Asset">Hard Asset</option>
+            <option value="Investing">Investing</option>
             <option value="Goal">Goal</option>
-            <option value="Certificate">Certificate</option>
           </select>
         </div>
 
@@ -228,7 +241,7 @@ export function DeleteAccountModal({ account, onClose, onDeleted }: DeleteAccoun
   async function handleDelete(): Promise<void> {
     setDeleting(true)
     try {
-      await window.electronAPI.invoke('assets:delete-account', { id: account.id })
+      await api.deleteAccount(account.id)
       onDeleted()
     } finally {
       setDeleting(false)
@@ -282,13 +295,7 @@ export function AddTransactionModal({ accountId, onClose, onSaved }: AddTransact
     }
     setSaving(true)
     try {
-      await window.electronAPI.invoke('assets:add-transaction', {
-        accountId,
-        type: txType,
-        amount: parsedAmount,
-        date,
-        note: note || undefined,
-      })
+      await api.addTransaction(accountId, txType, parsedAmount, date, note || undefined)
       onSaved()
     } finally {
       setSaving(false)
@@ -408,14 +415,7 @@ export function EditTransactionModal({ accountId, transaction, onClose, onSaved 
     }
     setSaving(true)
     try {
-      await window.electronAPI.invoke('assets:update-transaction', {
-        accountId,
-        transactionId: transaction.id,
-        type: txType,
-        amount: parsedAmount,
-        date,
-        note: note || undefined,
-      })
+      await api.updateTransaction(accountId, transaction.id, txType, parsedAmount, date, note || undefined)
       onSaved()
     } finally {
       setSaving(false)
@@ -518,7 +518,7 @@ export function DeleteTransactionModal({ accountId, transactionId, onClose, onDe
   async function handleDelete(): Promise<void> {
     setDeleting(true)
     try {
-      await window.electronAPI.invoke('assets:delete-transaction', { accountId, transactionId })
+      await api.deleteTransaction(accountId, transactionId)
       onDeleted()
     } finally {
       setDeleting(false)

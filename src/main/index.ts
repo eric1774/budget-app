@@ -21,10 +21,22 @@ import {
   updateGoal,
   deleteGoal,
   setGoalTarget,
+  setGoalDividendRate,
+  setGoalStartingAmount,
   addContribution,
   updateContribution,
   deleteContribution,
 } from './goals-store'
+import {
+  getMortgages,
+  addMortgage,
+  updateMortgage,
+  deleteMortgage,
+  getMortgagePayments,
+  addMortgagePayment,
+  updateMortgagePayment,
+  deleteMortgagePayment,
+} from './mortgage-store'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -152,9 +164,32 @@ ipcMain.handle('goals:add', (_e, name: string) => addGoal(name))
 ipcMain.handle('goals:update', (_e, id: string, fields: { name?: string }) => updateGoal(id, fields))
 ipcMain.handle('goals:delete', (_e, id: string) => deleteGoal(id))
 ipcMain.handle('goals:set-target', (_e, id: string, targetAmount: number | null, targetDate: string | null) => setGoalTarget(id, targetAmount, targetDate))
+ipcMain.handle('goals:set-starting-amount', (_e, id: string, startingAmount: number | null) => setGoalStartingAmount(id, startingAmount))
+ipcMain.handle('goals:set-dividend-rate', (_e, id: string, dividendRate: number | null) => setGoalDividendRate(id, dividendRate))
 ipcMain.handle('goals:add-contribution', (_e, goalId: string, amount: number, date: string, note?: string) => addContribution(goalId, amount, date, note))
 ipcMain.handle('goals:update-contribution', (_e, goalId: string, contributionId: string, fields: { amount?: number; date?: string; note?: string }) => updateContribution(goalId, contributionId, fields))
 ipcMain.handle('goals:delete-contribution', (_e, goalId: string, contributionId: string) => deleteContribution(goalId, contributionId))
+
+// ── Mortgage IPC ─────────────────────────────────────────────────────────────
+
+ipcMain.handle('mortgages:get-all', () => getMortgages())
+ipcMain.handle('mortgages:add', (_e, args: { name: string; marketValue: number; principalBalance: number }) =>
+  addMortgage(args.name, args.marketValue, args.principalBalance)
+)
+ipcMain.handle('mortgages:update', (_e, args: { id: string; name?: string; marketValue?: number; principalBalance?: number }) =>
+  updateMortgage(args.id, { name: args.name, marketValue: args.marketValue, principalBalance: args.principalBalance })
+)
+ipcMain.handle('mortgages:delete', (_e, id: string) => deleteMortgage(id))
+ipcMain.handle('mortgages:get-payments', (_e, mortgageId: string) => getMortgagePayments(mortgageId))
+ipcMain.handle('mortgages:add-payment', (_e, args: { mortgageId: string; date: string; principal: number; interest: number; escrow: number; note?: string }) =>
+  addMortgagePayment(args.mortgageId, args.date, args.principal, args.interest, args.escrow, args.note)
+)
+ipcMain.handle('mortgages:update-payment', (_e, args: { mortgageId: string; paymentId: string; date?: string; principal?: number; interest?: number; escrow?: number; note?: string }) =>
+  updateMortgagePayment(args.mortgageId, args.paymentId, { date: args.date, principal: args.principal, interest: args.interest, escrow: args.escrow, note: args.note })
+)
+ipcMain.handle('mortgages:delete-payment', (_e, args: { mortgageId: string; paymentId: string }) =>
+  deleteMortgagePayment(args.mortgageId, args.paymentId)
+)
 
 app.whenReady().then(async () => {
   await startServer()

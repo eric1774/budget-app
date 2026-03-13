@@ -17,6 +17,11 @@ function readAssets(): AssetsData {
         account.transactions = []
         migrated = true
       }
+      // Migrate default Red Baron account to have syncedWithDashboard flag
+      if (account.syncedWithDashboard === undefined && account.name === 'Red Baron Checkings Account') {
+        account.syncedWithDashboard = true
+        migrated = true
+      }
     }
     if (migrated) writeAssets(data)
     return data
@@ -39,7 +44,21 @@ function accountBalance(account: AssetAccount): number {
 // ── Account CRUD ────────────────────────────────────────────────────────────
 
 export function getAccounts(): AssetAccount[] {
-  return readAssets().accounts
+  const data = readAssets()
+  // Seed default account on first run
+  if (data.accounts.length === 0) {
+    const defaultAccount: AssetAccount = {
+      id: randomUUID(),
+      name: 'Red Baron Checkings Account',
+      type: 'Checkings',
+      transactions: [],
+      createdAt: new Date().toISOString(),
+      syncedWithDashboard: true,
+    }
+    data.accounts.push(defaultAccount)
+    writeAssets(data)
+  }
+  return data.accounts
 }
 
 export function addAccount(name: string, type: AccountType): AssetAccount {

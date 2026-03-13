@@ -98,20 +98,7 @@ export function BudgetTab({ transactions, categories }: BudgetTabProps): JSX.Ele
     })
   }
 
-  const navBtn: React.CSSProperties = {
-    width: 32,
-    height: 32,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: 'var(--bg-elevated)',
-    border: '1px solid var(--border)',
-    borderRadius: 8,
-    color: 'var(--text-secondary)',
-    cursor: 'pointer',
-    transition: 'background 150ms ease, color 150ms ease',
-    fontSize: 14,
-  }
+  // navBtn uses btn-icon class from CSS for 44px touch target
 
   return (
     <div className="budget-main">
@@ -119,9 +106,10 @@ export function BudgetTab({ transactions, categories }: BudgetTabProps): JSX.Ele
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <button
+            className="btn-icon"
             onClick={() => setMonthKey((k) => adjustMonth(k, -1))}
-            style={navBtn}
             aria-label="Previous month"
+            style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 8 }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
@@ -129,9 +117,10 @@ export function BudgetTab({ transactions, categories }: BudgetTabProps): JSX.Ele
             {formatMonthLabel(monthKey)}
           </span>
           <button
+            className="btn-icon"
             onClick={() => setMonthKey((k) => adjustMonth(k, 1))}
-            style={navBtn}
             aria-label="Next month"
+            style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 8 }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
