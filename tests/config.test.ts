@@ -25,4 +25,8 @@ describe('server config', () => {
     expect(c.dataDir).toBe('/custom/app')
     expect(c.rendererRoot).toBe('/custom/renderer')
   })
+
+  it('throws on non-numeric PORT', () => {
+    expect(() => getConfig({ BUDGET_XLSX_PATH: '/x.xlsx', PORT: 'abc' })).toThrow(/PORT/)
+  })
 })

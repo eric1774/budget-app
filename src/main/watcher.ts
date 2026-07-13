@@ -25,6 +25,7 @@ export function startWatcher(filePath: string, notify: WatcherNotify = () => {})
 
   const onFsEvent = (): void => {
     if (debounceTimer) clearTimeout(debounceTimer)
+    if (retryTimeout) { clearTimeout(retryTimeout); retryTimeout = null }
     debounceTimer = setTimeout(() => handleFileChange(filePath, notify, 0), DEBOUNCE_MS)
   }
   watcher.on('change', onFsEvent)

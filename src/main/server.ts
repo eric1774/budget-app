@@ -77,6 +77,7 @@ const MIME: Record<string, string> = {
   '.svg': 'image/svg+xml',
   '.json': 'application/json',
   '.woff2': 'font/woff2',
+  '.webmanifest': 'application/manifest+json',
 }
 
 // --- Body reader helper ---
