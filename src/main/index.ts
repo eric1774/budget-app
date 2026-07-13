@@ -61,7 +61,7 @@ function createWindow(): void {
     mainWindow!.webContents.send('stored-path', storedPath ?? null)
     mainWindow!.webContents.send('server-info', getServerInfo())
     if (storedPath) {
-      startWatcher(storedPath, mainWindow!)
+      startWatcher(storedPath, (channel, payload) => mainWindow?.webContents.send(channel, payload))
     }
   })
 
@@ -106,7 +106,7 @@ ipcMain.handle('open-file-dialog', async () => {
   if (result.canceled || result.filePaths.length === 0) return null
   const filePath = result.filePaths[0]
   setStoredFilePath(filePath)
-  startWatcher(filePath, mainWindow)
+  startWatcher(filePath, (channel, payload) => mainWindow?.webContents.send(channel, payload))
   return filePath
 })
 
