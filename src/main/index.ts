@@ -41,6 +41,10 @@ import {
 
 let mainWindow: BrowserWindow | null = null
 
+function rendererRoot(): string {
+  return is.dev ? join(__dirname, '../renderer') : join(app.getAppPath(), 'out/renderer')
+}
+
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 800,
@@ -112,7 +116,7 @@ ipcMain.handle('get-server-info', () => getServerInfo())
 // IPC handler to restart the server (for toolbar restart button)
 ipcMain.handle('restart-server', async () => {
   await stopServer()
-  const info = await startServer()
+  const info = await startServer({ rendererRoot: rendererRoot() })
   mainWindow?.webContents.send('server-info', info)
   return info
 })
@@ -194,7 +198,7 @@ ipcMain.handle('mortgages:delete-payment', (_e, args: { mortgageId: string; paym
 
 app.whenReady().then(async () => {
   initDataDir(app.getPath('userData'))
-  await startServer()
+  await startServer({ rendererRoot: rendererRoot() })
   createWindow()
 
   app.on('activate', () => {
