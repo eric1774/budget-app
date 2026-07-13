@@ -11,7 +11,7 @@ Evolve the Budget Dashboard (currently an Electron desktop app) into a container
 
 | Decision | Choice |
 |---|---|
-| Host | Docker Compose stack on the homelab server (same box as Firefly III) |
+| Host | Docker Compose stack on the homelab Proxmox node. Firefly TEST and PROD are two separate LXC containers on that node; the budget stack runs alongside them (its own LXC/VM with Docker) and reaches each Firefly instance over the LAN |
 | Users | Family members on the LAN; Eric is admin |
 | AI backend | Claude API — Haiku 4.5 default, Sonnet as config toggle |
 | Firefly MCP layer | `daften/fireflyiii-mcp`, stdio child process, `MCP_READ_ONLY=true`, preset `insights` (57 read tools) |
@@ -19,7 +19,7 @@ Evolve the Budget Dashboard (currently an Electron desktop app) into a container
 | Firefly target | Build and validate against TEST (192.168.1.113), then flip config to PROD (192.168.1.199) |
 | Proposable writes | Transactions only (create). Accounts/budgets/categories/rules stay admin-direct in Firefly |
 | IAM | External IdP: Pocket ID (passkeys). Roles via Pocket ID groups (`budget-admin` group → admin role) |
-| Excel access | abraunegg `onedrive` client sidecar, `--monitor --download-only`, `sync_list` scoped to `Desktop/BUDGET/2026`, mirrored to a shared volume |
+| Excel access | abraunegg `onedrive` client sidecar, `--monitor --download-only`, `sync_list` scoped to `Desktop/BUDGET/2026`, `monitor_interval` 30s, mirrored to a shared volume |
 | TLS | Caddy reverse proxy with internal CA (passkeys/WebAuthn require HTTPS); root cert trusted once per family device |
 
 ## Architecture
@@ -41,7 +41,7 @@ Migration notes: renderer (React) ports nearly as-is; `excel.ts`, stores, and `w
 
 ### Excel freshness chain
 
-Excel save → OneDrive upload (secs–1 min) → sync client delta poll (`monitor_interval` ~60s) → file lands on volume → chokidar fires → re-parse. Expected end-to-end lag: 30s–2min. Edits from Excel mobile/web sync the same way. The server can never write back to OneDrive (`--download-only`); the never-touch-prod-xlsx rule is enforced at tool level.
+Excel save → OneDrive upload (secs–1 min) → sync client delta poll (`monitor_interval` 30s) → file lands on volume → chokidar fires → re-parse. Expected end-to-end lag: typically under 90s. Edits from Excel mobile/web sync the same way. The server can never write back to OneDrive (`--download-only`); the never-touch-prod-xlsx rule is enforced at tool level.
 
 ## Authentication (AuthN)
 
@@ -98,6 +98,10 @@ Append-only `audit_log` table: chat messages, every MCP tool call (name + argume
 - Claude API failure → visible chat error, retry with backoff; proposals never silently dropped.
 - Execution failure → status `failed` with Firefly's error attached, admin notified, no auto-retry.
 - Pocket ID down → new logins fail with a clear message; existing sessions run to expiry.
+
+## Development workflow constraint
+
+The current working copy at `BUDGET\Dev` stays UNTOUCHED until Eric approves merging. All implementation happens on a new work branch checked out in a **separate git worktree** (a sibling directory), so the original directory keeps running the known-good Electron app throughout. Merge to `master` only on Eric's explicit approval.
 
 ## Testing & rollout phases
 
