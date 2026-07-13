@@ -1,15 +1,17 @@
-import { app } from 'electron'
 import { join } from 'path'
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs'
 import { randomUUID } from 'crypto'
+import { getDataDir } from './data-dir'
 import type { MortgagesData, Mortgage, MortgagePayment } from '../shared/types'
 
-const MORTGAGES_PATH = join(app.getPath('userData'), 'mortgages.json')
+function mortgagesPath(): string {
+  return join(getDataDir(), 'mortgages.json')
+}
 
 function readMortgages(): MortgagesData {
-  if (!existsSync(MORTGAGES_PATH)) return { mortgages: [] }
+  if (!existsSync(mortgagesPath())) return { mortgages: [] }
   try {
-    const data = JSON.parse(readFileSync(MORTGAGES_PATH, 'utf-8')) as MortgagesData
+    const data = JSON.parse(readFileSync(mortgagesPath(), 'utf-8')) as MortgagesData
     for (const m of data.mortgages) if (!m.payments) m.payments = []
     return data
   } catch {
@@ -18,8 +20,8 @@ function readMortgages(): MortgagesData {
 }
 
 function writeMortgages(data: MortgagesData): void {
-  mkdirSync(app.getPath('userData'), { recursive: true })
-  writeFileSync(MORTGAGES_PATH, JSON.stringify(data, null, 2), 'utf-8')
+  mkdirSync(getDataDir(), { recursive: true })
+  writeFileSync(mortgagesPath(), JSON.stringify(data, null, 2), 'utf-8')
 }
 
 export function getMortgages(): Mortgage[] {

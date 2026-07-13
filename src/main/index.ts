@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
+import { initDataDir } from './data-dir'
 import { parseWorkbook } from './excel'
 import type { ParseResponse, BudgetMap } from '../shared/types'
 import { getStoredFilePath, setStoredFilePath, getBudgets, setBudget } from './store'
@@ -192,6 +193,7 @@ ipcMain.handle('mortgages:delete-payment', (_e, args: { mortgageId: string; paym
 )
 
 app.whenReady().then(async () => {
+  initDataDir(app.getPath('userData'))
   await startServer()
   createWindow()
 
