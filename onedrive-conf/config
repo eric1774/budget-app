@@ -1,0 +1,5 @@
+sync_dir = "/onedrive/data"
+download_only = "true"
+monitor_interval = "30"
+cleanup_local_files = "false"
+skip_dotfiles = "true"
