@@ -10,6 +10,12 @@ static LAN IP. In the container's **Options → Features**, enable
 `nesting=1` and `keyctl=1` (required for Docker inside LXC). Unprivileged
 container is fine.
 
+On the Proxmox **host**, make sure `lxc-pve` is >= 6.0.5-2 (`apt update &&
+apt install lxc-pve`, then stop/start the LXC). Older versions ship an
+AppArmor profile that breaks current runc inside unprivileged LXCs — every
+`docker run` fails with `open sysctl net.ipv4.ip_unprivileged_port_start
+... permission denied` (CVE-2025-52881 fallout).
+
 ## 2. Install Docker
 
 ```bash
@@ -51,17 +57,23 @@ accordingly and check `BUDGET_XLSX_PATH` in `docker-compose.yml` matches.
 ## 5. Start the stack
 
 ```bash
-docker compose up -d --build
+DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 docker compose up -d --build
 docker compose logs -f onedrive     # watch first sync complete
 docker compose logs -f budget-app   # expect: Parsed N transactions ... listening
 ```
+
+(The classic builder is forced because BuildKit's `RUN npm ci` reliably
+dies with `npm error Exit handler never called!` inside this LXC; the same
+install succeeds in seconds under `docker run` or the classic builder.)
 
 ## 6. Verify
 
 - `curl http://localhost:3737/api/health` → `{"ok":true,"hasSnapshot":true}`
 - From a phone/PC on the LAN: `http://<lxc-ip>:3737` renders the dashboard.
 - Edit + save the TEST workbook copy on the Windows PC; the dashboard
-  updates within ~90 seconds (OneDrive upload + 30 s mirror poll).
+  updates within ~6 minutes (OneDrive upload + mirror poll — the onedrive
+  client enforces a 300 s minimum on `monitor_interval`, so the spec's
+  30 s poll is not achievable).
 
 ## Rollback
 

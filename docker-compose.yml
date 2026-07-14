@@ -22,6 +22,10 @@ services:
     restart: unless-stopped
     environment:
       ONEDRIVE_DOWNLOADONLY: "1"
+      # Must match the UID:GID of the 'node' user in budget-app's image;
+      # otherwise the mirror is written root-owned and budget-app gets EACCES.
+      ONEDRIVE_UID: "1000"
+      ONEDRIVE_GID: "1000"
     volumes:
       - ./onedrive-conf:/onedrive/conf
       - budget_mirror:/onedrive/data
