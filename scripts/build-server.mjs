@@ -4,7 +4,7 @@ await build({
   entryPoints: ['src/server/index.ts'],
   bundle: true,
   platform: 'node',
-  target: 'node22',
+  target: 'node24',
   outfile: 'out/server/index.js',
   // Optional native deps of chokidar/ws — not needed, excluded from bundle
   external: ['fsevents', 'bufferutil', 'utf-8-validate'],
