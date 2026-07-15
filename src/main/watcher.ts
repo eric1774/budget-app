@@ -54,7 +54,12 @@ export function stopWatcher(): void {
 function handleFileChange(filePath: string, notify: WatcherNotify, retryCount: number): void {
   const response: ParseResponse = parseWorkbook(filePath)
   if (response.ok) {
-    console.log(`Parsed ${response.result.transactions.length} transactions from ${filePath} (watcher)`)
+    const skipped = response.result.skippedRows
+      ? ` (${response.result.skippedRows} rows skipped: blank category, missing amount, or bad date)`
+      : ''
+    console.log(
+      `Parsed ${response.result.transactions.length} transactions from ${filePath} (watcher)${skipped}`
+    )
     const payload = { ok: true, result: response.result }
     setLastSnapshot(response)
     notify('file-changed', payload)
