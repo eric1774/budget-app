@@ -2,7 +2,7 @@
  * API layer — tries Electron IPC first, falls back to HTTP for browser/mobile mode.
  */
 
-import type { AccountType } from '../../shared/types'
+import type { AccountType, AuthUser } from '../../shared/types'
 
 function isElectron(): boolean {
   return typeof window !== 'undefined' && !!(window as Window & { electronAPI?: unknown }).electronAPI
@@ -14,26 +14,34 @@ function ipc(channel: string, ...args: unknown[]): Promise<any> {
   return (window as Window & { electronAPI: { invoke: (ch: string, ...a: unknown[]) => Promise<any> } }).electronAPI.invoke(channel, ...args)
 }
 
+function bounceToLoginOn401(r: Response): void {
+  if (r.status === 401) window.location.href = '/auth/login'
+}
+
 async function httpGet(path: string): Promise<unknown> {
   const r = await fetch(path)
+  bounceToLoginOn401(r)
   if (!r.ok) throw new Error(`HTTP ${r.status}`)
   return r.json()
 }
 
 async function httpPost(path: string, body: unknown): Promise<unknown> {
   const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+  bounceToLoginOn401(r)
   if (!r.ok) throw new Error(`HTTP ${r.status}`)
   return r.json()
 }
 
 async function httpPut(path: string, body: unknown): Promise<unknown> {
   const r = await fetch(path, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+  bounceToLoginOn401(r)
   if (!r.ok) throw new Error(`HTTP ${r.status}`)
   return r.json()
 }
 
 async function httpDelete(path: string): Promise<unknown> {
   const r = await fetch(path, { method: 'DELETE' })
+  bounceToLoginOn401(r)
   if (!r.ok) throw new Error(`HTTP ${r.status}`)
   return r.json()
 }
@@ -159,4 +167,25 @@ export function addContribution(goalId: string, amount: number, date: string, no
 export function deleteContribution(goalId: string, contributionId: string): Promise<unknown> {
   if (isElectron()) return ipc('goals:delete-contribution', goalId, contributionId)
   return httpDelete(`/api/goals/${goalId}/contributions/${contributionId}`)
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+
+/** Current signed-in user, or null (Electron mode, auth disabled, or not signed in). */
+export async function getMe(): Promise<AuthUser | null> {
+  if (isElectron()) return null
+  try {
+    const r = await fetch('/api/me')
+    if (!r.ok) return null
+    // Auth-disabled servers have no /api/me; the SPA fallback answers with HTML
+    if (!(r.headers.get('content-type') ?? '').includes('application/json')) return null
+    return (await r.json()) as AuthUser
+  } catch {
+    return null
+  }
+}
+
+export async function logout(): Promise<void> {
+  await fetch('/auth/logout', { method: 'POST' })
+  window.location.href = '/auth/logged-out'
 }
