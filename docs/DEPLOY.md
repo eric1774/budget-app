@@ -95,3 +95,88 @@ Electron app on the Windows PC is untouched and keeps working.
 Changing `BUDGET_XLSX_PATH` to `2026 Budget.xlsx` requires Eric's explicit
 approval. The mirror is download-only either way — the server can never
 modify the spreadsheet.
+
+## Phase 2: HTTPS + passkey login (Caddy + Pocket ID)
+
+Everything below happens once, on the LXC (`/opt/budget-app`), after `git pull`.
+Reminder: builds on this LXC MUST use the classic builder — `DOCKER_BUILDKIT=0`.
+
+### 1. LAN DNS
+
+Point both hostnames at this LXC's IP (192.168.1.x) in your LAN DNS — router DNS
+entries or Pi-hole "Local DNS records". Per-device hosts files work as a fallback.
+
+- `budget.home.arpa` → LXC IP
+- `id.home.arpa` → LXC IP
+
+Verify from a family device: `nslookup budget.home.arpa` returns the LXC IP.
+
+### 2. Environment file
+
+    cp .env.example .env
+    openssl rand -base64 32   # → paste as POCKET_ID_ENCRYPTION_KEY
+
+Leave OIDC_CLIENT_ID / OIDC_CLIENT_SECRET empty for now (step 4 fills them).
+
+### 3. First start — Pocket ID setup
+
+    DOCKER_BUILDKIT=0 docker compose up -d --build caddy pocket-id
+
+budget-app will not start yet (missing OIDC vars) — expected.
+
+1. Open `https://id.home.arpa/setup` on Eric's machine (accept the TLS warning
+   this once, or do step 5 first).
+2. Create the admin account (Eric) and register a passkey.
+3. Admin UI → **User Groups** → create group `budget-admin` → add Eric.
+4. Create accounts for each family member (no group needed — they become members).
+
+### 4. Register the OIDC client
+
+Pocket ID admin UI → **OIDC Clients** → Add:
+
+- Name: `Budget Dashboard`
+- Callback URL: `https://budget.home.arpa/auth/callback`
+- PKCE: enabled
+- Leave it a confidential client; copy the **Client ID** and the **Client Secret**
+  (shown once) into `.env`.
+
+Then:
+
+    DOCKER_BUILDKIT=0 docker compose up -d --build
+
+`docker logs budget-app` should show
+`Auth enabled — OIDC issuer https://id.home.arpa, admin group "budget-admin", sessions 12h`.
+
+### 5. Trust the internal CA on family devices
+
+Export the root cert:
+
+    docker compose cp caddy:/data/caddy/pki/authorities/local/root.crt ./budget-ca.crt
+
+- **Windows:** double-click → Install Certificate → Local Machine →
+  "Trusted Root Certification Authorities".
+- **iPhone/iPad:** AirDrop or email `budget-ca.crt` → install profile →
+  Settings → General → About → Certificate Trust Settings → enable full trust.
+- **Android:** Settings → Security → Encryption & credentials → Install a certificate → CA.
+
+### 6. Verify
+
+1. `https://budget.home.arpa` from a family device → redirected to Pocket ID →
+   passkey tap → dashboard loads with your name in the header.
+2. Eric's header badge shows `admin`; a member account shows no badge role.
+3. `https://budget.home.arpa/api/snapshot` in a private/incognito window → 401
+   (JSON error, not data) — the API is closed to the unauthenticated LAN.
+4. Sign out → "Signed out" page → Sign in again works with one passkey tap.
+
+### Ops notes
+
+- Sessions last 12h (`SESSION_TTL_HOURS`); expired sessions are swept hourly.
+- `AUTH_DISABLED=1` exists for local development ONLY. The server refuses to
+  boot without OIDC config unless it is set, so auth cannot fall off silently.
+- Pocket ID data (users, passkeys, its own login audit log) lives in the
+  `pocket_id_data` volume — include it in volume backups.
+- If Pocket ID is down, existing sessions keep working until expiry; only new
+  logins fail (with a clear 502 from `/auth/login`).
+- Rollback: `git checkout master && DOCKER_BUILDKIT=0 docker compose up -d --build`
+  (the Phase 1 compose file has no caddy/pocket-id services; stray containers:
+  `docker compose down` first).
