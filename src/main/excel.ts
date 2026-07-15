@@ -9,10 +9,14 @@ const REQUIRED_COLUMNS = ['date', 'description', 'category', 'income', 'debit', 
 /**
  * Normalize a header string for matching: lowercase + trim.
  * Also handle the known typo "decription" → treat as "description".
+ * 'Budget' is the canonical category column (Eric's decision 2026-07-14):
+ * the Logbook also has a literal 'category' column further right, but the
+ * first matching header wins (indexOf), so 'Budget' takes priority.
  */
 function normalizeHeader(h: string): string {
   const s = h.toLowerCase().trim()
   if (s === 'decription') return 'description'
+  if (s === 'budget') return 'category'
   return s
 }
 
