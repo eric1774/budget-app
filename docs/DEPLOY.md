@@ -54,6 +54,16 @@ Confirm the dry-run lists only files under `BUDGET/2026/`. If the path
 prefix differs (Desktop backup naming), fix `onedrive-conf/sync_list`
 accordingly and check `BUDGET_XLSX_PATH` in `docker-compose.yml` matches.
 
+If the onedrive sidecar ever ran as root before `ONEDRIVE_UID/GID` was in
+place (e.g. during the interactive authorisation above), fix ownership once
+— the entrypoint does not reliably chown pre-existing conf files, and the
+client will otherwise crash-loop asking for re-authorisation:
+
+```bash
+chown -R 1000:1000 /opt/budget-app/onedrive-conf
+docker run --rm -v budget-app_budget_mirror:/mnt alpine chown -R 1000:1000 /mnt
+```
+
 ## 5. Start the stack
 
 ```bash

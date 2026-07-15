@@ -21,7 +21,7 @@ async function main(): Promise<void> {
     console.warn(`Workbook not found yet at ${config.xlsxPath} — waiting for OneDrive mirror`)
   }
 
-  startWatcher(config.xlsxPath)
+  startWatcher(config.xlsxPath, undefined, { usePolling: true })
   const info = await startServer({ rendererRoot: config.rendererRoot, preferredPort: config.port })
   console.log(`budget-app listening on ${info.url}`)
 

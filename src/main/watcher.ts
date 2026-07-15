@@ -13,7 +13,18 @@ const MAX_RETRIES = 5
 const RETRY_INTERVAL_MS = 800
 const DEBOUNCE_MS = 200
 
-export function startWatcher(filePath: string, notify: WatcherNotify = () => {}): void {
+export interface WatcherOptions {
+  // inotify loses the file when the OneDrive mirror replaces it via
+  // temp-file + rename (new inode), so the containerized entry must poll.
+  usePolling?: boolean
+  pollIntervalMs?: number
+}
+
+export function startWatcher(
+  filePath: string,
+  notify: WatcherNotify = () => {},
+  options: WatcherOptions = {}
+): void {
   stopWatcher()
   let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -21,6 +32,8 @@ export function startWatcher(filePath: string, notify: WatcherNotify = () => {})
     persistent: true,
     ignoreInitial: true,
     awaitWriteFinish: { stabilityThreshold: 150, pollInterval: 100 },
+    usePolling: options.usePolling ?? false,
+    interval: options.pollIntervalMs ?? 2000,
   })
 
   const onFsEvent = (): void => {
@@ -41,6 +54,7 @@ export function stopWatcher(): void {
 function handleFileChange(filePath: string, notify: WatcherNotify, retryCount: number): void {
   const response: ParseResponse = parseWorkbook(filePath)
   if (response.ok) {
+    console.log(`Parsed ${response.result.transactions.length} transactions from ${filePath} (watcher)`)
     const payload = { ok: true, result: response.result }
     setLastSnapshot(response)
     notify('file-changed', payload)
