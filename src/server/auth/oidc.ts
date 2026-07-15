@@ -39,11 +39,15 @@ export function _setPendingLogin(loginId: string, entry: PendingLogin): void {
   pending.set(loginId, entry)
 }
 
-export function takePendingLogin(loginId: string): PendingLogin | null {
+function sweepPendingLogins(): void {
   const now = Date.now()
   for (const [key, entry] of pending) {
     if (now - entry.createdAt > LOGIN_TTL_MS) pending.delete(key)
   }
+}
+
+export function takePendingLogin(loginId: string): PendingLogin | null {
+  sweepPendingLogins()
   const entry = pending.get(loginId) ?? null
   pending.delete(loginId)
   return entry
@@ -77,6 +81,7 @@ export async function beginLogin(env: AuthEnvConfig): Promise<{ url: string; log
     state,
   })
   const loginId = randomBytes(16).toString('hex')
+  sweepPendingLogins()
   pending.set(loginId, { verifier, state, createdAt: Date.now() })
   return { url: url.href, loginId }
 }

@@ -87,6 +87,19 @@ export function initAuth(env: AuthEnvConfig, flow: OidcFlow = realFlow): AuthRun
     }
 
     if (urlPath === '/auth/logout' && req.method === 'POST') {
+      const origin = req.headers.origin
+      if (origin) {
+        let sameOrigin: boolean
+        try {
+          sameOrigin = new URL(origin).origin === new URL(env.appBaseUrl).origin
+        } catch {
+          sameOrigin = false
+        }
+        if (!sameOrigin) {
+          json(res, 403, { error: 'Cross-origin request rejected' })
+          return true
+        }
+      }
       const id = parseCookies(req.headers.cookie)[SESSION_COOKIE]
       if (id) deleteSession(id)
       json(res, 200, { ok: true }, { 'Set-Cookie': clearSessionCookie() })

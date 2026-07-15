@@ -119,11 +119,28 @@ describe('auth routes', () => {
 
   it('POST /auth/logout deletes the session and clears the cookie', async () => {
     const s = createSession({ sub: 'u9', name: 'Member', email: 'm@x.com', role: 'member' }, 12)
-    const r = await fetch(`${base}/auth/logout`, { method: 'POST', headers: { cookie: `budget_session=${s.id}` } })
+    const r = await fetch(`${base}/auth/logout`, {
+      method: 'POST',
+      headers: { cookie: `budget_session=${s.id}`, origin: 'https://budget.home.arpa' },
+    })
     expect(r.status).toBe(200)
     expect(r.headers.get('set-cookie')).toContain('Max-Age=0')
     const me = await fetch(`${base}/api/me`, { headers: { cookie: `budget_session=${s.id}` } })
     expect(me.status).toBe(401)
+  })
+
+  it('POST /auth/logout from a cross-origin request is rejected without clearing the session', async () => {
+    const s = createSession({ sub: 'u9', name: 'Member', email: 'm@x.com', role: 'member' }, 12)
+    const r = await fetch(`${base}/auth/logout`, {
+      method: 'POST',
+      headers: { cookie: `budget_session=${s.id}`, origin: 'https://evil.example' },
+    })
+    expect(r.status).toBe(403)
+    expect(await r.json()).toEqual({ error: 'Cross-origin request rejected' })
+    const setCookies = r.headers.getSetCookie()
+    expect(setCookies.some((c) => c.includes('budget_session='))).toBe(false)
+    const me = await fetch(`${base}/api/me`, { headers: { cookie: `budget_session=${s.id}` } })
+    expect(me.status).toBe(200)
   })
 
   it('GET /auth/logged-out serves a page with a sign-in link', async () => {

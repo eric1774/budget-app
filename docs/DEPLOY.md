@@ -180,3 +180,4 @@ Export the root cert:
 - Rollback: `git checkout master && DOCKER_BUILDKIT=0 docker compose up -d --build`
   (the Phase 1 compose file has no caddy/pocket-id services; stray containers:
   `docker compose down` first).
+- Role changes in Pocket ID (adding/removing someone from budget-admin) take effect at next login — an existing session keeps its role until it expires (≤12h).

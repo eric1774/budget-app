@@ -458,7 +458,11 @@ export async function startServer(opts: StartServerOptions): Promise<ServerInfo>
   }
 
   httpServer = createHttpServer((req: IncomingMessage, res: ServerResponse) => {
-    void handleRequest(req, res)
+    handleRequest(req, res).catch((err) => {
+      console.error('Request handler failed:', err)
+      if (!res.headersSent) res.writeHead(500, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'Internal server error' }))
+    })
   })
 
   wss = new WebSocketServer({ server: httpServer })
