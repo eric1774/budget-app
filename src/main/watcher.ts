@@ -1,8 +1,11 @@
 import chokidar, { FSWatcher } from 'chokidar'
-import { BrowserWindow } from 'electron'
 import { parseWorkbook } from './excel'
 import type { ParseResponse } from '../shared/types'
 import { broadcastDataUpdate, setLastSnapshot } from './server'
+
+// Channel-style callback so the Electron entry can forward to webContents.send
+// and the headless entry can omit it (WS broadcast covers browser clients).
+export type WatcherNotify = (channel: string, payload: unknown) => void
 
 let watcher: FSWatcher | null = null
 let retryTimeout: ReturnType<typeof setTimeout> | null = null
@@ -10,7 +13,18 @@ const MAX_RETRIES = 5
 const RETRY_INTERVAL_MS = 800
 const DEBOUNCE_MS = 200
 
-export function startWatcher(filePath: string, win: BrowserWindow): void {
+export interface WatcherOptions {
+  // inotify loses the file when the OneDrive mirror replaces it via
+  // temp-file + rename (new inode), so the containerized entry must poll.
+  usePolling?: boolean
+  pollIntervalMs?: number
+}
+
+export function startWatcher(
+  filePath: string,
+  notify: WatcherNotify = () => {},
+  options: WatcherOptions = {}
+): void {
   stopWatcher()
   let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -18,12 +32,18 @@ export function startWatcher(filePath: string, win: BrowserWindow): void {
     persistent: true,
     ignoreInitial: true,
     awaitWriteFinish: { stabilityThreshold: 150, pollInterval: 100 },
+    usePolling: options.usePolling ?? false,
+    interval: options.pollIntervalMs ?? 2000,
   })
 
-  watcher.on('change', () => {
+  const onFsEvent = (): void => {
     if (debounceTimer) clearTimeout(debounceTimer)
-    debounceTimer = setTimeout(() => handleFileChange(filePath, win, 0), DEBOUNCE_MS)
-  })
+    if (retryTimeout) { clearTimeout(retryTimeout); retryTimeout = null }
+    debounceTimer = setTimeout(() => handleFileChange(filePath, notify, 0), DEBOUNCE_MS)
+  }
+  watcher.on('change', onFsEvent)
+  // The OneDrive mirror may create the file after boot (or replace via temp+rename)
+  watcher.on('add', onFsEvent)
 }
 
 export function stopWatcher(): void {
@@ -31,29 +51,37 @@ export function stopWatcher(): void {
   if (retryTimeout) { clearTimeout(retryTimeout); retryTimeout = null }
 }
 
-function handleFileChange(filePath: string, win: BrowserWindow, retryCount: number): void {
+function handleFileChange(filePath: string, notify: WatcherNotify, retryCount: number): void {
   const response: ParseResponse = parseWorkbook(filePath)
   if (response.ok) {
+    const skipped = response.result.skippedRows
+      ? ` (${response.result.skippedRows} rows skipped: blank category, missing amount, or bad date)`
+      : ''
+    console.log(
+      `Parsed ${response.result.transactions.length} transactions from ${filePath} (watcher)${skipped}`
+    )
     const payload = { ok: true, result: response.result }
     setLastSnapshot(response)
-    win.webContents.send('file-changed', payload)
+    notify('file-changed', payload)
     broadcastDataUpdate({ type: 'file-changed', ...payload })
   } else if (response.error.kind === 'read-error' && retryCount < MAX_RETRIES) {
-    // File may be locked by Excel — retry silently
+    // File may be locked by Excel or mid-download — retry silently
     retryTimeout = setTimeout(
-      () => handleFileChange(filePath, win, retryCount + 1),
+      () => handleFileChange(filePath, notify, retryCount + 1),
       RETRY_INTERVAL_MS
     )
     if (retryCount === 0) {
-      // Only send locked warning on first retry attempt
-      win.webContents.send('file-locked', { retriesRemaining: MAX_RETRIES - retryCount })
+      const lockPayload = { retriesRemaining: MAX_RETRIES - retryCount }
+      notify('file-locked', lockPayload)
+      broadcastDataUpdate({ type: 'file-locked', ...lockPayload })
     }
   } else if (response.error.kind === 'read-error' && retryCount >= MAX_RETRIES) {
-    // Exhausted retries — tell renderer to show persistent locked warning
-    win.webContents.send('file-locked-persistent', { error: response.error.message })
+    const persistentPayload = { error: response.error.message }
+    notify('file-locked-persistent', persistentPayload)
+    broadcastDataUpdate({ type: 'file-locked-persistent', ...persistentPayload })
   } else {
-    // Structural error (missing sheet, columns) — send as normal error
-    win.webContents.send('file-changed', { ok: false, error: response.error })
-    broadcastDataUpdate({ type: 'file-changed', ok: false, error: response.error })
+    const errorPayload = { ok: false, error: response.error }
+    notify('file-changed', errorPayload)
+    broadcastDataUpdate({ type: 'file-changed', ...errorPayload })
   }
 }

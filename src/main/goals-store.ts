@@ -1,23 +1,25 @@
-import { app } from 'electron'
 import { join } from 'path'
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs'
 import { randomUUID } from 'crypto'
+import { getDataDir } from './data-dir'
 import type { Goal, GoalContribution, GoalsData } from '../shared/types'
 
-const GOALS_PATH = join(app.getPath('userData'), 'goals.json')
+function goalsPath(): string {
+  return join(getDataDir(), 'goals.json')
+}
 
 function readGoals(): GoalsData {
-  if (!existsSync(GOALS_PATH)) return { goals: [] }
+  if (!existsSync(goalsPath())) return { goals: [] }
   try {
-    return JSON.parse(readFileSync(GOALS_PATH, 'utf-8')) as GoalsData
+    return JSON.parse(readFileSync(goalsPath(), 'utf-8')) as GoalsData
   } catch {
     return { goals: [] }
   }
 }
 
 function writeGoals(data: GoalsData): void {
-  mkdirSync(app.getPath('userData'), { recursive: true })
-  writeFileSync(GOALS_PATH, JSON.stringify(data, null, 2), 'utf-8')
+  mkdirSync(getDataDir(), { recursive: true })
+  writeFileSync(goalsPath(), JSON.stringify(data, null, 2), 'utf-8')
 }
 
 // ── Goal CRUD ────────────────────────────────────────────────────────────────

@@ -1,15 +1,17 @@
-import { app } from 'electron'
 import { join } from 'path'
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs'
 import { randomUUID } from 'crypto'
+import { getDataDir } from './data-dir'
 import type { AssetsData, AssetAccount, Transaction, AccountType } from '../shared/types'
 
-const ASSETS_PATH = join(app.getPath('userData'), 'assets.json')
+function assetsPath(): string {
+  return join(getDataDir(), 'assets.json')
+}
 
 function readAssets(): AssetsData {
-  if (!existsSync(ASSETS_PATH)) return { accounts: [] }
+  if (!existsSync(assetsPath())) return { accounts: [] }
   try {
-    const data = JSON.parse(readFileSync(ASSETS_PATH, 'utf-8')) as AssetsData
+    const data = JSON.parse(readFileSync(assetsPath(), 'utf-8')) as AssetsData
     // Migrate accounts from old snapshot model (no transactions array)
     let migrated = false
     for (const account of data.accounts) {
@@ -30,8 +32,8 @@ function readAssets(): AssetsData {
 }
 
 function writeAssets(data: AssetsData): void {
-  mkdirSync(app.getPath('userData'), { recursive: true })
-  writeFileSync(ASSETS_PATH, JSON.stringify(data, null, 2), 'utf-8')
+  mkdirSync(getDataDir(), { recursive: true })
+  writeFileSync(assetsPath(), JSON.stringify(data, null, 2), 'utf-8')
 }
 
 // Running sum of all transactions: deposits add, withdrawals subtract

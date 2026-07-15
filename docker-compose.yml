@@ -1,0 +1,35 @@
+services:
+  budget-app:
+    build: .
+    container_name: budget-app
+    restart: unless-stopped
+    ports:
+      - "3737:3737"
+    environment:
+      # POINTS AT THE TEST COPY. Do not switch to '2026 Budget.xlsx'
+      # without Eric's explicit approval.
+      BUDGET_XLSX_PATH: "/data/budget/Desktop/BUDGET/2026/2026 Budget - Copy.xlsx"
+      APP_DATA_DIR: /data/app
+    volumes:
+      - budget_mirror:/data/budget:ro
+      - app_data:/data/app
+    depends_on:
+      - onedrive
+
+  onedrive:
+    image: driveone/onedrive:edge
+    container_name: onedrive-sync
+    restart: unless-stopped
+    environment:
+      ONEDRIVE_DOWNLOADONLY: "1"
+      # Must match the UID:GID of the 'node' user in budget-app's image;
+      # otherwise the mirror is written root-owned and budget-app gets EACCES.
+      ONEDRIVE_UID: "1000"
+      ONEDRIVE_GID: "1000"
+    volumes:
+      - ./onedrive-conf:/onedrive/conf
+      - budget_mirror:/onedrive/data
+
+volumes:
+  budget_mirror:
+  app_data:

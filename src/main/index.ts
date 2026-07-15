@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
+import { initDataDir } from './data-dir'
 import { parseWorkbook } from './excel'
 import type { ParseResponse, BudgetMap } from '../shared/types'
 import { getStoredFilePath, setStoredFilePath, getBudgets, setBudget } from './store'
@@ -40,6 +41,10 @@ import {
 
 let mainWindow: BrowserWindow | null = null
 
+function rendererRoot(): string {
+  return is.dev ? join(__dirname, '../renderer') : join(app.getAppPath(), 'out/renderer')
+}
+
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 800,
@@ -56,7 +61,7 @@ function createWindow(): void {
     mainWindow!.webContents.send('stored-path', storedPath ?? null)
     mainWindow!.webContents.send('server-info', getServerInfo())
     if (storedPath) {
-      startWatcher(storedPath, mainWindow!)
+      startWatcher(storedPath, (channel, payload) => mainWindow?.webContents.send(channel, payload))
     }
   })
 
@@ -101,7 +106,7 @@ ipcMain.handle('open-file-dialog', async () => {
   if (result.canceled || result.filePaths.length === 0) return null
   const filePath = result.filePaths[0]
   setStoredFilePath(filePath)
-  startWatcher(filePath, mainWindow)
+  startWatcher(filePath, (channel, payload) => mainWindow?.webContents.send(channel, payload))
   return filePath
 })
 
@@ -111,7 +116,7 @@ ipcMain.handle('get-server-info', () => getServerInfo())
 // IPC handler to restart the server (for toolbar restart button)
 ipcMain.handle('restart-server', async () => {
   await stopServer()
-  const info = await startServer()
+  const info = await startServer({ rendererRoot: rendererRoot() })
   mainWindow?.webContents.send('server-info', info)
   return info
 })
@@ -192,7 +197,8 @@ ipcMain.handle('mortgages:delete-payment', (_e, args: { mortgageId: string; paym
 )
 
 app.whenReady().then(async () => {
-  await startServer()
+  initDataDir(app.getPath('userData'))
+  await startServer({ rendererRoot: rendererRoot() })
   createWindow()
 
   app.on('activate', () => {

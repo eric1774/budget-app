@@ -4,8 +4,6 @@ import { join, extname } from 'path'
 import { networkInterfaces } from 'os'
 import { createServer as createNetServer } from 'net'
 import { WebSocketServer, WebSocket } from 'ws'
-import { app } from 'electron'
-import { is } from '@electron-toolkit/utils'
 import type { ServerInfo, ParseResponse } from '../shared/types'
 import { getBudgets, setBudget } from './store'
 import {
@@ -79,6 +77,7 @@ const MIME: Record<string, string> = {
   '.svg': 'image/svg+xml',
   '.json': 'application/json',
   '.woff2': 'font/woff2',
+  '.webmanifest': 'application/manifest+json',
 }
 
 // --- Body reader helper ---
@@ -107,18 +106,28 @@ export function setLastSnapshot(response: ParseResponse): void {
   lastSnapshot = response
 }
 
-export async function startServer(): Promise<ServerInfo> {
+export interface StartServerOptions {
+  rendererRoot: string
+  preferredPort?: number
+}
+
+export async function startServer(opts: StartServerOptions): Promise<ServerInfo> {
   if (httpServer) return serverInfo!
-  const port = await findFreePort(DEFAULT_PORT)
+  const port = await findFreePort(opts.preferredPort ?? DEFAULT_PORT)
   const ip = getLanIp()
-  const rendererRoot = is.dev
-    ? join(__dirname, '../renderer')
-    : join(app.getAppPath(), 'out/renderer')
+  const rendererRoot = opts.rendererRoot
 
   httpServer = createHttpServer((req: IncomingMessage, res: ServerResponse) => {
     // Strip query strings; decode URI; prevent directory traversal
     let urlPath = (req.url ?? '/').split('?')[0]
     try { urlPath = decodeURIComponent(urlPath) } catch { urlPath = '/' }
+
+    // REST endpoint: GET /api/health — liveness + snapshot readiness
+    if (urlPath === '/api/health') {
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ ok: true, hasSnapshot: lastSnapshot !== null }))
+      return
+    }
 
     // REST endpoint: GET /api/snapshot — returns last good ParseResponse as JSON
     if (urlPath === '/api/snapshot') {

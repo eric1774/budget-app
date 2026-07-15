@@ -1,0 +1,8 @@
+sync_dir = "/onedrive/data"
+download_only = "true"
+# onedrive v2.5+ enforces a 300s minimum; lower values are rejected at startup
+monitor_interval = "300"
+cleanup_local_files = "false"
+# match the LXC's vCPU count (client defaults to 8 and warns on 2-core hosts)
+threads = "2"
+skip_dotfiles = "true"

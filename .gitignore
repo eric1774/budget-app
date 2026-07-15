@@ -3,3 +3,8 @@ node_modules/
 dist/
 out/
 .vite/
+
+# onedrive client runtime state (auth tokens, sync db) — config and sync_list ARE committed
+onedrive-conf/refresh_token
+onedrive-conf/items.sqlite3*
+onedrive-conf/*.log
