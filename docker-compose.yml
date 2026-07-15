@@ -10,6 +10,10 @@ services:
       # without Eric's explicit approval.
       BUDGET_XLSX_PATH: "/data/budget/Desktop/BUDGET/2026/2026 Budget - Copy.xlsx"
       APP_DATA_DIR: /data/app
+      # Must match the household's local timezone. Excel dates parse at
+      # midnight server-time; on UTC they render as the previous day in
+      # Central-time browsers, shifting month-boundary transactions.
+      TZ: America/Chicago
     volumes:
       - budget_mirror:/data/budget:ro
       - app_data:/data/app

@@ -9,6 +9,10 @@ RUN npm run build:web
 
 FROM node:22-alpine
 WORKDIR /app
+# tzdata so the TZ env var (set in docker-compose) actually takes effect;
+# without it Alpine silently stays on UTC and Excel dates parsed at
+# midnight server-time shift into the previous day/month in the browser.
+RUN apk add --no-cache tzdata
 ENV NODE_ENV=production \
     RENDERER_ROOT=/app/renderer \
     APP_DATA_DIR=/data/app \
