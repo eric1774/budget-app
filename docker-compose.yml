@@ -3,8 +3,6 @@ services:
     build: .
     container_name: budget-app
     restart: unless-stopped
-    ports:
-      - "3737:3737"
     environment:
       # POINTS AT THE TEST COPY. Do not switch to '2026 Budget.xlsx'
       # without Eric's explicit approval.
@@ -14,11 +12,66 @@ services:
       # midnight server-time; on UTC they render as the previous day in
       # Central-time browsers, shifting month-boundary transactions.
       TZ: America/Chicago
+      # ── Auth (Phase 2) ──
+      APP_BASE_URL: https://${BUDGET_HOST}
+      OIDC_ISSUER: https://${POCKET_ID_HOST}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
+      ADMIN_GROUP: budget-admin
+      # Trust Caddy's internal CA for OIDC discovery/token calls to https://${POCKET_ID_HOST}
+      NODE_EXTRA_CA_CERTS: /caddy-ca/caddy/pki/authorities/local/root.crt
     volumes:
       - budget_mirror:/data/budget:ro
       - app_data:/data/app
+      - caddy_data:/caddy-ca:ro
     depends_on:
-      - onedrive
+      onedrive:
+        condition: service_started
+      pocket-id:
+        condition: service_started
+      caddy:
+        # Healthy = internal CA root exists, so NODE_EXTRA_CA_CERTS resolves at boot
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      BUDGET_HOST: ${BUDGET_HOST}
+      POCKET_ID_HOST: ${POCKET_ID_HOST}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    healthcheck:
+      test: ["CMD", "test", "-f", "/data/caddy/pki/authorities/local/root.crt"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    networks:
+      default:
+        aliases:
+          # budget-app resolves the public hostnames to Caddy inside the
+          # compose network, so OIDC discovery uses the same URLs as browsers.
+          - ${BUDGET_HOST}
+          - ${POCKET_ID_HOST}
+
+  pocket-id:
+    image: ghcr.io/pocket-id/pocket-id:v1
+    container_name: pocket-id
+    restart: unless-stopped
+    environment:
+      APP_URL: https://${POCKET_ID_HOST}
+      TRUST_PROXY: "true"
+      ENCRYPTION_KEY: ${POCKET_ID_ENCRYPTION_KEY}
+      TZ: America/Chicago
+    volumes:
+      - pocket_id_data:/app/data
 
   onedrive:
     image: driveone/onedrive:edge
@@ -37,3 +90,6 @@ services:
 volumes:
   budget_mirror:
   app_data:
+  caddy_data:
+  caddy_config:
+  pocket_id_data:

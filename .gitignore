@@ -8,3 +8,5 @@ out/
 onedrive-conf/refresh_token
 onedrive-conf/items.sqlite3*
 onedrive-conf/*.log
+
+.env

@@ -1,0 +1,13 @@
+# Both sites use Caddy's internal CA (passkeys/WebAuthn require HTTPS).
+# The root cert is at /data/caddy/pki/authorities/local/root.crt — see docs/DEPLOY.md
+# for trusting it on family devices.
+
+{$BUDGET_HOST} {
+	tls internal
+	reverse_proxy budget-app:3737
+}
+
+{$POCKET_ID_HOST} {
+	tls internal
+	reverse_proxy pocket-id:1411
+}
