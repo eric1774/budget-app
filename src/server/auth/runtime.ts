@@ -73,12 +73,12 @@ export function initAuth(env: AuthEnvConfig, flow: OidcFlow = realFlow): AuthRun
       try {
         const user = await flow.completeLogin(env, loginId, new URL(req.url ?? '/', env.appBaseUrl))
         const session = createSession(user, env.sessionTtlHours)
+        console.log(`Signed in: ${user.name} (${user.sub}) as ${user.role}`)
         res.writeHead(302, {
           Location: '/',
           'Set-Cookie': [sessionCookie(session.id, env.sessionTtlHours * 3600), clearLoginCookie()],
         })
         res.end()
-        console.log(`Signed in: ${user.name} (${user.sub}) as ${user.role}`)
       } catch (err) {
         console.error('OIDC callback failed:', err)
         text(res, 400, 'Sign-in failed — go to /auth/login and try again.', { 'Set-Cookie': clearLoginCookie() })

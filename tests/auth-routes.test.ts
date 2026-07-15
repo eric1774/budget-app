@@ -17,8 +17,13 @@ const env: AuthEnvConfig = {
   sessionTtlHours: 12,
 }
 
+let failBeginLogin = false
+
 const stubFlow: OidcFlow = {
-  beginLogin: async () => ({ url: 'https://id.home.arpa/authorize?fake=1', loginId: 'login-1' }),
+  beginLogin: async () => {
+    if (failBeginLogin) throw new Error('discovery failed')
+    return { url: 'https://id.home.arpa/authorize?fake=1', loginId: 'login-1' }
+  },
   completeLogin: async (_env, loginId) => {
     if (loginId !== 'login-1') throw new Error('unknown login')
     return { sub: 'u1', name: 'Eric', email: 'e@x.com', role: 'admin' }
@@ -57,6 +62,17 @@ describe('auth routes', () => {
     expect(r.headers.get('set-cookie')).toContain('budget_login=login-1')
   })
 
+  it('GET /auth/login is a 502 when the IdP is unreachable', async () => {
+    failBeginLogin = true
+    try {
+      const r = await fetch(`${base}/auth/login`, { redirect: 'manual' })
+      expect(r.status).toBe(502)
+      expect(await r.text()).toContain('identity provider')
+    } finally {
+      failBeginLogin = false
+    }
+  })
+
   it('GET /auth/callback creates a session and redirects home', async () => {
     const r = await fetch(`${base}/auth/callback?code=x&state=y`, {
       redirect: 'manual',
@@ -64,14 +80,29 @@ describe('auth routes', () => {
     })
     expect(r.status).toBe(302)
     expect(r.headers.get('location')).toBe('/')
-    const setCookie = r.headers.get('set-cookie') ?? ''
-    expect(setCookie).toContain('budget_session=')
-    expect(setCookie).toContain('HttpOnly')
+    const setCookies = r.headers.getSetCookie()
+    expect(setCookies.some((c) => c.includes('budget_session=') && c.includes('HttpOnly'))).toBe(true)
+    expect(setCookies.some((c) => c.includes('Max-Age=43200'))).toBe(true)
+    expect(setCookies.some((c) => c.includes('budget_login=') && c.includes('Max-Age=0'))).toBe(true)
   })
 
   it('GET /auth/callback without the login cookie is a 400', async () => {
     const r = await fetch(`${base}/auth/callback?code=x&state=y`, { redirect: 'manual' })
     expect(r.status).toBe(400)
+    const setCookie = r.headers.get('set-cookie') ?? ''
+    expect(setCookie).toContain('budget_login=')
+    expect(setCookie).toContain('Max-Age=0')
+  })
+
+  it('GET /auth/callback with an invalid login cookie is a 400 and clears the login cookie', async () => {
+    const r = await fetch(`${base}/auth/callback?code=x&state=y`, {
+      redirect: 'manual',
+      headers: { cookie: 'budget_login=bogus' },
+    })
+    expect(r.status).toBe(400)
+    const setCookie = r.headers.get('set-cookie') ?? ''
+    expect(setCookie).toContain('budget_login=')
+    expect(setCookie).toContain('Max-Age=0')
   })
 
   it('GET /api/me returns the session user', async () => {
