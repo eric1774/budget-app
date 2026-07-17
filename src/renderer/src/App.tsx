@@ -196,6 +196,37 @@ export default function App(): JSX.Element {
     if (typeof window !== 'undefined' && window.electronAPI) return
 
     let mounted = true
+
+    const bounceToLogin = (): void => {
+      window.location.href = '/auth/login'
+    }
+
+    const fetchSnapshot = (): void => {
+      fetch('/api/snapshot')
+        .then((r) => {
+          // Session died (12h expiry, cleared cookies) — re-auth instead of
+          // leaving the page stuck on the loading skeleton
+          if (r.status === 401) {
+            bounceToLogin()
+            return null
+          }
+          return r.json()
+        })
+        .then((data) => {
+          if (!mounted || !data) return
+          const snap = data as ParseResponse
+          if (snap.ok) {
+            setParseResult(reviveDates(snap.result))
+            setStatus('loaded')
+            setLastSyncedAt(new Date())
+          }
+        })
+        .catch(() => {})
+    }
+
+    // Load data immediately — the dashboard must not wait for the WebSocket
+    fetchSnapshot()
+
     const client = new WsClient(buildWsUrl(), {
       onMessage: (payload) => {
         if (!mounted) return
@@ -216,22 +247,10 @@ export default function App(): JSX.Element {
       onStateChange: (state) => {
         if (!mounted) return
         setWsState(state)
-        if (state === 'connected') {
-          // Fetch fresh snapshot immediately after (re)connect
-          fetch('/api/snapshot')
-            .then((r) => r.json())
-            .then((data) => {
-              if (!mounted) return
-              const snap = data as ParseResponse
-              if (snap.ok) {
-                setParseResult(reviveDates(snap.result))
-                setStatus('loaded')
-                setLastSyncedAt(new Date())
-              }
-            })
-            .catch(() => {})
-        }
+        // Refresh after (re)connect — updates broadcast while disconnected were missed
+        if (state === 'connected') fetchSnapshot()
       },
+      onAuthRejected: bounceToLogin,
     })
 
     return () => {

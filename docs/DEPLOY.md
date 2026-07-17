@@ -181,3 +181,14 @@ Export the root cert:
   (the Phase 1 compose file has no caddy/pocket-id services; stray containers:
   `docker compose down` first).
 - Role changes in Pocket ID (adding/removing someone from budget-admin) take effect at next login — an existing session keeps its role until it expires (≤12h).
+- The group's **Name** (slug) in Pocket ID must be exactly `budget-admin` — the
+  friendly name doesn't matter, the slug is what goes in the groups claim
+  (UAT caught `budget_admin` with an underscore silently mapping to member).
+- The `ca-perms` one-shot service makes Caddy's internal CA root readable by
+  budget-app (Caddy creates its PKI tree `0700 root:root`). If budget-app ever
+  logs `Ignoring extra certs … Permission denied` or logins fail with
+  `UNABLE_TO_GET_ISSUER_CERT_LOCALLY`, re-run `docker compose up ca-perms`,
+  then `docker restart budget-app` (the CA bundle is only read at boot).
+- A dashboard stuck on the loading skeleton means the page outlived its session
+  (12h expiry, or cookies cleared mid-session) — since the UAT fixes it
+  redirects to sign-in by itself; on an older build, F5 does it.
