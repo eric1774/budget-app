@@ -96,6 +96,18 @@ function readBody(req: IncomingMessage, res: ServerResponse, cb: (body: any) => 
   })
 }
 
+// Reachable without a session. Browsers fetch the web-app manifest (and the
+// service worker fetches shell assets) WITHOUT credentials per spec — gating
+// them 302s into a cross-origin CORS dead-end and the SW retries forever.
+// None of these expose data.
+const PUBLIC_PATHS = new Set([
+  '/api/health',
+  '/manifest.webmanifest',
+  '/sw.js',
+  '/icon-192.png',
+  '/icon-512.png',
+])
+
 // --- Server state ---
 let httpServer: ReturnType<typeof createHttpServer> | null = null
 let wss: WebSocketServer | null = null
@@ -129,7 +141,7 @@ export async function startServer(opts: StartServerOptions): Promise<ServerInfo>
     // ── Auth gate (web mode only; Electron passes no auth runtime) ──────────
     if (opts.auth) {
       if (await opts.auth.handleRequest(req, res)) return
-      if (urlPath !== '/api/health') {
+      if (!PUBLIC_PATHS.has(urlPath)) {
         const session = opts.auth.getSessionUser(req)
         if (!session) {
           if (urlPath.startsWith('/api/')) {

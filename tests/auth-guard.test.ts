@@ -49,6 +49,15 @@ describe('auth gate', () => {
     expect(r.status).toBe(200)
   })
 
+  it('leaves PWA shell assets public (no auth redirect)', async () => {
+    // Browsers fetch the manifest (and the SW fetches shell assets) without
+    // credentials — these must not bounce to the IdP.
+    for (const path of ['/manifest.webmanifest', '/sw.js', '/icon-192.png', '/icon-512.png']) {
+      const r = await fetch(`${base}${path}`, { redirect: 'manual' })
+      expect(r.status).toBe(200) // served (SPA fallback in this fixture), not 302/401
+    }
+  })
+
   it('401s API requests without a session', async () => {
     const r = await fetch(`${base}/api/snapshot`)
     expect(r.status).toBe(401)
