@@ -23,6 +23,10 @@ describe('MCP tool safety', () => {
     expect(READ_TOOL_PATTERN.test('forget_me')).toBe(false)
     expect(WRITE_TOOL_PATTERN.test('recreate_view')).toBe(false)
   })
+
+  it('write tripwire is case-insensitive', () => {
+    expect(() => assertToolSafety([t('get_accounts'), t('Create_transaction')])).toThrow(/write/i)
+  })
 })
 
 describe('assertCallAllowed (call-time allowlist guard)', () => {

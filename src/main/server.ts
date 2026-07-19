@@ -170,8 +170,16 @@ export async function startServer(opts: StartServerOptions): Promise<ServerInfo>
       }
     }
 
-    // ── Chat routes (need an identity; synthesize one in auth-disabled dev) ──
+    // ── Chat routes (need an identity; synthesize one ONLY in auth-disabled dev) ──
     if (opts.chat && urlPath.startsWith('/api/chat/')) {
+      // With auth enabled, a null session here means the request slipped past the
+      // gate (e.g. a chat path added to PUBLIC_PATHS). Never fall back to the dev
+      // identity in that case — refuse locally instead of impersonating an admin.
+      if (opts.auth && !session) {
+        res.writeHead(401, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: 'Unauthorized' }))
+        return
+      }
       const chatSession: SessionRecord =
         session ?? { id: 'dev', sub: 'dev-user', name: 'Dev', email: '', role: 'admin', expiresAt: Number.MAX_SAFE_INTEGER }
       if (await opts.chat.handleRequest(req, res, chatSession)) return
