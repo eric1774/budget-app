@@ -20,6 +20,13 @@ services:
       ADMIN_GROUP: budget-admin
       # OIDC calls to https://${POCKET_ID_HOST} present a real Let's Encrypt
       # cert (via caddy) — trusted by Node's bundled roots, nothing extra needed.
+      # ── Chat (Phase 3) — TEST Firefly only; prod flip needs Eric's approval ──
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      FIREFLY_URL: ${FIREFLY_URL}
+      FIREFLY_TOKEN: ${FIREFLY_TOKEN}
+      CHAT_MODEL: ${CHAT_MODEL:-claude-haiku-4-5}
+      CHAT_DAILY_TOKEN_BUDGET: ${CHAT_DAILY_TOKEN_BUDGET:-250000}
+      FIREFLY_MCP_COMMAND: /mcp/node_modules/.bin/fireflyiii-mcp
     volumes:
       - budget_mirror:/data/budget:ro
       - app_data:/data/app

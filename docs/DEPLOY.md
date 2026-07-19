@@ -280,3 +280,30 @@ the old hostnames — this is painless BEFORE the family enrolls, so do it now:
   trusts Let's Encrypt natively. The old §5 CA-trust ceremony is obsolete;
   previously installed "Caddy Local Authority" root certs on devices are
   harmless and can be removed at leisure.
+
+## Phase 3: Read-only Firefly chat
+
+1. In TEST Firefly III (`http://192.168.1.113`): Options → Profile → OAuth →
+   create a new Personal Access Token named `budget-app-chat`. Copy it.
+2. On the LXC, add to `.env`: `ANTHROPIC_API_KEY`, `FIREFLY_URL=http://192.168.1.113`,
+   `FIREFLY_TOKEN=<the PAT>`. Leave `CHAT_MODEL`/`CHAT_DAILY_TOKEN_BUDGET` at defaults.
+3. `git pull && DOCKER_BUILDKIT=0 docker compose up -d --build`
+4. `docker logs budget-app` — expect
+   `Chat enabled — model claude-haiku-4-5, Firefly http://192.168.1.113, daily budget 250000 tokens`
+   then `Firefly MCP connected: N read tools (of M exposed)`.
+   If instead you see `REFUSING TO START CHAT`, the read-only layer failed — do NOT
+   work around it; report it.
+5. Verify in the app (Chat tab):
+   - "What asset accounts are there?" → names match Firefly TEST
+   - "How much did we spend on Groceries this month?" → plausible number
+   - "Create a transaction for $5" → the assistant explains it cannot write
+   - Stop the TEST Firefly LXC briefly → chat shows a clear unavailable message,
+     dashboard unaffected; start it again → chat heals on the next message.
+6. Budget check: `CHAT_DAILY_TOKEN_BUDGET=1000` temporarily, send two messages →
+   second one is refused with the budget message; restore the default.
+
+Ops notes:
+- Chat is optional: without the three env vars the app boots with chat disabled.
+- Every chat message and every Firefly tool call is recorded in the `audit_log`
+  table (`/data/app/budget-app.db`) — the admin audit UI arrives in Phase 4.
+- Cost lever: `CHAT_MODEL=claude-sonnet-5` for smarter answers at ~3-5× the cost.

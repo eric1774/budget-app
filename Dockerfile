@@ -7,6 +7,15 @@ RUN npm ci
 COPY . .
 RUN npm run build:web
 
+# Firefly MCP server — separate prod-only install so the esbuild-bundled app
+# stays self-contained. @daften/fireflyiii-mcp has its own runtime deps
+# (@modelcontextprotocol/sdk, zod) that are deduped into the top-level
+# /app/node_modules rather than nested under the package, so a plain COPY of
+# the package dir alone would leave it unable to resolve them at runtime.
+# Installing fresh into /mcp keeps its dependency tree self-contained.
+# Version pinned via the root package.json.
+RUN npm install --prefix /mcp --omit=dev @daften/fireflyiii-mcp@$(node -p "require('/app/package.json').dependencies['@daften/fireflyiii-mcp']")
+
 FROM node:24-alpine
 WORKDIR /app
 # tzdata so the TZ env var (set in docker-compose) actually takes effect;
@@ -19,6 +28,8 @@ ENV NODE_ENV=production \
     PORT=3737
 COPY --from=build /app/out/renderer ./renderer
 COPY --from=build /app/out/server ./server
+COPY --from=build /mcp /mcp
+RUN test -e /mcp/node_modules/.bin/fireflyiii-mcp
 RUN mkdir -p /data/app && chown -R node:node /data/app /app
 USER node
 EXPOSE 3737
