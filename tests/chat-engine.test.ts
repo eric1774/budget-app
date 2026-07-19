@@ -2,7 +2,10 @@ import { describe, it, expect } from 'vitest'
 import { runChatTurn, CHAT_SYSTEM_PROMPT, type EngineDeps, type AnthropicMessageLike } from '../src/server/chat/engine'
 import type { McpTool } from '../src/server/chat/mcp-client'
 
-const tools: McpTool[] = [{ name: 'get_accounts', description: 'List accounts', inputSchema: { type: 'object' } }]
+const tools: McpTool[] = [
+  { name: 'get_accounts', description: 'List accounts', inputSchema: { type: 'object' } },
+  { name: 'search_transactions', description: 'Search transactions', inputSchema: { type: 'object' } },
+]
 
 function textMsg(text: string, tokens = 10): AnthropicMessageLike {
   return { content: [{ type: 'text', text }], stop_reason: 'end_turn', usage: { input_tokens: tokens, output_tokens: tokens } }
@@ -96,5 +99,62 @@ describe('chat engine', () => {
   it('system prompt pins the read-only contract', () => {
     expect(CHAT_SYSTEM_PROMPT).toMatch(/read-only/i)
     expect(CHAT_SYSTEM_PROMPT).toMatch(/cannot .*(create|modify|delete)/i)
+  })
+
+  it('runs parallel tool_use blocks from a single response in order and merges both results', async () => {
+    const calls: unknown[] = []
+    const audits: { e: string; d: unknown }[] = []
+    let step = 0
+    const deps: EngineDeps = {
+      createMessage: async (params) => {
+        step++
+        if (step === 1) {
+          return {
+            content: [
+              { type: 'tool_use', id: 'tu_1', name: 'get_accounts', input: { type: 'asset' } },
+              { type: 'tool_use', id: 'tu_2', name: 'search_transactions', input: { query: 'coffee' } },
+            ],
+            stop_reason: 'tool_use',
+            usage: { input_tokens: 10, output_tokens: 10 },
+          }
+        }
+        const messages = params.messages as { role: string; content: unknown }[]
+        const userMessages = messages.filter((m) => m.role === 'user')
+        // Only the original user message plus a single follow-up user message carrying both tool results
+        expect(userMessages.length).toBe(2)
+        const followUp = userMessages[userMessages.length - 1]
+        const content = followUp.content as { type: string; tool_use_id: string }[]
+        expect(content).toHaveLength(2)
+        expect(content.map((c) => c.tool_use_id)).toEqual(['tu_1', 'tu_2'])
+        expect(content.every((c) => c.type === 'tool_result')).toBe(true)
+        return textMsg('You have 3 accounts and 1 coffee purchase.')
+      },
+      callTool: async (name, args) => {
+        calls.push({ name, args })
+        return name === 'get_accounts' ? '[{"name":"Red Baron"}]' : '[{"description":"Coffee"}]'
+      },
+      onAudit: (e, d) => audits.push({ e, d }),
+    }
+    const r = await runChatTurn(deps, 'claude-haiku-4-5', tools, [{ role: 'user', text: 'accounts and coffee spend?' }])
+    expect(calls).toEqual([
+      { name: 'get_accounts', args: { type: 'asset' } },
+      { name: 'search_transactions', args: { query: 'coffee' } },
+    ])
+    expect(audits.filter((a) => a.e === 'tool_call')).toHaveLength(2)
+    expect(r.reply).toBe('You have 3 accounts and 1 coffee purchase.')
+  })
+
+  it('falls back to (no answer) when the final response has no text blocks', async () => {
+    const deps: EngineDeps = {
+      createMessage: async () => ({
+        content: [],
+        stop_reason: 'end_turn',
+        usage: { input_tokens: 5, output_tokens: 5 },
+      }),
+      callTool: async () => { throw new Error('should not be called') },
+      onAudit: () => {},
+    }
+    const r = await runChatTurn(deps, 'claude-haiku-4-5', tools, [{ role: 'user', text: 'hi' }])
+    expect(r.reply).toBe('(no answer)')
   })
 })
