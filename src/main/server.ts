@@ -6,6 +6,8 @@ import { createServer as createNetServer } from 'net'
 import { WebSocketServer, WebSocket } from 'ws'
 import type { ServerInfo, ParseResponse } from '../shared/types'
 import type { AuthRuntime } from '../server/auth/runtime'
+import type { ChatRuntime } from '../server/chat/runtime'
+import type { SessionRecord } from '../server/auth/session-store'
 import { getBudgets, setBudget } from './store'
 import {
   getAccounts,
@@ -123,6 +125,7 @@ export interface StartServerOptions {
   rendererRoot: string
   preferredPort?: number
   auth?: AuthRuntime | null
+  chat?: ChatRuntime | null
 }
 
 export async function startServer(opts: StartServerOptions): Promise<ServerInfo> {
@@ -138,11 +141,13 @@ export async function startServer(opts: StartServerOptions): Promise<ServerInfo>
     let urlPath = (req.url ?? '/').split('?')[0]
     try { urlPath = decodeURIComponent(urlPath) } catch { urlPath = '/' }
 
+    let session: SessionRecord | null = null
+
     // ── Auth gate (web mode only; Electron passes no auth runtime) ──────────
     if (opts.auth) {
       if (await opts.auth.handleRequest(req, res)) return
       if (!PUBLIC_PATHS.has(urlPath)) {
-        const session = opts.auth.getSessionUser(req)
+        session = opts.auth.getSessionUser(req)
         if (!session) {
           if (urlPath.startsWith('/api/')) {
             res.writeHead(401, { 'Content-Type': 'application/json' })
@@ -163,6 +168,13 @@ export async function startServer(opts: StartServerOptions): Promise<ServerInfo>
           }
         }
       }
+    }
+
+    // ── Chat routes (need an identity; synthesize one in auth-disabled dev) ──
+    if (opts.chat && urlPath.startsWith('/api/chat/')) {
+      const chatSession: SessionRecord =
+        session ?? { id: 'dev', sub: 'dev-user', name: 'Dev', email: '', role: 'admin', expiresAt: Number.MAX_SAFE_INTEGER }
+      if (await opts.chat.handleRequest(req, res, chatSession)) return
     }
 
     // REST endpoint: GET /api/health — liveness + snapshot readiness

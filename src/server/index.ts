@@ -7,6 +7,7 @@ import { getConfig } from './config'
 import { openDb, closeDb } from './db'
 import { initAuth, type AuthRuntime } from './auth/runtime'
 import { sweepExpiredSessions } from './auth/session-store'
+import { initChat, type ChatRuntime } from './chat/runtime'
 
 async function main(): Promise<void> {
   const config = getConfig(process.env)
@@ -26,6 +27,14 @@ async function main(): Promise<void> {
     console.warn('AUTH DISABLED — every request is anonymous. Local development only; never deploy this mode.')
   }
 
+  let chatRuntime: ChatRuntime | null = null
+  if (config.chat) {
+    chatRuntime = initChat(config.chat)
+    console.log(`Chat enabled — model ${config.chat.model}, Firefly ${config.chat.fireflyUrl}, daily budget ${config.chat.dailyTokenBudget} tokens`)
+  } else {
+    console.warn('Chat disabled — set ANTHROPIC_API_KEY, FIREFLY_URL and FIREFLY_TOKEN to enable it.')
+  }
+
   if (existsSync(config.xlsxPath)) {
     const response = parseWorkbook(config.xlsxPath)
     if (response.ok) {
@@ -39,12 +48,13 @@ async function main(): Promise<void> {
   }
 
   startWatcher(config.xlsxPath, undefined, { usePolling: true })
-  const info = await startServer({ rendererRoot: config.rendererRoot, preferredPort: config.port, auth })
+  const info = await startServer({ rendererRoot: config.rendererRoot, preferredPort: config.port, auth, chat: chatRuntime })
   console.log(`budget-app listening on ${info.url}`)
 
   const shutdown = (): void => {
     console.log('Shutting down...')
     stopWatcher()
+    chatRuntime?.close().catch(() => {})
     stopServer().then(() => {
       closeDb()
       process.exit(0)
