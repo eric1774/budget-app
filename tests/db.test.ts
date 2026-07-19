@@ -37,4 +37,23 @@ describe('db', () => {
         .run('s1', 'u1', 'n', 'e', 'superuser', 0, 0)
     ).toThrow()
   })
+
+  it('creates the chat_messages and audit_log tables', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'budget-db-test-'))
+    openDb(dir)
+    const names = (getDb()
+      .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('chat_messages', 'audit_log') ORDER BY name")
+      .all() as { name: string }[]).map((r) => r.name)
+    expect(names).toEqual(['audit_log', 'chat_messages'])
+  })
+
+  it('rejects an invalid chat role via CHECK constraint', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'budget-db-test-'))
+    openDb(dir)
+    expect(() =>
+      getDb()
+        .prepare('INSERT INTO chat_messages (sub, role, text, tokens, created_at) VALUES (?, ?, ?, ?, ?)')
+        .run('u1', 'system', 'x', 0, 0)
+    ).toThrow()
+  })
 })

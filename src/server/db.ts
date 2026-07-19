@@ -4,7 +4,7 @@ import { DatabaseSync } from 'node:sqlite'
 
 let db: DatabaseSync | null = null
 
-// Phase 2: sessions. Later phases add proposals / audit_log / chat tables here.
+// Phase 2: sessions. Phase 3: chat_messages + audit_log. Later phases add proposals / other tables here.
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS sessions (
   id TEXT PRIMARY KEY,
@@ -16,6 +16,23 @@ CREATE TABLE IF NOT EXISTS sessions (
   expires_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions (expires_at);
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  sub TEXT NOT NULL,
+  role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
+  text TEXT NOT NULL,
+  tokens INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_sub_created ON chat_messages (sub, created_at);
+CREATE TABLE IF NOT EXISTS audit_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  sub TEXT NOT NULL,
+  event TEXT NOT NULL,
+  detail TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log (created_at);
 `
 
 export function openDb(dataDir: string): DatabaseSync {
