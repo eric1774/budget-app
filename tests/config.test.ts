@@ -72,3 +72,50 @@ describe('auth config', () => {
     expect(() => getConfig({ ...base, SESSION_TTL_HOURS: '0' })).toThrow(/SESSION_TTL_HOURS/)
   })
 })
+
+describe('chat config', () => {
+  const base = {
+    BUDGET_XLSX_PATH: '/x.xlsx',
+    AUTH_DISABLED: '1',
+    ANTHROPIC_API_KEY: 'sk-test',
+    FIREFLY_URL: 'http://192.168.1.113/',
+    FIREFLY_TOKEN: 'pat-read',
+  }
+
+  it('is null when chat env vars are absent (chat optional)', () => {
+    expect(getConfig({ BUDGET_XLSX_PATH: '/x.xlsx', AUTH_DISABLED: '1' }).chat).toBeNull()
+  })
+
+  it('is null when only some chat vars are present', () => {
+    const { FIREFLY_TOKEN: _omit, ...partial } = base
+    expect(getConfig(partial).chat).toBeNull()
+  })
+
+  it('parses the chat block with defaults', () => {
+    const c = getConfig(base)
+    expect(c.chat).toEqual({
+      anthropicApiKey: 'sk-test',
+      fireflyUrl: 'http://192.168.1.113',
+      fireflyToken: 'pat-read',
+      model: 'claude-haiku-4-5',
+      dailyTokenBudget: 250000,
+      mcpCommand: ['npx', '-y', '@daften/fireflyiii-mcp'],
+    })
+  })
+
+  it('honors CHAT_MODEL, CHAT_DAILY_TOKEN_BUDGET and FIREFLY_MCP_COMMAND overrides', () => {
+    const c = getConfig({
+      ...base,
+      CHAT_MODEL: 'claude-sonnet-5',
+      CHAT_DAILY_TOKEN_BUDGET: '50000',
+      FIREFLY_MCP_COMMAND: '/mcp/node_modules/.bin/fireflyiii-mcp',
+    })
+    expect(c.chat?.model).toBe('claude-sonnet-5')
+    expect(c.chat?.dailyTokenBudget).toBe(50000)
+    expect(c.chat?.mcpCommand).toEqual(['/mcp/node_modules/.bin/fireflyiii-mcp'])
+  })
+
+  it('throws on a non-positive CHAT_DAILY_TOKEN_BUDGET', () => {
+    expect(() => getConfig({ ...base, CHAT_DAILY_TOKEN_BUDGET: '0' })).toThrow(/CHAT_DAILY_TOKEN_BUDGET/)
+  })
+})

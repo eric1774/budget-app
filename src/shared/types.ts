@@ -127,3 +127,11 @@ export interface AuthUser {
   email: string
   role: UserRole
 }
+
+// ── Chat (Phase 3) ────────────────────────────────────────────────────────────
+export interface ChatMessage {
+  id: number
+  role: 'user' | 'assistant'
+  text: string
+  createdAt: string
+}

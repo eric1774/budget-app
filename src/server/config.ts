@@ -9,12 +9,22 @@ export interface AuthEnvConfig {
   sessionTtlHours: number
 }
 
+export interface ChatEnvConfig {
+  anthropicApiKey: string
+  fireflyUrl: string
+  fireflyToken: string
+  model: string
+  dailyTokenBudget: number
+  mcpCommand: string[]
+}
+
 export interface ServerConfig {
   port: number
   dataDir: string
   xlsxPath: string
   rendererRoot: string
   auth: AuthEnvConfig | null
+  chat: ChatEnvConfig | null
 }
 
 function parsePort(rawPort: string): number {
@@ -48,6 +58,24 @@ function getAuthConfig(env: NodeJS.ProcessEnv): AuthEnvConfig | null {
   }
 }
 
+function getChatConfig(env: NodeJS.ProcessEnv): ChatEnvConfig | null {
+  const { ANTHROPIC_API_KEY, FIREFLY_URL, FIREFLY_TOKEN } = env
+  // Chat is an optional feature — the Excel dashboard must work without it
+  if (!ANTHROPIC_API_KEY || !FIREFLY_URL || !FIREFLY_TOKEN) return null
+  const budget = env.CHAT_DAILY_TOKEN_BUDGET ? Number(env.CHAT_DAILY_TOKEN_BUDGET) : 250000
+  if (!Number.isFinite(budget) || budget <= 0) {
+    throw new Error('CHAT_DAILY_TOKEN_BUDGET must be a positive number')
+  }
+  return {
+    anthropicApiKey: ANTHROPIC_API_KEY,
+    fireflyUrl: FIREFLY_URL.replace(/\/+$/, ''),
+    fireflyToken: FIREFLY_TOKEN,
+    model: env.CHAT_MODEL ?? 'claude-haiku-4-5',
+    dailyTokenBudget: budget,
+    mcpCommand: (env.FIREFLY_MCP_COMMAND ?? 'npx -y @daften/fireflyiii-mcp').split(' ').filter(Boolean),
+  }
+}
+
 export function getConfig(env: NodeJS.ProcessEnv): ServerConfig {
   const xlsxPath = env.BUDGET_XLSX_PATH
   if (!xlsxPath) {
@@ -59,5 +87,6 @@ export function getConfig(env: NodeJS.ProcessEnv): ServerConfig {
     xlsxPath,
     rendererRoot: env.RENDERER_ROOT ?? join(__dirname, '../renderer'),
     auth: getAuthConfig(env),
+    chat: getChatConfig(env),
   }
 }

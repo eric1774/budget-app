@@ -13,6 +13,9 @@
     "start:web": "node out/server/index.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.112.3",
+    "@daften/fireflyiii-mcp": "0.3.1",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "chokidar": "^3.6.0",
     "openid-client": "^6.8.4",
     "qrcode": "^1.5.4",
