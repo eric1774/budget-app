@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { assertToolSafety, filterTools, READ_TOOL_PATTERN, WRITE_TOOL_PATTERN, type McpTool } from '../src/server/chat/mcp-client'
+import { assertToolSafety, assertCallAllowed, filterTools, READ_TOOL_PATTERN, WRITE_TOOL_PATTERN, type McpTool } from '../src/server/chat/mcp-client'
 
 const t = (name: string): McpTool => ({ name, inputSchema: { type: 'object' } })
 
@@ -22,5 +22,21 @@ describe('MCP tool safety', () => {
   it('patterns are anchored at the start', () => {
     expect(READ_TOOL_PATTERN.test('forget_me')).toBe(false)
     expect(WRITE_TOOL_PATTERN.test('recreate_view')).toBe(false)
+  })
+})
+
+describe('assertCallAllowed (call-time allowlist guard)', () => {
+  const allowed = new Set(['get_accounts', 'search_transactions'])
+
+  it('passes silently for an allowed name', () => {
+    expect(() => assertCallAllowed(allowed, 'get_accounts')).not.toThrow()
+  })
+
+  it('throws for an unfiltered/unknown name', () => {
+    expect(() => assertCallAllowed(allowed, 'export_transactions')).toThrow(/not allowed/)
+  })
+
+  it('throws for a write-verb name, proving the model can never reach it', () => {
+    expect(() => assertCallAllowed(allowed, 'create_transaction')).toThrow(/not allowed/)
   })
 })

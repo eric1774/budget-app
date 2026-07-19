@@ -34,6 +34,11 @@ export interface FireflyMcp {
   close(): Promise<void>
 }
 
+// Re-checked at call time — the model must never reach an unfiltered tool.
+export function assertCallAllowed(allowed: ReadonlySet<string>, name: string): void {
+  if (!allowed.has(name)) throw new Error(`Tool not allowed: ${name}`)
+}
+
 export async function connectFireflyMcp(chat: ChatEnvConfig): Promise<FireflyMcp> {
   const [command, ...args] = chat.mcpCommand
   const transport = new StdioClientTransport({
@@ -61,8 +66,7 @@ export async function connectFireflyMcp(chat: ChatEnvConfig): Promise<FireflyMcp
   return {
     tools,
     async callTool(name, callArgs) {
-      // Re-check at call time — the model must never reach an unfiltered tool
-      if (!allowed.has(name)) throw new Error(`Tool not allowed: ${name}`)
+      assertCallAllowed(allowed, name)
       const result = await client.callTool({ name, arguments: callArgs })
       const parts = (result.content ?? []) as { type: string; text?: string }[]
       const text = parts.filter((p) => p.type === 'text' && p.text).map((p) => p.text).join('\n')
