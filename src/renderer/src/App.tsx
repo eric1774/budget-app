@@ -15,6 +15,7 @@ import { BudgetTab } from './components/BudgetTab'
 import { LogTab } from './components/LogTab'
 import { AssetsTab } from './components/AssetsTab'
 import { GoalsTab } from './components/GoalsTab'
+import { ChatTab } from './components/ChatTab'
 import { LogFilterBar } from './components/LogFilterBar'
 import type { LogFilterState } from './components/LogFilterBar'
 import { DEFAULT_LOG_FILTER } from './components/LogFilterBar'
@@ -36,7 +37,7 @@ function reviveDates(result: ParseResult): ParseResult {
 // --- Types ---
 
 type Status = 'welcome' | 'loading' | 'loaded' | 'error'
-type ActiveTab = 'dashboard' | 'budget' | 'log' | 'goals' | 'assets'
+type ActiveTab = 'dashboard' | 'budget' | 'log' | 'goals' | 'assets' | 'chat'
 
 interface BannerState {
   type: 'warning' | 'error' | 'success'
@@ -663,6 +664,18 @@ export default function App(): JSX.Element {
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
           <span className="tab-label">Assets</span>
         </button>
+        {!window.electronAPI && (
+          <button
+            role="tab"
+            aria-selected={activeTab === 'chat'}
+            aria-controls="panel-chat"
+            className={`tab-btn${activeTab === 'chat' ? ' tab-btn--active' : ''}`}
+            onClick={() => setActiveTab('chat')}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            <span className="tab-label">Chat</span>
+          </button>
+        )}
       </nav>
 
       {/* Offline badge — browser mode only, when disconnected */}
@@ -777,7 +790,7 @@ export default function App(): JSX.Element {
             selectedGoalId={selectedGoalId}
           />
         </div>
-      ) : (
+      ) : activeTab === 'assets' ? (
         <div id="panel-assets" role="tabpanel" aria-labelledby="tab-assets" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
           <AssetsTab
             onAccountSelect={(account) => setSelectedAssetAccountId(account?.id ?? null)}
@@ -786,6 +799,10 @@ export default function App(): JSX.Element {
               ? filteredTransactions[filteredTransactions.length - 1].balance
               : undefined}
           />
+        </div>
+      ) : (
+        <div id="panel-chat" role="tabpanel" aria-labelledby="tab-chat" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+          <ChatTab />
         </div>
       )}
     </div>

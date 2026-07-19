@@ -189,3 +189,34 @@ export async function logout(): Promise<void> {
   await fetch('/auth/logout', { method: 'POST' })
   window.location.href = '/auth/logged-out'
 }
+
+// ── Chat ──────────────────────────────────────────────────────────────────────
+
+export interface ChatBudget { usedToday: number; budget: number }
+
+export async function chatHistory(): Promise<{ messages: import('../../shared/types').ChatMessage[]; budget: ChatBudget }> {
+  const r = await fetch('/api/chat/history')
+  bounceToLoginOn401(r)
+  if (!r.ok) throw new Error(`HTTP ${r.status}`)
+  return r.json()
+}
+
+export async function chatSend(text: string): Promise<{ reply: import('../../shared/types').ChatMessage; usage: ChatBudget & { tokens: number } }> {
+  const r = await fetch('/api/chat/message', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+  })
+  bounceToLoginOn401(r)
+  if (!r.ok) {
+    const body = await r.json().catch(() => ({ error: `HTTP ${r.status}` }))
+    throw new Error(body.error ?? `HTTP ${r.status}`)
+  }
+  return r.json()
+}
+
+export async function chatClear(): Promise<void> {
+  const r = await fetch('/api/chat/clear', { method: 'POST' })
+  bounceToLoginOn401(r)
+  if (!r.ok) throw new Error(`HTTP ${r.status}`)
+}
