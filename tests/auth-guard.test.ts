@@ -5,8 +5,8 @@ import { join } from 'path'
 import WebSocket from 'ws'
 import { openDb, closeDb } from '../src/server/db'
 import { initAuth, type OidcFlow } from '../src/server/auth/runtime'
-import { createSession } from '../src/server/auth/session-store'
-import { startServer, stopServer } from '../src/main/server'
+import { createSession, deleteSession } from '../src/server/auth/session-store'
+import { startServer, stopServer, sweepWsSessions } from '../src/main/server'
 import { initDataDir } from '../src/main/data-dir'
 import type { AuthEnvConfig } from '../src/server/config'
 
@@ -113,6 +113,18 @@ describe('auth gate', () => {
       ws.on('close', (c) => resolve(c))
     })
     expect(code).toBe(4401)
+  })
+
+  it('closes an open WebSocket when its session dies (sweep)', async () => {
+    const s = createSession({ sub: 'u1', name: 'Eric', email: 'e@x.com', role: 'admin' }, 12)
+    const ws = new WebSocket(`${base.replace('http', 'ws')}/`, {
+      headers: { cookie: `budget_session=${s.id}` },
+    })
+    await new Promise<void>((resolve) => ws.on('open', () => resolve()))
+    const closed = new Promise<number>((resolve) => ws.on('close', (c) => resolve(c)))
+    deleteSession(s.id)
+    expect(sweepWsSessions()).toBeGreaterThanOrEqual(1)
+    expect(await closed).toBe(4401)
   })
 
   it('keeps WebSocket connections with a session open', async () => {
