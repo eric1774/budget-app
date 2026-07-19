@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { runChatTurn, CHAT_SYSTEM_PROMPT, type EngineDeps, type AnthropicMessageLike } from '../src/server/chat/engine'
+import { runChatTurn, todayContext, CHAT_SYSTEM_PROMPT, type EngineDeps, type AnthropicMessageLike } from '../src/server/chat/engine'
 import type { McpTool } from '../src/server/chat/mcp-client'
 
 const tools: McpTool[] = [
@@ -20,6 +20,24 @@ function toolMsg(name: string, input: unknown): AnthropicMessageLike {
 }
 
 describe('chat engine', () => {
+  it('sends the current date as an uncached system block after the cached prompt', async () => {
+    let seen: Record<string, unknown> | null = null
+    const deps: EngineDeps = {
+      createMessage: async (params) => { seen = params; return textMsg('ok') },
+      callTool: async () => { throw new Error('should not be called') },
+      onAudit: () => {},
+    }
+    await runChatTurn(deps, 'claude-haiku-4-5', tools, [{ role: 'user', text: 'hi' }])
+    const system = (seen as unknown as { system: { text: string; cache_control?: unknown }[] }).system
+    expect(system).toHaveLength(2)
+    expect(system[0].text).toBe(CHAT_SYSTEM_PROMPT)
+    expect(system[0].cache_control).toEqual({ type: 'ephemeral' })
+    expect(system[1].text).toMatch(/Today's date is \w+, \d{4}-\d{2}-\d{2} \(America\/Chicago\)/)
+    expect(system[1].cache_control).toBeUndefined()
+    // block text matches what todayContext produces for the same moment
+    expect(system[1].text).toBe(todayContext())
+  })
+
   it('returns a plain answer without tools', async () => {
     const audits: string[] = []
     const deps: EngineDeps = {

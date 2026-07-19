@@ -26,6 +26,15 @@ If a tool fails or Firefly is unreachable, say so plainly and suggest trying aga
 const MAX_TOOL_ITERATIONS = 8
 const MAX_TOKENS = 4096
 
+// The model has no clock — without this it guesses what "this month" means.
+// Kept as a separate uncached block so the cached CHAT_SYSTEM_PROMPT prefix
+// stays byte-stable across days.
+export function todayContext(now = new Date()): string {
+  const day = now.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'America/Chicago' })
+  const date = now.toLocaleDateString('en-CA', { timeZone: 'America/Chicago' })
+  return `Today's date is ${day}, ${date} (America/Chicago). Compute all relative date ranges ("this month", "last week") from this date, and pass explicit start/end dates to tools.`
+}
+
 function toAnthropicTools(tools: McpTool[]): Record<string, unknown>[] {
   return tools.map((t) => ({
     name: t.name,
@@ -50,7 +59,10 @@ export async function runChatTurn(
     const response = await deps.createMessage({
       model,
       max_tokens: MAX_TOKENS,
-      system: [{ type: 'text', text: CHAT_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
+      system: [
+        { type: 'text', text: CHAT_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } },
+        { type: 'text', text: todayContext() },
+      ],
       tools: anthropicTools,
       ...(final ? { tool_choice: { type: 'none' } } : {}),
       messages,
