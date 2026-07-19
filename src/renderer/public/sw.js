@@ -30,6 +30,12 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
+  // Only handle our own origin — browser extensions inject chrome-extension://
+  // resources whose scheme Cache.put rejects
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
   // Auth flow and API data must always be live — never cached, never faked
   if (url.pathname.startsWith('/auth/') || url.pathname.startsWith('/api/')) {
     return;
