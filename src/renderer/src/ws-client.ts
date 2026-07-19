@@ -6,6 +6,9 @@ export interface WsClientOptions {
   onMessage: (payload: unknown) => void
   // Called when connection state changes
   onStateChange: (state: WsState) => void
+  // Called when the server closes the socket with 4401 (no/expired session).
+  // Retrying can never succeed without re-auth, so the client stops for good.
+  onAuthRejected?: () => void
 }
 
 export class WsClient {
@@ -46,8 +49,13 @@ export class WsClient {
       }
     }
 
-    ws.onclose = () => {
+    ws.onclose = (event) => {
       if (this.destroyed) return
+      if (event.code === 4401) {
+        this.destroyed = true
+        this.options.onAuthRejected?.()
+        return
+      }
       this.scheduleReconnect()
     }
 

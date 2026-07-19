@@ -3,8 +3,6 @@ services:
     build: .
     container_name: budget-app
     restart: unless-stopped
-    ports:
-      - "3737:3737"
     environment:
       # POINTS AT THE TEST COPY. Do not switch to '2026 Budget.xlsx'
       # without Eric's explicit approval.
@@ -14,11 +12,71 @@ services:
       # midnight server-time; on UTC they render as the previous day in
       # Central-time browsers, shifting month-boundary transactions.
       TZ: America/Chicago
+      # ── Auth (Phase 2) ──
+      APP_BASE_URL: https://${BUDGET_HOST}
+      OIDC_ISSUER: https://${POCKET_ID_HOST}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
+      ADMIN_GROUP: budget-admin
+      # OIDC calls to https://${POCKET_ID_HOST} present a real Let's Encrypt
+      # cert (via caddy) — trusted by Node's bundled roots, nothing extra needed.
     volumes:
       - budget_mirror:/data/budget:ro
       - app_data:/data/app
     depends_on:
-      - onedrive
+      onedrive:
+        condition: service_started
+      pocket-id:
+        condition: service_started
+      caddy:
+        condition: service_healthy
+
+  caddy:
+    # Custom build: caddy + Cloudflare DNS plugin for the DNS-01 ACME
+    # challenge (wildcard Let's Encrypt cert, LAN-only deployment)
+    build: ./caddy
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      BASE_DOMAIN: ${BASE_DOMAIN}
+      BUDGET_HOST: ${BUDGET_HOST}
+      POCKET_ID_HOST: ${POCKET_ID_HOST}
+      ACME_EMAIL: ${ACME_EMAIL}
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    healthcheck:
+      # Admin endpoint answers once the config loads; cert issuance is async
+      # and budget-app's OIDC discovery is lazy+retried, so no cert gating.
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:2019/config/"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 5s
+    networks:
+      default:
+        aliases:
+          # budget-app resolves the public hostnames to Caddy inside the
+          # compose network, so OIDC discovery uses the same URLs as browsers.
+          - ${BUDGET_HOST}
+          - ${POCKET_ID_HOST}
+
+  pocket-id:
+    image: ghcr.io/pocket-id/pocket-id:v1
+    container_name: pocket-id
+    restart: unless-stopped
+    environment:
+      APP_URL: https://${POCKET_ID_HOST}
+      TRUST_PROXY: "true"
+      ENCRYPTION_KEY: ${POCKET_ID_ENCRYPTION_KEY}
+      TZ: America/Chicago
+    volumes:
+      - pocket_id_data:/app/data
 
   onedrive:
     image: driveone/onedrive:edge
@@ -37,3 +95,6 @@ services:
 volumes:
   budget_mirror:
   app_data:
+  caddy_data:
+  caddy_config:
+  pocket_id_data:

@@ -117,3 +117,13 @@ export interface Goal {
 export interface GoalsData {
   goals: Goal[]
 }
+
+// ── Auth (Phase 2) ────────────────────────────────────────────────────────────
+export type UserRole = 'admin' | 'member'
+
+export interface AuthUser {
+  sub: string
+  name: string
+  email: string
+  role: UserRole
+}

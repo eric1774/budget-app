@@ -5,6 +5,7 @@ import { networkInterfaces } from 'os'
 import { createServer as createNetServer } from 'net'
 import { WebSocketServer, WebSocket } from 'ws'
 import type { ServerInfo, ParseResponse } from '../shared/types'
+import type { AuthRuntime } from '../server/auth/runtime'
 import { getBudgets, setBudget } from './store'
 import {
   getAccounts,
@@ -95,6 +96,18 @@ function readBody(req: IncomingMessage, res: ServerResponse, cb: (body: any) => 
   })
 }
 
+// Reachable without a session. Browsers fetch the web-app manifest (and the
+// service worker fetches shell assets) WITHOUT credentials per spec — gating
+// them 302s into a cross-origin CORS dead-end and the SW retries forever.
+// None of these expose data.
+const PUBLIC_PATHS = new Set([
+  '/api/health',
+  '/manifest.webmanifest',
+  '/sw.js',
+  '/icon-192.png',
+  '/icon-512.png',
+])
+
 // --- Server state ---
 let httpServer: ReturnType<typeof createHttpServer> | null = null
 let wss: WebSocketServer | null = null
@@ -109,6 +122,7 @@ export function setLastSnapshot(response: ParseResponse): void {
 export interface StartServerOptions {
   rendererRoot: string
   preferredPort?: number
+  auth?: AuthRuntime | null
 }
 
 export async function startServer(opts: StartServerOptions): Promise<ServerInfo> {
@@ -117,10 +131,39 @@ export async function startServer(opts: StartServerOptions): Promise<ServerInfo>
   const ip = getLanIp()
   const rendererRoot = opts.rendererRoot
 
-  httpServer = createHttpServer((req: IncomingMessage, res: ServerResponse) => {
+  const appOrigin = opts.auth ? new URL(opts.auth.env.appBaseUrl).origin : null
+
+  async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
     // Strip query strings; decode URI; prevent directory traversal
     let urlPath = (req.url ?? '/').split('?')[0]
     try { urlPath = decodeURIComponent(urlPath) } catch { urlPath = '/' }
+
+    // ── Auth gate (web mode only; Electron passes no auth runtime) ──────────
+    if (opts.auth) {
+      if (await opts.auth.handleRequest(req, res)) return
+      if (!PUBLIC_PATHS.has(urlPath)) {
+        const session = opts.auth.getSessionUser(req)
+        if (!session) {
+          if (urlPath.startsWith('/api/')) {
+            res.writeHead(401, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ error: 'Not signed in' }))
+          } else {
+            res.writeHead(302, { Location: '/auth/login' })
+            res.end()
+          }
+          return
+        }
+        // CSRF backstop: cookies are SameSite=Lax, but reject any cross-origin mutation outright
+        if (req.method !== 'GET' && req.method !== 'HEAD') {
+          const origin = req.headers.origin
+          if (origin && origin !== appOrigin) {
+            res.writeHead(403, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ error: 'Cross-origin request rejected' }))
+            return
+          }
+        }
+      }
+    }
 
     // REST endpoint: GET /api/health — liveness + snapshot readiness
     if (urlPath === '/api/health') {
@@ -424,9 +467,24 @@ export async function startServer(opts: StartServerOptions): Promise<ServerInfo>
         res.end(data)
       }
     })
+  }
+
+  httpServer = createHttpServer((req: IncomingMessage, res: ServerResponse) => {
+    handleRequest(req, res).catch((err) => {
+      console.error('Request handler failed:', err)
+      if (!res.headersSent) res.writeHead(500, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'Internal server error' }))
+    })
   })
 
   wss = new WebSocketServer({ server: httpServer })
+
+  if (opts.auth) {
+    const auth = opts.auth
+    wss.on('connection', (socket, req) => {
+      if (!auth.getSessionUser(req)) socket.close(4401, 'Authentication required')
+    })
+  }
 
   await new Promise<void>((resolve) => httpServer!.listen(port, '0.0.0.0', resolve))
 

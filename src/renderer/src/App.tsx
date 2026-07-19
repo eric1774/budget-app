@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import type { ParseResult, ParseError, ParseResponse, BudgetMap, ServerInfo } from '../../shared/types'
+import type { ParseResult, ParseError, ParseResponse, BudgetMap, ServerInfo, AuthUser } from '../../shared/types'
+import { getMe, logout } from './api'
 import { WsClient, buildWsUrl } from './ws-client'
 import type { WsState } from './ws-client'
 import { LoadingSkeleton } from './components/LoadingSkeleton'
@@ -142,6 +143,11 @@ export default function App(): JSX.Element {
   const [wsState, setWsState] = useState<WsState | null>(null)
   // Timestamp of last parse error for the "Last updated X min ago" stale data badge
   const [parseErrorBadgeAt, setParseErrorBadgeAt] = useState<Date | null>(null)
+  const [user, setUser] = useState<AuthUser | null>(null)
+
+  useEffect(() => {
+    getMe().then(setUser)
+  }, [])
 
   // Map dashboard filterState date preset to log filter date fields
   const dashboardDateToLogDate = useCallback((fs: FilterState): Pick<LogFilterState, 'datePreset' | 'selectedMonthYear'> => {
@@ -190,6 +196,37 @@ export default function App(): JSX.Element {
     if (typeof window !== 'undefined' && window.electronAPI) return
 
     let mounted = true
+
+    const bounceToLogin = (): void => {
+      window.location.href = '/auth/login'
+    }
+
+    const fetchSnapshot = (): void => {
+      fetch('/api/snapshot')
+        .then((r) => {
+          // Session died (12h expiry, cleared cookies) — re-auth instead of
+          // leaving the page stuck on the loading skeleton
+          if (r.status === 401) {
+            bounceToLogin()
+            return null
+          }
+          return r.json()
+        })
+        .then((data) => {
+          if (!mounted || !data) return
+          const snap = data as ParseResponse
+          if (snap.ok) {
+            setParseResult(reviveDates(snap.result))
+            setStatus('loaded')
+            setLastSyncedAt(new Date())
+          }
+        })
+        .catch(() => {})
+    }
+
+    // Load data immediately — the dashboard must not wait for the WebSocket
+    fetchSnapshot()
+
     const client = new WsClient(buildWsUrl(), {
       onMessage: (payload) => {
         if (!mounted) return
@@ -210,22 +247,10 @@ export default function App(): JSX.Element {
       onStateChange: (state) => {
         if (!mounted) return
         setWsState(state)
-        if (state === 'connected') {
-          // Fetch fresh snapshot immediately after (re)connect
-          fetch('/api/snapshot')
-            .then((r) => r.json())
-            .then((data) => {
-              if (!mounted) return
-              const snap = data as ParseResponse
-              if (snap.ok) {
-                setParseResult(reviveDates(snap.result))
-                setStatus('loaded')
-                setLastSyncedAt(new Date())
-              }
-            })
-            .catch(() => {})
-        }
+        // Refresh after (re)connect — updates broadcast while disconnected were missed
+        if (state === 'connected') fetchSnapshot()
       },
+      onAuthRejected: bounceToLogin,
     })
 
     return () => {
@@ -560,6 +585,15 @@ export default function App(): JSX.Element {
           {filePath ?? ''}
         </span>
         <div className="app-header__actions">
+          {user && (
+            <span className="app-header__user" title={user.email}>
+              {user.name}
+              {user.role === 'admin' && <span className="app-header__role">admin</span>}
+              <button className="app-header__signout" onClick={() => { void logout() }}>
+                Sign out
+              </button>
+            </span>
+          )}
           <button className="btn-ghost" onClick={handleSelectFile}>
             Change File
           </button>

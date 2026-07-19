@@ -1,4 +1,4 @@
-FROM node:22-alpine AS build
+FROM node:24-alpine AS build
 WORKDIR /app
 # Electron is a devDependency only needed for desktop mode; skip its binary download
 ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1
@@ -7,7 +7,7 @@ RUN npm ci
 COPY . .
 RUN npm run build:web
 
-FROM node:22-alpine
+FROM node:24-alpine
 WORKDIR /app
 # tzdata so the TZ env var (set in docker-compose) actually takes effect;
 # without it Alpine silently stays on UTC and Excel dates parsed at
