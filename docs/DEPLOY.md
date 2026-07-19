@@ -98,6 +98,13 @@ modify the spreadsheet.
 
 ## Phase 2: HTTPS + passkey login (Caddy + Pocket ID)
 
+> **SUPERSEDED IN PART — read Phase 2.1 below first.** The stack now uses a
+> real domain with wildcard Let's Encrypt certificates (Cloudflare DNS-01)
+> instead of Caddy's internal CA. Sections 1 (LAN DNS) and 5 (trust the
+> internal CA) no longer apply — there is nothing to install on any device.
+> Sections 2–4 and 6 still describe the Pocket ID setup flow accurately,
+> substituting your real hostnames.
+
 Everything below happens once, on the LXC (`/opt/budget-app`), after `git pull`.
 Reminder: builds on this LXC MUST use the classic builder — `DOCKER_BUILDKIT=0`.
 
@@ -192,3 +199,84 @@ Export the root cert:
 - A dashboard stuck on the loading skeleton means the page outlived its session
   (12h expiry, or cookies cleared mid-session) — since the UAT fixes it
   redirects to sign-in by itself; on an older build, F5 does it.
+
+## Phase 2.1: Real domain + Let's Encrypt (supersedes the internal CA)
+
+The two app hostnames become subdomains of a real domain you own, with DNS
+hosted at Cloudflare. The A records are **public but point at the private LAN
+IP** — resolvable from anywhere, reachable only on your LAN. Nothing is
+port-forwarded or exposed; the ACME DNS-01 challenge is outbound-only. Caddy
+serves one **wildcard** Let's Encrypt certificate (individual subdomains stay
+out of public Certificate Transparency logs), so **no device ever installs a
+certificate**.
+
+### 1. Cloudflare (one-time, in the Cloudflare dashboard)
+
+1. DNS → Records → add two **A** records, both **"DNS only" (grey cloud —
+   NOT proxied)**:
+   - `budget` → the LXC's LAN IP (e.g. 192.168.1.114)
+   - `id` → the same IP
+2. Profile → API Tokens → Create Token → "Edit zone DNS" template:
+   - Permissions: **Zone → DNS → Edit**
+   - Zone Resources: **Include → Specific zone → your domain** (only this zone)
+   - Copy the token — it goes in `.env` in the next step (never commit it).
+
+### 2. Update .env on the LXC
+
+New/changed values (see `.env.example`):
+
+    BASE_DOMAIN=yourdomain.com
+    BUDGET_HOST=budget.yourdomain.com
+    POCKET_ID_HOST=id.yourdomain.com
+    ACME_EMAIL=you@example.com
+    CLOUDFLARE_API_TOKEN=<the token from step 1>
+
+`POCKET_ID_ENCRYPTION_KEY` / `OIDC_CLIENT_ID` / `OIDC_CLIENT_SECRET` keep
+their existing values.
+
+### 3. Rebuild and watch the cert arrive
+
+    cd /opt/budget-app
+    git pull
+    DOCKER_BUILDKIT=0 docker compose up -d --build
+    docker logs -f caddy
+
+Expect a `certificate obtained successfully` line for `*.yourdomain.com`
+within a minute or two. Errors mentioning the DNS provider mean the token
+scope or `BASE_DOMAIN` is wrong.
+
+### 4. Migrating an existing home.arpa install
+
+Passkeys are cryptographically bound to the domain, so the old ones die with
+the old hostnames — this is painless BEFORE the family enrolls, so do it now:
+
+1. Get back into Pocket ID (your old passkey no longer matches):
+
+       docker compose exec pocket-id /app/pocket-id one-time-access-token <your-username-or-email>
+
+   Open the printed link at `https://id.yourdomain.com`, then Account
+   Settings → Passkeys → add a new passkey (delete the stale one).
+2. Admin UI → OIDC Clients → Budget Dashboard → change the callback URL to
+   `https://budget.yourdomain.com/auth/callback`.
+3. (`APP_URL` needs no manual edit — compose derives it from
+   `POCKET_ID_HOST`.)
+4. Optional cleanup: remove the old `*.home.arpa` records from Pi-hole, and
+   add `budget`/`id.yourdomain.com` → LXC IP as Pi-hole Local DNS records —
+   devices using Pi-hole then keep resolving even during an internet outage.
+5. Sign into `https://budget.yourdomain.com` with the new passkey and re-run
+   the Phase 2 §6 verification.
+
+### Ops notes (Phase 2.1)
+
+- **Internet dependency:** name resolution now rides public DNS. If the
+  internet is down, devices using the AT&T resolver can't resolve the
+  dashboard (devices pointed at Pi-hole keep working via the local records
+  from step 4.4). Cert renewals (~60 days) also need outbound internet;
+  Caddy renews automatically.
+- **Rebind protection:** if a device resolves the names but can't load the
+  site, its resolver may be filtering private-IP answers. Fix per device by
+  using Pi-hole, or set Android's Private DNS to `one.one.one.one`.
+- The `ca-perms` service and `NODE_EXTRA_CA_CERTS` are gone — budget-app
+  trusts Let's Encrypt natively. The old §5 CA-trust ceremony is obsolete;
+  previously installed "Caddy Local Authority" root certs on devices are
+  harmless and can be removed at leisure.

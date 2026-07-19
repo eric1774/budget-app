@@ -18,71 +18,45 @@ services:
       OIDC_CLIENT_ID: ${OIDC_CLIENT_ID}
       OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
       ADMIN_GROUP: budget-admin
-      # Trust Caddy's internal CA for OIDC discovery/token calls to https://${POCKET_ID_HOST}
-      NODE_EXTRA_CA_CERTS: /caddy-ca/caddy/pki/authorities/local/root.crt
+      # OIDC calls to https://${POCKET_ID_HOST} present a real Let's Encrypt
+      # cert (via caddy) — trusted by Node's bundled roots, nothing extra needed.
     volumes:
       - budget_mirror:/data/budget:ro
       - app_data:/data/app
-      - caddy_data:/caddy-ca:ro
     depends_on:
       onedrive:
         condition: service_started
       pocket-id:
         condition: service_started
       caddy:
-        # Healthy = internal CA root exists, so NODE_EXTRA_CA_CERTS resolves at boot
         condition: service_healthy
-      ca-perms:
-        # CA root must also be READABLE by the app's non-root user — see ca-perms
-        condition: service_completed_successfully
-
-  # One-shot init: Caddy creates its PKI tree 0700 root:root, which the
-  # budget-app container (user node, uid 1000) cannot traverse — it would
-  # fail to load NODE_EXTRA_CA_CERTS and OIDC discovery would fail TLS
-  # verification at first login. Opens directory traversal + read on the
-  # root cert only; private keys next to it stay 0600.
-  ca-perms:
-    image: caddy:2-alpine
-    container_name: ca-perms
-    entrypoint:
-      - /bin/sh
-      - -c
-      - |
-        i=0
-        until [ -f /data/caddy/pki/authorities/local/root.crt ]; do
-          i=$$((i+1))
-          if [ $$i -gt 60 ]; then echo 'ca-perms: root.crt never appeared' >&2; exit 1; fi
-          sleep 1
-        done
-        chmod 755 /data /data/caddy /data/caddy/pki /data/caddy/pki/authorities /data/caddy/pki/authorities/local
-        chmod 644 /data/caddy/pki/authorities/local/root.crt
-        echo 'ca-perms: CA root readable'
-    volumes:
-      - caddy_data:/data
-    depends_on:
-      caddy:
-        condition: service_started
-    restart: "no"
 
   caddy:
-    image: caddy:2-alpine
+    # Custom build: caddy + Cloudflare DNS plugin for the DNS-01 ACME
+    # challenge (wildcard Let's Encrypt cert, LAN-only deployment)
+    build: ./caddy
     container_name: caddy
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     environment:
+      BASE_DOMAIN: ${BASE_DOMAIN}
       BUDGET_HOST: ${BUDGET_HOST}
       POCKET_ID_HOST: ${POCKET_ID_HOST}
+      ACME_EMAIL: ${ACME_EMAIL}
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
     healthcheck:
-      test: ["CMD", "test", "-f", "/data/caddy/pki/authorities/local/root.crt"]
-      interval: 5s
+      # Admin endpoint answers once the config loads; cert issuance is async
+      # and budget-app's OIDC discovery is lazy+retried, so no cert gating.
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:2019/config/"]
+      interval: 10s
       timeout: 3s
-      retries: 12
+      retries: 6
       start_period: 5s
     networks:
       default:

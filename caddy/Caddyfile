@@ -1,13 +1,28 @@
-# Both sites use Caddy's internal CA (passkeys/WebAuthn require HTTPS).
-# The root cert is at /data/caddy/pki/authorities/local/root.crt — see docs/DEPLOY.md
-# for trusting it on family devices.
-
-{$BUDGET_HOST} {
-	tls internal
-	reverse_proxy budget-app:3737
+# Real-domain mode: one wildcard Let's Encrypt certificate for *.BASE_DOMAIN,
+# issued via Cloudflare DNS-01. The wildcard keeps individual subdomains out
+# of public Certificate Transparency logs. The A records for these hosts point
+# at PRIVATE LAN IPs — resolvable from anywhere, reachable only on the LAN.
+{
+	email {$ACME_EMAIL}
 }
 
-{$POCKET_ID_HOST} {
-	tls internal
-	reverse_proxy pocket-id:1411
+*.{$BASE_DOMAIN} {
+	tls {
+		dns cloudflare {$CLOUDFLARE_API_TOKEN}
+	}
+
+	@budget host {$BUDGET_HOST}
+	handle @budget {
+		reverse_proxy budget-app:3737
+	}
+
+	@id host {$POCKET_ID_HOST}
+	handle @id {
+		reverse_proxy pocket-id:1411
+	}
+
+	# Any other name under the wildcard: refuse
+	handle {
+		abort
+	}
 }
