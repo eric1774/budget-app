@@ -113,6 +113,24 @@ let httpServer: ReturnType<typeof createHttpServer> | null = null
 let wss: WebSocketServer | null = null
 let serverInfo: ServerInfo | null = null
 let lastSnapshot: ParseResponse | null = null
+let activeAuth: AuthRuntime | null = null
+let wsSweepTimer: ReturnType<typeof setInterval> | null = null
+const wsSessionIds = new Map<WebSocket, string>()
+
+// Close any WebSocket whose backing session has expired or been logged out.
+// Runs on an interval in auth mode; exported so tests can trigger it directly.
+export function sweepWsSessions(): number {
+  if (!activeAuth) return 0
+  let closed = 0
+  for (const [socket, sessionId] of wsSessionIds) {
+    if (!activeAuth.isSessionLive(sessionId)) {
+      wsSessionIds.delete(socket)
+      socket.close(4401, 'Session expired')
+      closed++
+    }
+  }
+  return closed
+}
 
 // Store the latest parse result so /api/snapshot can return it to browser clients
 export function setLastSnapshot(response: ParseResponse): void {
@@ -481,9 +499,21 @@ export async function startServer(opts: StartServerOptions): Promise<ServerInfo>
 
   if (opts.auth) {
     const auth = opts.auth
+    activeAuth = auth
     wss.on('connection', (socket, req) => {
-      if (!auth.getSessionUser(req)) socket.close(4401, 'Authentication required')
+      const session = auth.getSessionUser(req)
+      if (!session) {
+        socket.close(4401, 'Authentication required')
+        return
+      }
+      // Remember which session backs this socket so the sweeper can cull it
+      // when the session expires or is logged out (spec: 12h expiry applies
+      // to the live data channel too, not just HTTP).
+      wsSessionIds.set(socket, session.id)
+      socket.on('close', () => wsSessionIds.delete(socket))
     })
+    wsSweepTimer = setInterval(sweepWsSessions, 60_000)
+    wsSweepTimer.unref()
   }
 
   await new Promise<void>((resolve) => httpServer!.listen(port, '0.0.0.0', resolve))
@@ -506,6 +536,9 @@ export function stopServer(): Promise<void> {
       httpServer.closeAllConnections?.()
       httpServer.close(() => r())
     })
+    if (wsSweepTimer) { clearInterval(wsSweepTimer); wsSweepTimer = null }
+    wsSessionIds.clear()
+    activeAuth = null
     wss = null; httpServer = null; serverInfo = null
     Promise.all([wssDone, httpDone]).then(() => resolve())
   })

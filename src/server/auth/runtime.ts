@@ -23,6 +23,8 @@ export interface AuthRuntime {
   /** Handles /auth/* and /api/me. Returns true when the request was handled. */
   handleRequest(req: IncomingMessage, res: ServerResponse): Promise<boolean>
   getSessionUser(req: IncomingMessage): SessionRecord | null
+  /** True while the session id exists and is unexpired — used to cull open WebSockets. */
+  isSessionLive(id: string): boolean
 }
 
 const LOGGED_OUT_HTML = `<!doctype html>
@@ -45,6 +47,10 @@ export function initAuth(env: AuthEnvConfig, flow: OidcFlow = realFlow): AuthRun
   function getSessionUser(req: IncomingMessage): SessionRecord | null {
     const id = parseCookies(req.headers.cookie)[SESSION_COOKIE]
     return id ? getSession(id) : null
+  }
+
+  function isSessionLive(id: string): boolean {
+    return getSession(id) !== null
   }
 
   async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<boolean> {
@@ -125,5 +131,5 @@ export function initAuth(env: AuthEnvConfig, flow: OidcFlow = realFlow): AuthRun
     return false
   }
 
-  return { env, handleRequest, getSessionUser }
+  return { env, handleRequest, getSessionUser, isSessionLive }
 }
