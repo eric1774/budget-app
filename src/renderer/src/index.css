@@ -1066,10 +1066,392 @@ html, body, #root {
   gap: var(--space-lg);
 }
 
-.budget-summary-cards {
+.budget-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Month pager — glass pill */
+.month-pager {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.month-pager__btn {
+  width: 34px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color var(--transition-base), background var(--transition-base);
+}
+.month-pager__btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.month-pager__label {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary);
+  min-width: 148px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Budget hero overview ── */
+.budget-hero {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-xl);
+  padding: 20px 24px !important;
+}
+
+.budget-hero--empty {
+  align-items: center;
+  gap: 14px;
+}
+
+.budget-hero__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.budget-hero__label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.budget-hero__value {
+  font-family: var(--font-mono);
+  font-size: clamp(20px, 2.4vw, 28px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.budget-hero__of {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  letter-spacing: 0;
+}
+
+.budget-hero__meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.budget-hero__side {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 6px;
+  padding-left: var(--space-xl);
+  border-left: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.budget-hero__side-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.budget-hero__side-value {
+  font-family: var(--font-mono);
+  font-size: clamp(18px, 2vw, 24px);
+  font-weight: 600;
+  color: var(--income);
+  font-variant-numeric: tabular-nums;
+}
+.budget-hero__side-value--over {
+  color: var(--expense);
+}
+
+/* ── Budget progress bars (shared by hero + cards) ── */
+.budget-bar {
+  position: relative;
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 99px;
+}
+
+.budget-bar--hero {
+  height: 10px;
+  margin-top: 4px;
+}
+
+.budget-bar__fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #2DD4BF, #34D399);
+  box-shadow: 0 0 10px rgba(45, 212, 191, 0.25);
+  transition: width 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.budget-bar__fill--over {
+  background: linear-gradient(90deg, #F87171, #EF4444);
+  box-shadow: 0 0 10px rgba(248, 113, 113, 0.3);
+}
+
+/* Pace tick — where "today" falls within the month */
+.budget-bar__tick {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.45);
+  transform: translateX(-1px);
+  pointer-events: none;
+}
+
+/* ── Status chips ── */
+.budget-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 99px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  line-height: 1.7;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.budget-chip--ok {
+  color: var(--income);
+  background: var(--income-bg);
+  border: 1px solid rgba(52, 211, 153, 0.25);
+}
+.budget-chip--ahead {
+  color: var(--warning);
+  background: var(--warning-bg);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+}
+.budget-chip--over {
+  color: var(--expense);
+  background: var(--expense-bg);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+.budget-chip--muted {
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+}
+
+/* ── Category insight card grid ── */
+.budget-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: 12px;
+}
+
+.budget-grid__empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+  padding: 32px 0;
+}
+
+.budget-card {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 14px 16px;
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
+  cursor: pointer;
+  appearance: none;
+  transition: transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+}
+.budget-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 4px 20px rgba(45, 212, 191, 0.10), 0 0 0 1px rgba(45, 212, 191, 0.08);
+}
+.budget-card--over:hover {
+  border-color: var(--expense);
+  box-shadow: 0 4px 20px rgba(248, 113, 113, 0.12), 0 0 0 1px rgba(248, 113, 113, 0.10);
+}
+.budget-card--nobudget {
+  opacity: 0.75;
+}
+.budget-card--nobudget:hover {
+  opacity: 1;
+}
+
+.budget-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.budget-card__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.budget-card__nums {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.budget-card__spent {
+  font-family: var(--font-mono);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.budget-card__of {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.budget-card__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11.5px;
+}
+
+.budget-card__remaining {
+  color: var(--income);
+  font-variant-numeric: tabular-nums;
+}
+.budget-card__remaining--over {
+  color: var(--expense);
+}
+.budget-card--nobudget .budget-card__remaining {
+  color: var(--text-secondary);
+}
+
+.budget-card__pct {
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Budget modal rows ── */
+.budget-modal__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 6px;
+  margin: 0 -6px;
+  border-radius: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+.budget-modal__row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.budget-modal__cat {
+  color: var(--text-primary);
+  font-size: 13px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.budget-modal__input-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0 10px;
+  transition: border-color var(--transition-base);
+  flex-shrink: 0;
+}
+.budget-modal__input-wrap:focus-within {
+  border-color: rgba(45, 212, 191, 0.45);
+}
+
+.budget-modal__currency {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+
+.budget-input {
+  width: 90px;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  padding: 7px 0;
+  font-size: 13px;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  -moz-appearance: textfield;
+}
+.budget-input::-webkit-outer-spin-button,
+.budget-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .budget-hero {
+    flex-direction: column;
+    gap: 14px;
+  }
+  .budget-hero__side {
+    border-left: none;
+    border-top: 1px solid var(--border-subtle);
+    padding-left: 0;
+    padding-top: 12px;
+    align-items: flex-start;
+  }
 }
 
 /* ── Summary (insight) cards ── */
@@ -1476,9 +1858,6 @@ html, body, #root {
     flex: 1 1 0;
   }
 
-  .budget-summary-cards {
-    grid-template-columns: 1fr;
-  }
 
   .budget-main { gap: var(--space-md); }
   .budget-tab-outer { padding: var(--space-md); }

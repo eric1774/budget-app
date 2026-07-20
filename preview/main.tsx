@@ -1,4 +1,5 @@
 import { createRoot } from 'react-dom/client'
+import { BudgetTab } from '../src/renderer/src/components/BudgetTab'
 import { MonthlyChart } from '../src/renderer/src/components/MonthlyChart'
 import { CategoryBreakdownChart } from '../src/renderer/src/components/CategoryBreakdownChart'
 import { BalanceChart } from '../src/renderer/src/components/BalanceChart'
@@ -44,15 +45,43 @@ function makeData(): Transaction[] {
 
 const txns = makeData()
 
+// Mock the budgets API for BudgetTab (preview runs without the real server)
+const MOCK_BUDGETS = {
+  '2026-07': {
+    'Groceries': 600, 'Dining Out': 250, 'Utilities / Gas / Insurance': 450,
+    'Mortgage': 1800, 'Entertainment': 150, 'Subscriptions': 80,
+    'Baby Needs': 200, 'Horse Budget': 300, 'Tithe': 500,
+  },
+}
+const realFetch = window.fetch.bind(window)
+window.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+  if (url.includes('/api/budgets')) {
+    return Promise.resolve(new Response(JSON.stringify(MOCK_BUDGETS), { status: 200 }))
+  }
+  return realFetch(input, init)
+}) as typeof window.fetch
+
+const page = new URLSearchParams(location.search).get('page') ?? 'dashboard'
+
 createRoot(document.getElementById('root')!).render(
   <div style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
-    <main className="dashboard-main">
-      <SummaryCards transactions={txns} onCardClick={() => {}} />
-      <MonthlyChart transactions={txns} />
-      <div className="charts-row">
-        <CategoryBreakdownChart transactions={txns.filter((t) => t.debit > 0)} onCategoryDoubleClick={() => {}} />
-        <BalanceChart transactions={txns} />
-      </div>
-    </main>
+    {page === 'budget' ? (
+      <main className="budget-tab-outer">
+        <BudgetTab
+          transactions={txns}
+          categories={CATS.filter((c) => c !== 'Income')}
+        />
+      </main>
+    ) : (
+      <main className="dashboard-main">
+        <SummaryCards transactions={txns} onCardClick={() => {}} />
+        <MonthlyChart transactions={txns} />
+        <div className="charts-row">
+          <CategoryBreakdownChart transactions={txns.filter((t) => t.debit > 0)} onCategoryDoubleClick={() => {}} />
+          <BalanceChart transactions={txns} />
+        </div>
+      </main>
+    )}
   </div>
 )
