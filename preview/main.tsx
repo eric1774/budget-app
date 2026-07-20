@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BudgetTab } from '../src/renderer/src/components/BudgetTab'
+import { GoalsTab } from '../src/renderer/src/components/GoalsTab'
+import { AssetsTab } from '../src/renderer/src/components/AssetsTab'
 import { LogTab } from '../src/renderer/src/components/LogTab'
 import { LogFilterBar, DEFAULT_LOG_FILTER } from '../src/renderer/src/components/LogFilterBar'
 import type { LogFilterState } from '../src/renderer/src/components/LogFilterBar'
@@ -57,16 +59,68 @@ const MOCK_BUDGETS = {
     'Baby Needs': 200, 'Horse Budget': 300, 'Tithe': 500,
   },
 }
+const MOCK_GOALS = [
+  { id: 'g1', name: 'House Down Payment', targetAmount: 60000, targetDate: '2028-06-01', startingAmount: 18000, contributions: [{ amount: 9500 }], createdAt: '' },
+  { id: 'g2', name: 'Family Vacation', targetAmount: 5000, targetDate: '2026-12-15', startingAmount: 1200, contributions: [{ amount: 1450 }], createdAt: '' },
+  { id: 'g3', name: 'Emergency Fund', targetAmount: 15000, startingAmount: 15200, contributions: [], createdAt: '' },
+  { id: 'g4', name: 'New Truck', targetAmount: 35000, targetDate: '2029-03-01', startingAmount: 4000, contributions: [{ amount: 2100 }], createdAt: '' },
+  { id: 'g5', name: 'Kids College Fund', contributions: [{ amount: 3600 }], startingAmount: 2000, createdAt: '' },
+]
+
+const MOCK_ACCOUNTS = [
+  { id: 'a1', name: 'Everyday Checking', type: 'Checkings', syncedWithDashboard: true, transactions: [], createdAt: '' },
+  { id: 'a2', name: 'High-Yield Savings', type: 'Savings', transactions: [
+    { id: 't1', date: '2026-01-15', type: 'deposit', amount: 12000 },
+    { id: 't2', date: '2026-03-10', type: 'deposit', amount: 2500 },
+    { id: 't3', date: '2026-05-02', type: 'deposit', amount: 1800 },
+    { id: 't4', date: '2026-07-01', type: 'deposit', amount: 900 },
+  ], createdAt: '' },
+  { id: 'a3', name: 'Fidelity 401k', type: 'Retirement', transactions: [
+    { id: 't5', date: '2026-02-01', type: 'deposit', amount: 41000 },
+    { id: 't6', date: '2026-04-01', type: 'deposit', amount: 2400 },
+    { id: 't7', date: '2026-06-01', type: 'deposit', amount: 2600 },
+  ], createdAt: '' },
+  { id: 'a4', name: 'Brokerage', type: 'Investing', transactions: [
+    { id: 't8', date: '2026-03-01', type: 'deposit', amount: 8000 },
+    { id: 't9', date: '2026-06-15', type: 'withdrawal', amount: 1200 },
+  ], createdAt: '' },
+]
+
+const MOCK_MORTGAGES = [
+  { id: 'm1', name: 'Primary Home', marketValue: 380000, principalBalance: 291000, payments: [], createdAt: '' },
+]
+
 const realFetch = window.fetch.bind(window)
 window.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
   const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
   if (url.includes('/api/budgets')) {
     return Promise.resolve(new Response(JSON.stringify(MOCK_BUDGETS), { status: 200 }))
   }
+  if (url.includes('/api/goals')) {
+    return Promise.resolve(new Response(JSON.stringify(MOCK_GOALS), { status: 200 }))
+  }
+  if (url.includes('mortgage')) {
+    return Promise.resolve(new Response(JSON.stringify(MOCK_MORTGAGES), { status: 200 }))
+  }
+  if (url.includes('/api/assets')) {
+    return Promise.resolve(new Response(JSON.stringify(MOCK_ACCOUNTS), { status: 200 }))
+  }
   return realFetch(input, init)
 }) as typeof window.fetch
 
 const page = new URLSearchParams(location.search).get('page') ?? 'dashboard'
+
+function GoalsPreview(): JSX.Element {
+  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null)
+  return (
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <GoalsTab
+        onGoalSelect={(g) => setSelectedGoalId(g?.id ?? null)}
+        selectedGoalId={selectedGoalId}
+      />
+    </div>
+  )
+}
 
 function LogPreview(): JSX.Element {
   const [filter, setFilter] = useState<LogFilterState>(DEFAULT_LOG_FILTER)
@@ -108,7 +162,11 @@ function LogPreview(): JSX.Element {
 
 createRoot(document.getElementById('root')!).render(
   <div style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
-    {page === 'log' ? (
+    {page === 'goals' ? (
+      <GoalsPreview />
+    ) : page === 'assets' ? (
+      <AssetsTab onAccountSelect={() => {}} selectedAccountId={null} dashboardBalance={14211.22} />
+    ) : page === 'log' ? (
       <LogPreview />
     ) : page === 'budget' ? (
       <main className="budget-tab-outer">

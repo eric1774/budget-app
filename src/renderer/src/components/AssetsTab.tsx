@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
+import type { CSSProperties } from 'react'
+import { Plus, PencilSimple, Trash } from '@phosphor-icons/react'
 import type { AssetAccount, Mortgage } from '../../../shared/types'
-import { GlassCard } from './GlassCard'
 import { AccountDetailPanel } from './AccountDetailPanel'
 import {
   AddAccountModal,
@@ -37,6 +38,17 @@ const cadFormatter = new Intl.NumberFormat('en-CA', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 })
+const cadShortFormatter = new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 })
+
+// Matches NetWorthSection's donut colors so cards and chart agree
+const TYPE_COLORS: Record<string, string> = {
+  Checkings: '#2DD4BF',
+  Savings: '#60A5FA',
+  Retirement: '#FBBF24',
+  'Hard Asset': '#F87171',
+  Investing: '#A78BFA',
+  Goal: '#34D399',
+}
 
 function accountBalance(account: AssetAccount): number {
   return (account.transactions ?? []).reduce((sum, t) => {
@@ -45,10 +57,13 @@ function accountBalance(account: AssetAccount): number {
 }
 
 function lastTransactionDate(account: AssetAccount): string | null {
+  // Asset transaction dates are ISO strings on disk; the shared type erroneously
+  // resolves to the Excel Transaction (Date) — compare as strings
   if ((account.transactions ?? []).length === 0) return null
-  return account.transactions.reduce((best, t) =>
-    t.date.localeCompare(best) > 0 ? t.date : best
-  , account.transactions[0].date)
+  return account.transactions.reduce<string>((best, t) => {
+    const d = t.date as unknown as string
+    return d.localeCompare(best) > 0 ? d : best
+  }, account.transactions[0].date as unknown as string)
 }
 
 // Use CSS class btn-primary instead
@@ -56,7 +71,6 @@ function lastTransactionDate(account: AssetAccount): string | null {
 export function AssetsTab({ onAccountSelect, selectedAccountId, dashboardBalance }: AssetsTabProps): JSX.Element {
   const [accounts, setAccounts] = useState<AssetAccount[]>([])
   const [mortgages, setMortgages] = useState<Mortgage[]>([])
-  const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [modal, setModal] = useState<ModalState>(null)
   const [selectedMortgageId, setSelectedMortgageId] = useState<string | null>(null)
 
@@ -118,197 +132,155 @@ export function AssetsTab({ onAccountSelect, selectedAccountId, dashboardBalance
     <div className="assets-tab-outer">
       <NetWorthSection accounts={accounts} dashboardBalance={dashboardBalance} mortgages={mortgages} />
 
-      {/* Add Account + Add Mortgage buttons */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
-        <button
-          className="btn-primary"
-          onClick={() => setModal({ kind: 'add-mortgage' })}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Add Mortgage
-        </button>
-        <button
-          className="btn-primary"
-          onClick={() => setModal({ kind: 'add-account' })}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      {/* Accounts section */}
+      <div className="asset-section-head">
+        <span className="asset-section-head__title">Accounts</span>
+        <button className="btn-ghost" onClick={() => setModal({ kind: 'add-account' })}>
+          <Plus size={13} weight="bold" />
           Add Account
         </button>
       </div>
-
-      {/* Mortgage cards */}
-      {mortgages.length > 0 && (
-        <>
-          <div style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 16, marginBottom: 8, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Mortgages
-          </div>
-          <div className="assets-account-grid">
-            {mortgages.map((mortgage) => {
-              const equity = mortgage.marketValue - mortgage.principalBalance
-              return (
-                <div
-                  key={mortgage.id}
-                  style={{ position: 'relative', cursor: 'pointer' }}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setSelectedMortgageId(mortgage.id)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSelectedMortgageId(mortgage.id) }}
-                >
-                  {/* Card action buttons (edit + delete) */}
-                  <div style={{ display: 'flex', gap: 2, position: 'absolute', top: 6, right: 6, zIndex: 2 }}>
-                    <button
-                      className="btn-icon"
-                      title="Edit mortgage"
-                      aria-label={`Edit ${mortgage.name}`}
-                      onClick={(e) => { e.stopPropagation(); setModal({ kind: 'edit-mortgage', mortgage }) }}
-                      style={{ width: 36, height: 36, minWidth: 36, minHeight: 36 }}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    </button>
-                    <button
-                      className="btn-icon btn-icon--danger"
-                      title="Delete mortgage"
-                      aria-label={`Delete ${mortgage.name}`}
-                      onClick={(e) => { e.stopPropagation(); setModal({ kind: 'delete-mortgage', mortgage }) }}
-                      style={{ width: 36, height: 36, minWidth: 36, minHeight: 36 }}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                    </button>
-                  </div>
-
-                  <GlassCard style={{ padding: 16, border: '1px solid var(--border-accent)' }}>
-                    {/* Mortgage name */}
-                    <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8 }}>
-                      {mortgage.name}
-                    </div>
-
-                    {/* Type badge */}
-                    <div style={{
-                      display: 'inline-block',
-                      background: 'rgba(249,115,22,0.15)',
-                      color: '#f97316',
-                      fontSize: 11,
-                      borderRadius: 4,
-                      padding: '2px 7px',
-                      marginBottom: 12,
-                    }}>
-                      Mortgage
-                    </div>
-
-                    {/* Equity */}
-                    <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 2 }}>Equity</div>
-                    <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-accent)', marginBottom: 10 }}>
-                      {cadFormatter.format(equity)}
-                    </div>
-
-                    {/* Market value + principal in smaller text */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text-muted)' }}>
-                      <span>Market: {cadFormatter.format(mortgage.marketValue)}</span>
-                      <span>Owed: {cadFormatter.format(mortgage.principalBalance)}</span>
-                    </div>
-                  </GlassCard>
-                </div>
-              )
-            })}
-          </div>
-        </>
-      )}
-
-      {/* Account cards grid */}
       {accounts.length === 0 ? (
-        <div style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: 40 }}>
-          No accounts yet. Add an account to get started.
-        </div>
+        <div className="asset-empty">No accounts yet. Add an account to get started.</div>
       ) : (
         <div className="assets-account-grid">
           {accounts.map((account) => {
             const balance = getDisplayBalance(account)
             const isSynced = account.syncedWithDashboard && dashboardBalance !== undefined
             const lastDate = lastTransactionDate(account)
-            const isSelected = account.id === selectedAccountId
-            const isHovered = account.id === hoveredId
-            const borderColor = isSelected || isHovered ? 'var(--color-accent)' : 'var(--border-accent)'
+            const accent = TYPE_COLORS[account.type] ?? 'var(--accent)'
+            const hasValue = isSynced || (account.transactions ?? []).length > 0
 
             return (
-              <div
-                key={account.id}
-                role="button"
-                tabIndex={0}
-                onClick={() => onAccountSelect(account)}
-                onMouseEnter={() => setHoveredId(account.id)}
-                onMouseLeave={() => setHoveredId(null)}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onAccountSelect(account) }}
-                style={{ cursor: 'pointer', position: 'relative' }}
-              >
-                {/* Card action buttons (edit + delete) */}
-                <div style={{ display: 'flex', gap: 2, position: 'absolute', top: 6, right: 6, zIndex: 2 }}>
+              <div className="asset-card-wrap" key={account.id}>
+                <div className="asset-card-actions">
                   <button
                     className="btn-icon"
+                    style={{ width: 32, height: 32, minWidth: 32, minHeight: 32 }}
                     title="Edit account"
                     aria-label={`Edit ${account.name}`}
-                    onClick={(e) => { e.stopPropagation(); setModal({ kind: 'edit-account', account }) }}
-                    style={{ width: 36, height: 36, minWidth: 36, minHeight: 36 }}
+                    onClick={() => setModal({ kind: 'edit-account', account })}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    <PencilSimple size={13} />
                   </button>
                   <button
                     className="btn-icon btn-icon--danger"
+                    style={{ width: 32, height: 32, minWidth: 32, minHeight: 32 }}
                     title="Delete account"
                     aria-label={`Delete ${account.name}`}
-                    onClick={(e) => { e.stopPropagation(); setModal({ kind: 'delete-account', account }) }}
-                    style={{ width: 36, height: 36, minWidth: 36, minHeight: 36 }}
+                    onClick={() => setModal({ kind: 'delete-account', account })}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    <Trash size={13} />
                   </button>
                 </div>
 
-                <GlassCard
-                  style={{
-                    padding: 16,
-                    border: `1px solid ${borderColor}`,
-                  }}
+                <button
+                  className={`glass-card asset-card${account.id === selectedAccountId ? ' asset-card--selected' : ''}`}
+                  style={{ '--card-accent': accent } as CSSProperties}
+                  onClick={() => onAccountSelect(account)}
+                  aria-label={`${account.name} (${account.type})${hasValue ? `: ${cadFormatter.format(balance)}` : ''}. View details.`}
                 >
-                  {/* Account name */}
-                  <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8 }}>
-                    {account.name}
+                  <div className="budget-card__top">
+                    <span className="budget-card__name">{account.name}</span>
+                    <span className="asset-chip">{account.type}</span>
                   </div>
+                  <div className="budget-card__nums">
+                    {hasValue ? (
+                      <span className="budget-card__spent">{cadFormatter.format(balance)}</span>
+                    ) : (
+                      <span className="asset-card__nodata">
+                        {account.syncedWithDashboard ? 'Load a file' : 'No data'}
+                      </span>
+                    )}
+                  </div>
+                  <div className="asset-card__meta">
+                    {isSynced ? (
+                      <>
+                        <span className="status-dot status-dot--online" />
+                        Synced with Dashboard
+                      </>
+                    ) : account.syncedWithDashboard && dashboardBalance === undefined ? (
+                      'Syncs when file is loaded'
+                    ) : lastDate ? (
+                      `Updated ${new Date(lastDate + 'T00:00:00').toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                    ) : (
+                      'No transactions'
+                    )}
+                  </div>
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
-                  {/* Type badge */}
-                  <div style={{
-                    display: 'inline-block',
-                    background: 'rgba(32,200,160,0.15)',
-                    color: 'var(--color-accent)',
-                    fontSize: 11,
-                    borderRadius: 4,
-                    padding: '2px 7px',
-                    marginBottom: 12,
-                  }}>
-                    {account.type}
-                  </div>
+      {/* Mortgages section */}
+      <div className="asset-section-head">
+        <span className="asset-section-head__title">Mortgages</span>
+        <button className="btn-ghost" onClick={() => setModal({ kind: 'add-mortgage' })}>
+          <Plus size={13} weight="bold" />
+          Add Mortgage
+        </button>
+      </div>
+      {mortgages.length === 0 ? (
+        <div className="asset-empty">No mortgages tracked.</div>
+      ) : (
+        <div className="assets-account-grid">
+          {mortgages.map((mortgage) => {
+            const equity = mortgage.marketValue - mortgage.principalBalance
+            const equityPct = mortgage.marketValue > 0 ? (equity / mortgage.marketValue) * 100 : 0
+            return (
+              <div className="asset-card-wrap" key={mortgage.id}>
+                <div className="asset-card-actions">
+                  <button
+                    className="btn-icon"
+                    style={{ width: 32, height: 32, minWidth: 32, minHeight: 32 }}
+                    title="Edit mortgage"
+                    aria-label={`Edit ${mortgage.name}`}
+                    onClick={() => setModal({ kind: 'edit-mortgage', mortgage })}
+                  >
+                    <PencilSimple size={13} />
+                  </button>
+                  <button
+                    className="btn-icon btn-icon--danger"
+                    style={{ width: 32, height: 32, minWidth: 32, minHeight: 32 }}
+                    title="Delete mortgage"
+                    aria-label={`Delete ${mortgage.name}`}
+                    onClick={() => setModal({ kind: 'delete-mortgage', mortgage })}
+                  >
+                    <Trash size={13} />
+                  </button>
+                </div>
 
-                  {/* Balance */}
-                  <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>
-                    {isSynced
-                      ? cadFormatter.format(balance)
-                      : (account.transactions ?? []).length > 0
-                        ? cadFormatter.format(balance)
-                        : account.syncedWithDashboard
-                          ? <span style={{ color: 'var(--text-muted)' }}>Load a file</span>
-                          : <span style={{ color: 'var(--text-muted)' }}>No data</span>
-                    }
+                <button
+                  className="glass-card asset-card"
+                  style={{ '--card-accent': '#FB923C' } as CSSProperties}
+                  onClick={() => setSelectedMortgageId(mortgage.id)}
+                  aria-label={`${mortgage.name} mortgage: ${cadFormatter.format(equity)} equity, ${Math.round(equityPct)}% of market value. View details.`}
+                >
+                  <div className="budget-card__top">
+                    <span className="budget-card__name">{mortgage.name}</span>
+                    <span className="asset-chip">Mortgage</span>
                   </div>
-
-                  {/* Last transaction / sync indicator */}
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                    {isSynced
-                      ? 'Synced with Dashboard'
-                      : account.syncedWithDashboard && dashboardBalance === undefined
-                        ? 'Syncs when file is loaded'
-                        : lastDate
-                          ? `Updated ${new Date(lastDate + 'T00:00:00').toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })}`
-                          : 'No transactions'}
+                  <div className="budget-card__nums">
+                    <span className="budget-card__spent">{cadFormatter.format(equity)}</span>
+                    <span className="budget-card__of">equity</span>
                   </div>
-                </GlassCard>
+                  <div
+                    className="budget-bar"
+                    role="progressbar"
+                    aria-valuenow={Math.round(equityPct)}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`${Math.round(equityPct)}% equity`}
+                  >
+                    <div className="budget-bar__fill asset-card__equity-fill" style={{ width: `${Math.min(equityPct, 100)}%` }} />
+                  </div>
+                  <div className="budget-card__bottom">
+                    <span className="asset-card__meta">Market {cadShortFormatter.format(mortgage.marketValue)}</span>
+                    <span className="asset-card__meta">Owed {cadShortFormatter.format(mortgage.principalBalance)}</span>
+                  </div>
+                </button>
               </div>
             )
           })}

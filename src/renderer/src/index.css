@@ -1657,6 +1657,194 @@ html, body, #root {
   font-variant-numeric: tabular-nums;
 }
 
+/* ── Page title (Goals, etc.) ── */
+.page-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+/* ── Goals page ── */
+.goals-outer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-xl);
+  gap: var(--space-lg);
+  overflow-y: auto;
+}
+
+.goal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+}
+
+.goal-tile-wrap,
+.asset-card-wrap {
+  position: relative;
+}
+
+.goal-tile-actions,
+.asset-card-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+.goal-tile-wrap:hover .goal-tile-actions,
+.goal-tile-wrap:focus-within .goal-tile-actions,
+.asset-card-wrap:hover .asset-card-actions,
+.asset-card-wrap:focus-within .asset-card-actions {
+  opacity: 1;
+}
+/* Touch devices have no hover — keep actions visible */
+@media (pointer: coarse) {
+  .goal-tile-actions,
+  .asset-card-actions {
+    opacity: 1;
+  }
+}
+
+.goal-tile,
+.asset-card {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 14px 16px;
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
+  cursor: pointer;
+  appearance: none;
+  overflow: hidden;
+  transition: transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+}
+.goal-tile:hover,
+.asset-card:hover,
+.asset-card--selected {
+  transform: translateY(-2px);
+  border-color: var(--card-accent, var(--accent));
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--card-accent, var(--accent)) 12%, transparent),
+              0 0 0 1px color-mix(in srgb, var(--card-accent, var(--accent)) 10%, transparent);
+}
+
+/* Accent hairline along the top, matching summary cards */
+.goal-tile::before,
+.asset-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--card-accent, var(--accent)), transparent 72%);
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.goal-tile__fill {
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--card-accent, var(--accent)) 100%, transparent),
+    color-mix(in srgb, var(--card-accent, var(--accent)) 70%, #ffffff 8%));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--card-accent, var(--accent)) 28%, transparent);
+}
+
+.goal-tile__hint {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+
+/* ── Assets page ── */
+.networth {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.chart-empty {
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+  text-align: center;
+  padding: 0 16px;
+}
+
+.asset-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: var(--space-lg);
+  margin-bottom: 10px;
+}
+
+.asset-section-head__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.asset-section-head .btn-ghost {
+  min-height: 34px;
+  padding: 5px 12px;
+}
+
+.asset-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 99px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  line-height: 1.7;
+  flex-shrink: 0;
+  color: var(--card-accent, var(--accent));
+  background: color-mix(in srgb, var(--card-accent, var(--accent)) 11%, transparent);
+  border: 1px solid color-mix(in srgb, var(--card-accent, var(--accent)) 28%, transparent);
+}
+
+.asset-card__nodata {
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+
+.asset-card__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.asset-card__equity-fill {
+  background: linear-gradient(90deg, #FB923C, #FBBF24);
+  box-shadow: 0 0 10px rgba(251, 146, 60, 0.25);
+}
+
+.asset-empty {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+  padding: 24px 0;
+}
+
 /* ── Budget modal rows ── */
 .budget-modal__row {
   display: flex;
