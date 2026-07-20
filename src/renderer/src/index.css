@@ -229,6 +229,146 @@ html, body, #root {
   background: rgba(255, 255, 255, 0.05);
 }
 
+/* ── Category filter popover ── */
+.cat-filter {
+  position: relative;
+  display: inline-flex;
+}
+
+.cat-filter__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  min-height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--transition-base), background var(--transition-base),
+              border-color var(--transition-base);
+}
+.cat-filter__btn:hover {
+  color: var(--text-primary);
+  border-color: var(--border-hover);
+  background: rgba(255, 255, 255, 0.05);
+}
+.cat-filter__btn--filtered,
+.cat-filter__btn--filtered:hover {
+  color: var(--accent);
+  border-color: rgba(45, 212, 191, 0.35);
+  background: var(--accent-dim);
+}
+
+.cat-filter__count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  padding: 1px 7px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  line-height: 1.6;
+}
+
+.filter-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 90;
+  width: min(270px, calc(100vw - 32px));
+  background: var(--bg-overlay);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-hover);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: filterBarFadeIn 140ms ease;
+}
+
+.filter-popover__search {
+  width: 100%;
+  font-size: 12px;
+  font-family: inherit;
+  padding: 6px 10px;
+  min-height: 32px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  transition: border-color var(--transition-base);
+}
+.filter-popover__search::placeholder { color: var(--text-muted); }
+.filter-popover__search:focus { border-color: rgba(45, 212, 191, 0.4); outline: none; }
+
+.filter-popover__actions {
+  display: flex;
+  gap: 6px;
+}
+
+.filter-popover__action {
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--accent);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: background var(--transition-base);
+}
+.filter-popover__action:hover { background: var(--accent-dim); }
+
+.filter-popover__list {
+  max-height: 260px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0 -4px;
+  padding: 0 4px;
+}
+
+.filter-popover__item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 8px;
+  border-radius: 7px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  user-select: none;
+}
+.filter-popover__item:hover { background: rgba(255, 255, 255, 0.04); }
+.filter-popover__item--checked { color: var(--text-primary); }
+
+.filter-popover__item input[type='checkbox'] {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.filter-popover__empty {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 8px;
+  text-align: center;
+}
+
 /* ── Filter bar rows ── */
 .filter-bar-top {
   display: flex;
@@ -671,6 +811,9 @@ html, body, #root {
   flex-direction: column;
   gap: var(--space-sm);
   flex-shrink: 0;
+  /* Above the dashboard cards so the category popover isn't painted under them */
+  position: relative;
+  z-index: 55;
 }
 
 /* ── Log Tab ── */

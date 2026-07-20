@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 
 export interface FilterState {
   datePreset: 'this-month' | 'last-month' | 'this-year' | 'all-time' | 'custom'
@@ -31,6 +31,32 @@ function buildSummaryText(filterState: FilterState, allCategories: string[]): st
 export function FilterBar({ filterState, allCategories, onChange }: FilterBarProps): JSX.Element {
   const { datePreset, customFrom, customTo, activeCategories } = filterState
 
+  const [catOpen, setCatOpen] = useState(false)
+  const [catSearch, setCatSearch] = useState('')
+  const catRef = useRef<HTMLDivElement>(null)
+
+  // Close popover on outside click or Escape
+  useEffect(() => {
+    if (!catOpen) return
+    const onDown = (e: MouseEvent): void => {
+      if (catRef.current && !catRef.current.contains(e.target as Node)) setCatOpen(false)
+    }
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') setCatOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [catOpen])
+
+  // Reset search each time the popover opens
+  useEffect(() => {
+    if (catOpen) setCatSearch('')
+  }, [catOpen])
+
   const handlePresetClick = (preset: FilterState['datePreset']): void => {
     onChange({
       ...filterState,
@@ -59,6 +85,10 @@ export function FilterBar({ filterState, allCategories, onChange }: FilterBarPro
   const handleNone = (): void => onChange({ ...filterState, activeCategories: new Set() })
 
   const summaryText = buildSummaryText(filterState, allCategories)
+  const hiddenCount = allCategories.length - activeCategories.size
+  const visibleCategories = catSearch.trim() === ''
+    ? allCategories
+    : allCategories.filter((c) => c.toLowerCase().includes(catSearch.trim().toLowerCase()))
 
   return (
     <div className="filter-bar filter-bar-wrap">
@@ -101,33 +131,65 @@ export function FilterBar({ filterState, allCategories, onChange }: FilterBarPro
           </div>
         )}
 
+        {/* Category filter — compact popover */}
+        <div className="cat-filter" ref={catRef}>
+          <button
+            className={`cat-filter__btn${hiddenCount > 0 ? ' cat-filter__btn--filtered' : ''}`}
+            onClick={() => setCatOpen((v) => !v)}
+            aria-expanded={catOpen}
+            aria-haspopup="true"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+            </svg>
+            Categories
+            <span className="cat-filter__count">
+              {activeCategories.size}/{allCategories.length}
+            </span>
+          </button>
+
+          {catOpen && (
+            <div className="filter-popover" role="dialog" aria-label="Filter categories">
+              <input
+                type="search"
+                className="filter-popover__search"
+                placeholder="Search categories…"
+                value={catSearch}
+                onChange={(e) => setCatSearch(e.target.value)}
+                autoFocus
+              />
+              <div className="filter-popover__actions">
+                <button className="filter-popover__action" onClick={handleAll}>Select all</button>
+                <button className="filter-popover__action" onClick={handleNone}>Clear</button>
+              </div>
+              <div className="filter-popover__list">
+                {visibleCategories.length === 0 && (
+                  <span className="filter-popover__empty">No matches</span>
+                )}
+                {visibleCategories.map((cat) => {
+                  const isActive = activeCategories.has(cat)
+                  return (
+                    <label
+                      key={cat}
+                      className={`filter-popover__item${isActive ? ' filter-popover__item--checked' : ''}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isActive}
+                        onChange={() => handleToggleCategory(cat)}
+                      />
+                      {cat}
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
         <span className="filter-summary" aria-live="polite">
           {summaryText}
         </span>
-      </div>
-
-      {/* Category chips */}
-      <div className="chip-row">
-        <button onClick={handleAll} className="filter-chip filter-chip--all">
-          All
-        </button>
-        <button onClick={handleNone} className="filter-chip filter-chip--none">
-          None
-        </button>
-
-        {allCategories.map((cat) => {
-          const isActive = activeCategories.has(cat)
-          return (
-            <button
-              key={cat}
-              className={`filter-chip${isActive ? ' filter-chip--active' : ''}`}
-              aria-pressed={isActive}
-              onClick={() => handleToggleCategory(cat)}
-            >
-              {cat}
-            </button>
-          )
-        })}
       </div>
     </div>
   )
