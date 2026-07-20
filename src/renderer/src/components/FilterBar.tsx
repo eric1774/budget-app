@@ -62,24 +62,17 @@ export function FilterBar({ filterState, allCategories, onChange }: FilterBarPro
 
   return (
     <div className="filter-bar filter-bar-wrap">
-      {/* Top row */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
-
-        {/* Segmented date control */}
-        <div className="date-preset-group">
-          {DATE_PRESETS.map((preset, i) => {
+      {/* Top row: date presets + custom range + summary */}
+      <div className="filter-bar-top">
+        <div className="date-preset-group" role="group" aria-label="Date range">
+          {DATE_PRESETS.map((preset) => {
             const isActive = datePreset === preset.key
             return (
               <button
                 key={preset.key}
                 className={`preset-segment${isActive ? ' preset-segment--active' : ''}`}
+                aria-pressed={isActive}
                 onClick={() => handlePresetClick(preset.key)}
-                style={{
-                  fontWeight: isActive ? 600 : 400,
-                  background: isActive ? 'var(--accent)' : 'transparent',
-                  color: isActive ? '#080B10' : 'var(--text-muted)',
-                  borderRight: i < DATE_PRESETS.length - 1 ? '1px solid var(--border)' : 'none',
-                }}
               >
                 {preset.label}
               </button>
@@ -87,88 +80,38 @@ export function FilterBar({ filterState, allCategories, onChange }: FilterBarPro
           })}
         </div>
 
-        {/* Custom date inputs */}
         {datePreset === 'custom' && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>From</span>
+          <div className="date-range-inputs">
+            <span>From</span>
             <input
               type="date"
+              className="date-input"
+              aria-label="From date"
               value={customFrom}
               onChange={handleCustomFrom}
-              style={{
-                fontSize: 12,
-                padding: '4px 8px',
-                background: 'var(--bg-elevated)',
-                border: '1px solid var(--border)',
-                borderRadius: 6,
-                color: 'var(--text-primary)',
-                colorScheme: 'dark',
-                fontFamily: 'inherit',
-              }}
             />
-            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>To</span>
+            <span>To</span>
             <input
               type="date"
+              className="date-input"
+              aria-label="To date"
               value={customTo}
               onChange={handleCustomTo}
-              style={{
-                fontSize: 12,
-                padding: '4px 8px',
-                background: 'var(--bg-elevated)',
-                border: '1px solid var(--border)',
-                borderRadius: 6,
-                color: 'var(--text-primary)',
-                colorScheme: 'dark',
-                fontFamily: 'inherit',
-              }}
             />
           </div>
         )}
 
-        {/* Summary */}
-        <span style={{
-          fontSize: 11,
-          color: 'var(--text-muted)',
-          letterSpacing: '0.02em',
-        }}>
+        <span className="filter-summary" aria-live="polite">
           {summaryText}
         </span>
       </div>
 
       {/* Category chips */}
       <div className="chip-row">
-        <button
-          onClick={handleAll}
-          className="filter-chip"
-          style={{
-            padding: '3px 11px',
-            fontSize: 11,
-            fontWeight: 600,
-            fontFamily: 'inherit',
-            cursor: 'pointer',
-            borderRadius: 99,
-            background: 'transparent',
-            color: 'var(--accent)',
-            border: '1px solid rgba(45,212,191,0.35)',
-          }}
-        >
+        <button onClick={handleAll} className="filter-chip filter-chip--all">
           All
         </button>
-        <button
-          onClick={handleNone}
-          className="filter-chip"
-          style={{
-            padding: '3px 11px',
-            fontSize: 11,
-            fontWeight: 500,
-            fontFamily: 'inherit',
-            cursor: 'pointer',
-            borderRadius: 99,
-            background: 'transparent',
-            color: 'var(--text-muted)',
-            border: '1px solid var(--border)',
-          }}
-        >
+        <button onClick={handleNone} className="filter-chip filter-chip--none">
           None
         </button>
 
@@ -177,19 +120,9 @@ export function FilterBar({ filterState, allCategories, onChange }: FilterBarPro
           return (
             <button
               key={cat}
-              className="filter-chip"
+              className={`filter-chip${isActive ? ' filter-chip--active' : ''}`}
+              aria-pressed={isActive}
               onClick={() => handleToggleCategory(cat)}
-              style={{
-                borderRadius: 99,
-                padding: '3px 11px',
-                fontSize: 11,
-                fontWeight: isActive ? 600 : 400,
-                fontFamily: 'inherit',
-                cursor: 'pointer',
-                border: `1px solid ${isActive ? 'var(--accent)' : 'var(--border)'}`,
-                background: isActive ? 'var(--accent-dim)' : 'transparent',
-                color: isActive ? 'var(--accent)' : 'var(--text-muted)',
-              }}
             >
               {cat}
             </button>
