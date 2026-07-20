@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend, LabelList } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, LabelList } from 'recharts'
 import type { Transaction } from '../../../shared/types'
 import { ChartCard, ChartToggle, ChartStat, TooltipShell, chartIcons, axisTickSmall } from './ChartCard'
 
@@ -10,7 +10,25 @@ interface CategoryBreakdownChartProps {
 
 type ChartType = 'bar' | 'pie'
 
-const COLORS = ['#20c8a0', '#06b6d4', '#818cf8', '#fb923c', '#f472b6', '#a78bfa', '#34d399', '#60a5fa']
+// 16 distinct hues, ordered so adjacent slices contrast — no repeats for typical category counts
+const COLORS = [
+  '#2DD4BF', // teal
+  '#F472B6', // pink
+  '#60A5FA', // blue
+  '#FBBF24', // amber
+  '#A78BFA', // violet
+  '#34D399', // green
+  '#FB923C', // orange
+  '#818CF8', // indigo
+  '#F87171', // red
+  '#A3E635', // lime
+  '#06B6D4', // cyan
+  '#C084FC', // purple
+  '#FCD34D', // yellow
+  '#5EEAD4', // light teal
+  '#F9A8D4', // light pink
+  '#93C5FD', // light blue
+]
 
 const fmt = (v: number): string =>
   new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v)
@@ -134,50 +152,61 @@ export function CategoryBreakdownChart({ transactions, onCategoryDoubleClick }: 
           </BarChart>
         </ResponsiveContainer>
       ) : (
-        <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie
-              data={data}
-              nameKey="category"
-              dataKey="total"
-              cx="50%"
-              cy="50%"
-              innerRadius={62}
-              outerRadius={100}
-              paddingAngle={2}
-              stroke="var(--bg-surface)"
-              strokeWidth={2}
-              animationDuration={700}
-              onClick={(entry) => handleCategoryClick((entry as unknown as { category: string }).category)}
-              style={{ cursor: onCategoryDoubleClick ? 'pointer' : undefined }}
-            >
-              {data.map((_, index) => (
-                <Cell key={index} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-            {/* Center KPI — total spend across selected categories */}
-            <text
-              x="50%"
-              y="47%"
-              textAnchor="middle"
-              dominantBaseline="middle"
-              style={{ fill: 'var(--text-primary)', fontSize: 17, fontWeight: 600, fontFamily: 'var(--font-mono)' }}
-            >
-              {fmtShort(grandTotal)}
-            </text>
-            <text
-              x="50%"
-              y="56%"
-              textAnchor="middle"
-              dominantBaseline="middle"
-              style={{ fill: 'var(--text-secondary)', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase' }}
-            >
-              total spent
-            </text>
-            <Tooltip content={<CategoryTip />} />
-            <Legend wrapperStyle={{ fontSize: 12, color: 'var(--text-secondary)' }} iconType="circle" iconSize={8} />
-          </PieChart>
-        </ResponsiveContainer>
+        <>
+          <ResponsiveContainer width="100%" height={240}>
+            <PieChart>
+              <Pie
+                data={data}
+                nameKey="category"
+                dataKey="total"
+                cx="50%"
+                cy="50%"
+                innerRadius={62}
+                outerRadius={100}
+                paddingAngle={2}
+                stroke="var(--bg-surface)"
+                strokeWidth={2}
+                animationDuration={700}
+                onClick={(entry) => handleCategoryClick((entry as unknown as { category: string }).category)}
+                style={{ cursor: onCategoryDoubleClick ? 'pointer' : undefined }}
+              >
+                {data.map((_, index) => (
+                  <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              {/* Center KPI — total spend across selected categories */}
+              <text
+                x="50%"
+                y="45%"
+                textAnchor="middle"
+                dominantBaseline="middle"
+                style={{ fill: 'var(--text-primary)', fontSize: 17, fontWeight: 600, fontFamily: 'var(--font-mono)' }}
+              >
+                {fmtShort(grandTotal)}
+              </text>
+              <text
+                x="50%"
+                y="57%"
+                textAnchor="middle"
+                dominantBaseline="middle"
+                style={{ fill: 'var(--text-secondary)', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase' }}
+              >
+                total spent
+              </text>
+              <Tooltip content={<CategoryTip />} />
+            </PieChart>
+          </ResponsiveContainer>
+          {/* Compact custom legend — dot, name, share */}
+          <div className="cat-legend">
+            {data.map((d, index) => (
+              <div className="cat-legend__item" key={d.category} title={`${d.category} — ${fmt(d.total)}`}>
+                <span className="cat-legend__dot" style={{ background: COLORS[index % COLORS.length] }} />
+                <span className="cat-legend__name">{d.category}</span>
+                <span className="cat-legend__pct">{d.pct.toFixed(0)}%</span>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </ChartCard>
   )

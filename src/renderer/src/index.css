@@ -476,6 +476,45 @@ html, body, #root {
   line-height: 1.6;
 }
 
+/* Compact donut legend */
+.cat-legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 4px 16px;
+  margin-top: 10px;
+}
+
+.cat-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  min-width: 0;
+  line-height: 1.7;
+}
+
+.cat-legend__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.cat-legend__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cat-legend__pct {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
 /* Custom glass tooltip */
 .chart-tip {
   background: rgba(15, 22, 35, 0.97);

@@ -105,7 +105,8 @@ export function MonthlyChart({ transactions }: MonthlyChartProps): JSX.Element {
       stat={
         data.length > 0 ? (
           <ChartStat color={avgNet >= 0 ? 'var(--income)' : 'var(--expense)'}>
-            {avgNet >= 0 ? '↑' : '↓'} {fmtShort(Math.abs(avgNet))}/mo avg net
+            {avgNet >= 0 ? '↑' : '↓'} {fmtShort(Math.abs(avgNet))}
+            {data.length > 1 ? '/mo avg net' : ' net this period'}
           </ChartStat>
         ) : undefined
       }
