@@ -9,7 +9,10 @@ interface BudgetModalProps {
 }
 
 function formatMonthLabel(monthKey: string): string {
-  return new Date(monthKey + '-01').toLocaleDateString('en-CA', { month: 'long', year: 'numeric' })
+  // Construct via numeric parts — new Date('YYYY-MM-DD') parses as UTC and
+  // renders the previous month in negative-offset timezones
+  const [y, m] = monthKey.split('-').map(Number)
+  return new Date(y, m - 1, 1).toLocaleDateString('en-CA', { month: 'long', year: 'numeric' })
 }
 
 export function BudgetModal({ categories, monthKey, budgets, onBudgetChange, onClose }: BudgetModalProps): JSX.Element {
@@ -88,39 +91,21 @@ export function BudgetModal({ categories, monthKey, budgets, onBudgetChange, onC
         {/* Scrollable category list */}
         <div style={{ overflowY: 'auto', padding: '8px 20px 16px' }}>
           {categories.map((category) => (
-            <div
-              key={category}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '9px 0',
-                borderBottom: '1px solid var(--border-subtle)',
-              }}
-            >
-              <span style={{ color: 'var(--text-primary)', fontSize: 13 }}>{category}</span>
-              <input
-                type="number"
-                min="0"
-                step="1"
-                className="budget-input"
-                placeholder="—"
-                value={budgets[category] ? budgets[category] : ''}
-                onChange={(e) => handleInputChange(category, e.target.value)}
-                style={{
-                  width: 110,
-                  background: 'var(--bg-elevated)',
-                  border: '1px solid var(--border)',
-                  color: 'var(--text-primary)',
-                  borderRadius: 8,
-                  padding: '6px 10px',
-                  fontSize: 13,
-                  textAlign: 'right',
-                  fontFamily: 'inherit',
-                  outline: 'none',
-                }}
-              />
-            </div>
+            <label key={category} className="budget-modal__row">
+              <span className="budget-modal__cat">{category}</span>
+              <span className="budget-modal__input-wrap">
+                <span className="budget-modal__currency">$</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  className="budget-input"
+                  placeholder="0"
+                  value={budgets[category] ? budgets[category] : ''}
+                  onChange={(e) => handleInputChange(category, e.target.value)}
+                />
+              </span>
+            </label>
           ))}
           {categories.length === 0 && (
             <p style={{ color: 'var(--text-muted)', fontSize: 14, textAlign: 'center', padding: '24px 0' }}>

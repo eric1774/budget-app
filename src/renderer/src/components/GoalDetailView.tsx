@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type { Goal } from '../../../shared/types'
+import { Trash } from '@phosphor-icons/react'
 import { GlassCard } from './GlassCard'
 import * as api from '../api'
 
@@ -274,9 +275,9 @@ export function GoalDetailView({ goal, onBack, onReload }: GoalDetailViewProps):
   }
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px', overflowY: 'auto' }}>
+    <div className="detail-outer">
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+      <div className="detail-head">
         <button
           className="btn-ghost"
           onClick={onBack}
@@ -285,35 +286,29 @@ export function GoalDetailView({ goal, onBack, onReload }: GoalDetailViewProps):
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
           Back
         </button>
-        <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--text-primary)' }}>
-          {goal.name}
-        </h2>
+        <h2 className="page-title">{goal.name}</h2>
         {badge && <div>{badge}</div>}
       </div>
 
       {/* Progress section */}
       <GlassCard style={{ marginBottom: 16 }}>
         {goal.targetAmount ? (
-          <>
-            <div style={{
-              width: '100%',
-              height: 10,
-              background: 'rgba(255,255,255,0.1)',
-              borderRadius: 5,
-              marginBottom: 8,
-            }}>
-              <div style={{
-                width: `${progress}%`,
-                height: '100%',
-                background: 'var(--color-accent)',
-                borderRadius: 5,
-                transition: 'width 0.3s',
-              }} />
+          <div className="budget-hero__main">
+            <div className="budget-hero__label">Progress</div>
+            <div className="budget-hero__value">
+              {cadFormatter.format(balance)}
+              <span className="budget-hero__of"> of {cadFormatter.format(goal.targetAmount)} · {progress}%</span>
             </div>
-            <div style={{ fontSize: 14, color: 'var(--text-muted)' }}>
-              {cadFormatter.format(balance)} of {cadFormatter.format(goal.targetAmount)} ({progress}%)
+            <div
+              className="budget-bar budget-bar--hero"
+              role="progressbar"
+              aria-valuenow={progress}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
+              <div className="budget-bar__fill" style={{ width: `${progress}%` }} />
             </div>
-          </>
+          </div>
         ) : (
           <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>
             Set a target to track progress
@@ -351,7 +346,7 @@ export function GoalDetailView({ goal, onBack, onReload }: GoalDetailViewProps):
             </div>
           ) : (
             <div style={{ display: 'flex', gap: 10, alignItems: 'center', flex: 1 }}>
-              <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>
+              <span className="summary-card__value" style={{ fontSize: 15, color: 'var(--text-primary)' }}>
                 {goal.startingAmount != null ? cadFormatter.format(goal.startingAmount) : <span style={{ color: 'var(--text-muted)' }}>Not set</span>}
               </span>
               <button
@@ -372,44 +367,39 @@ export function GoalDetailView({ goal, onBack, onReload }: GoalDetailViewProps):
       </GlassCard>
 
       {/* Stats row */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-        gap: 12,
-        marginBottom: 20,
-      }}>
+      <div className="summary-cards" style={{ marginBottom: 4 }}>
         <GlassCard>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
+          <div className="summary-card__label" style={{ marginBottom: 4 }}>
             Projected Completion
           </div>
-          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>
+          <div className="summary-card__value" style={{ fontSize: 15, color: 'var(--text-primary)' }}>
             {projected ?? 'Add contributions to project'}
           </div>
         </GlassCard>
 
         <GlassCard>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
+          <div className="summary-card__label" style={{ marginBottom: 4 }}>
             Avg Monthly
           </div>
-          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>
+          <div className="summary-card__value" style={{ fontSize: 15, color: 'var(--text-primary)' }}>
             {avgRate != null ? cadFormatter.format(avgRate) : '—'}
           </div>
         </GlassCard>
 
         <GlassCard>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
+          <div className="summary-card__label" style={{ marginBottom: 4 }}>
             Required Monthly
           </div>
-          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>
+          <div className="summary-card__value" style={{ fontSize: 15, color: 'var(--text-primary)' }}>
             {reqMonthly != null ? cadFormatter.format(reqMonthly) : (goal.targetDate ? '—' : 'No target date set')}
           </div>
         </GlassCard>
 
         <GlassCard>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
+          <div className="summary-card__label" style={{ marginBottom: 4 }}>
             Required Yearly
           </div>
-          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>
+          <div className="summary-card__value" style={{ fontSize: 15, color: 'var(--text-primary)' }}>
             {reqYearly != null ? cadFormatter.format(reqYearly) : '—'}
           </div>
         </GlassCard>
@@ -417,7 +407,7 @@ export function GoalDetailView({ goal, onBack, onReload }: GoalDetailViewProps):
 
       {/* Balance over time chart */}
       <GlassCard style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: 12 }}>
+        <div className="chart-card__title" style={{ display: 'block', marginBottom: 12 }}>
           Balance Over Time
         </div>
         {chartData.length > 0 ? (
@@ -425,20 +415,20 @@ export function GoalDetailView({ goal, onBack, onReload }: GoalDetailViewProps):
             <LineChart data={chartData} margin={{ top: 4, right: 16, bottom: 4, left: 8 }}>
               <XAxis
                 dataKey="date"
-                tick={{ fill: 'var(--text-muted)', fontSize: 10 }}
+                tick={{ fill: 'var(--text-secondary)', fontSize: 10 }}
                 axisLine={false}
                 tickLine={false}
                 interval="preserveStartEnd"
               />
               <YAxis
                 tickFormatter={(v) => cadFormatter.format(v as number) as unknown as string}
-                tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
+                tick={{ fill: 'var(--text-secondary)', fontSize: 11 }}
                 axisLine={false}
                 tickLine={false}
                 width={80}
               />
               <Tooltip
-                contentStyle={{ background: 'rgba(30,34,45,0.95)', border: '1px solid var(--border-accent)', borderRadius: 8, fontSize: 12 }}
+                contentStyle={{ background: 'rgba(15,22,35,0.97)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 10, fontSize: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.45)' }}
                 labelStyle={{ color: 'var(--text-primary)', marginBottom: 4 }}
                 formatter={(value) => [cadFormatter.format(value as number), 'Balance'] as unknown as [string, string]}
               />
@@ -494,7 +484,7 @@ export function GoalDetailView({ goal, onBack, onReload }: GoalDetailViewProps):
           <GlassCard style={{ marginBottom: 20 }}>
             {/* Header row */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
-              <div style={{ fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+              <div className="chart-card__title">
                 Certificate Growth Projector
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -555,7 +545,7 @@ export function GoalDetailView({ goal, onBack, onReload }: GoalDetailViewProps):
                       <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
                         Growth Only
                       </div>
-                      <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>
+                      <div className="summary-card__value" style={{ fontSize: 15, color: 'var(--text-primary)' }}>
                         {formatMonths(noContribMonths)}
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>to reach target</div>
@@ -587,20 +577,20 @@ export function GoalDetailView({ goal, onBack, onReload }: GoalDetailViewProps):
                     <LineChart data={growthData} margin={{ top: 4, right: 16, bottom: 4, left: 8 }}>
                       <XAxis
                         dataKey="label"
-                        tick={{ fill: 'var(--text-muted)', fontSize: 10 }}
+                        tick={{ fill: 'var(--text-secondary)', fontSize: 10 }}
                         axisLine={false}
                         tickLine={false}
                         interval={tickInterval}
                       />
                       <YAxis
                         tickFormatter={(v) => `$${((v as number) / 1000).toFixed(0)}k`}
-                        tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
+                        tick={{ fill: 'var(--text-secondary)', fontSize: 11 }}
                         axisLine={false}
                         tickLine={false}
                         width={52}
                       />
                       <Tooltip
-                        contentStyle={{ background: 'rgba(30,34,45,0.95)', border: '1px solid var(--border-accent)', borderRadius: 8, fontSize: 12 }}
+                        contentStyle={{ background: 'rgba(15,22,35,0.97)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 10, fontSize: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.45)' }}
                         labelStyle={{ color: 'var(--text-primary)', marginBottom: 4 }}
                         formatter={(value, name) => [
                           cadFormatter.format(value as number),
@@ -649,7 +639,7 @@ export function GoalDetailView({ goal, onBack, onReload }: GoalDetailViewProps):
       {/* Contribution log section */}
       <GlassCard>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <div style={{ fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+          <div className="chart-card__title">
             Contributions
           </div>
           {!showAddForm && (
@@ -662,66 +652,37 @@ export function GoalDetailView({ goal, onBack, onReload }: GoalDetailViewProps):
 
         {/* Add form */}
         {showAddForm && (
-          <div style={{
-            background: 'rgba(255,255,255,0.04)',
-            borderRadius: 8,
-            padding: 16,
-            marginBottom: 16,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 10,
-          }}>
+          <div className="pay-form">
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 120 }}>
-                <label style={{ fontSize: 12, color: 'var(--text-muted)' }}>Amount</label>
+              <div className="pay-form__field">
+                <label>Amount</label>
                 <input
                   type="number"
                   value={formAmount}
                   onChange={(e) => setFormAmount(e.target.value)}
                   placeholder="e.g. 500"
                   required
-                  style={{
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    borderRadius: 6,
-                    padding: '6px 10px',
-                    color: 'var(--text-primary)',
-                    fontSize: 14,
-                  }}
+                  className="date-input" style={{ width: '100%', fontFamily: 'inherit' }}
                 />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 140 }}>
-                <label style={{ fontSize: 12, color: 'var(--text-muted)' }}>Date</label>
+              <div className="pay-form__field">
+                <label>Date</label>
                 <input
                   type="date"
                   value={formDate}
                   onChange={(e) => setFormDate(e.target.value)}
                   required
-                  style={{
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    borderRadius: 6,
-                    padding: '6px 10px',
-                    color: 'var(--text-primary)',
-                    fontSize: 14,
-                  }}
+                  className="date-input" style={{ width: '100%', fontFamily: 'inherit' }}
                 />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 2, minWidth: 160 }}>
-                <label style={{ fontSize: 12, color: 'var(--text-muted)' }}>Note (optional)</label>
+              <div className="pay-form__field" style={{ flex: 2 }}>
+                <label>Note (optional)</label>
                 <input
                   type="text"
                   value={formNote}
                   onChange={(e) => setFormNote(e.target.value)}
                   placeholder="e.g. Monthly transfer"
-                  style={{
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    borderRadius: 6,
-                    padding: '6px 10px',
-                    color: 'var(--text-primary)',
-                    fontSize: 14,
-                  }}
+                  className="date-input" style={{ width: '100%', fontFamily: 'inherit' }}
                 />
               </div>
             </div>
@@ -748,44 +709,24 @@ export function GoalDetailView({ goal, onBack, onReload }: GoalDetailViewProps):
         {sortedContributions.length === 0 ? (
           <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>No contributions yet</div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div className="pay-list">
             {sortedContributions.map((c) => (
-              <div
-                key={c.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '8px 10px',
-                  background: 'rgba(255,255,255,0.03)',
-                  borderRadius: 6,
-                  gap: 12,
-                }}
-              >
-                <div style={{ display: 'flex', gap: 12, alignItems: 'center', flex: 1, minWidth: 0 }}>
-                  <span style={{ fontSize: 13, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{c.date}</span>
-                  <span style={{
-                    fontSize: 14,
-                    fontWeight: 600,
-                    color: c.amount >= 0 ? 'var(--success)' : 'var(--expense)',
-                    whiteSpace: 'nowrap',
-                  }}>
-                    {c.amount >= 0 ? '+' : ''}{cadFormatter.format(c.amount)}
-                  </span>
-                  {c.note && (
-                    <span style={{ fontSize: 13, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {c.note}
-                    </span>
-                  )}
+              <div key={c.id} className="pay-row">
+                <span className="pay-row__date">{c.date}</span>
+                <span className={`pay-row__amt ${c.amount >= 0 ? 'pay-row__amt--principal' : 'pay-row__amt--out'}`}>
+                  {c.amount >= 0 ? '+' : ''}{cadFormatter.format(c.amount)}
+                </span>
+                {c.note && <span className="pay-row__note">{c.note}</span>}
+                <div className="pay-row__actions">
+                  <button
+                    className="btn-icon btn-icon--danger"
+                    onClick={() => handleDeleteContribution(c.id)}
+                    aria-label="Delete contribution"
+                    style={{ width: 32, height: 32, minWidth: 32, minHeight: 32 }}
+                  >
+                    <Trash size={13} />
+                  </button>
                 </div>
-                <button
-                  className="btn-icon btn-icon--danger"
-                  onClick={() => handleDeleteContribution(c.id)}
-                  aria-label="Delete contribution"
-                  style={{ width: 34, height: 34, minWidth: 34, minHeight: 34 }}
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                </button>
               </div>
             ))}
           </div>

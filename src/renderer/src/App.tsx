@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import type { ParseResult, ParseError, ParseResponse, BudgetMap, ServerInfo, AuthUser } from '../../shared/types'
 import { getMe, logout } from './api'
 import { WsClient, buildWsUrl } from './ws-client'
@@ -84,31 +85,6 @@ function Banner({ type, message, dismissible, onDismiss }: BannerProps): JSX.Ele
   )
 }
 
-// --- Styles ---
-
-const styles = {
-  center: {
-    display: 'flex' as const,
-    flexDirection: 'column' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    height: '100vh',
-    gap: 16,
-    background: 'var(--bg-app)',
-    color: 'var(--text-primary)',
-  },
-  button: {
-    padding: '10px 24px',
-    fontSize: 16,
-    cursor: 'pointer',
-    backgroundColor: 'var(--color-accent)',
-    color: '#1a1d23',
-    border: 'none',
-    borderRadius: 4,
-    fontWeight: 600,
-  },
-}
-
 // --- Helpers ---
 
 function formatRelTime(d: Date): string {
@@ -117,6 +93,36 @@ function formatRelTime(d: Date): string {
   if (diffMin < 1) return 'just now'
   return `${diffMin} min ago`
 }
+
+// --- Tab definitions ---
+
+const TABS: { key: ActiveTab; label: string; icon: JSX.Element }[] = [
+  {
+    key: 'dashboard',
+    label: 'Dashboard',
+    icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
+  },
+  {
+    key: 'budget',
+    label: 'Budget',
+    icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
+  },
+  {
+    key: 'log',
+    label: 'Log',
+    icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>,
+  },
+  {
+    key: 'goals',
+    label: 'Goals',
+    icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+  },
+  {
+    key: 'assets',
+    label: 'Assets',
+    icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>,
+  },
+]
 
 // --- Main App ---
 
@@ -161,6 +167,31 @@ export default function App(): JSX.Element {
       return { datePreset: 'specific-month', selectedMonthYear: `${y}-${String(m).padStart(2, '0')}` }
     }
     return { datePreset: 'all', selectedMonthYear: null }
+  }, [])
+
+  // Tab selection — clears goal detail selection when re-entering Goals
+  const selectTab = useCallback((tab: ActiveTab) => {
+    setActiveTab(tab)
+    if (tab === 'goals') setSelectedGoalId(null)
+  }, [])
+
+  // Roving-tabindex arrow-key navigation for the tablist
+  const handleTabKeyDown = useCallback((e: ReactKeyboardEvent<HTMLElement>) => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft' && e.key !== 'Home' && e.key !== 'End') return
+    e.preventDefault()
+    setActiveTab((current) => {
+      const idx = TABS.findIndex((t) => t.key === current)
+      const nextIdx =
+        e.key === 'Home' ? 0 :
+        e.key === 'End' ? TABS.length - 1 :
+        e.key === 'ArrowRight' ? (idx + 1) % TABS.length :
+        (idx - 1 + TABS.length) % TABS.length
+      const next = TABS[nextIdx].key
+      if (next === 'goals') setSelectedGoalId(null)
+      // Move focus to the newly active tab after React re-renders the tabindex
+      requestAnimationFrame(() => document.getElementById(`tab-${next}`)?.focus())
+      return next
+    })
   }, [])
 
   // Navigate to Log tab with pre-applied filters from a dashboard card/chart click
@@ -521,19 +552,24 @@ export default function App(): JSX.Element {
   // Welcome state
   if (status === 'welcome') {
     return (
-      <div style={styles.center}>
+      <div className="app-state">
         {banner && (
           <Banner {...banner} onDismiss={() => setBanner(null)} />
         )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-          <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--accent)', boxShadow: '0 0 12px var(--accent-glow)' }} />
-          <h1 style={{ color: 'var(--text-primary)', fontSize: 22, fontWeight: 600, letterSpacing: '0.01em' }}>Budget Dashboard</h1>
+        <div className="glass-card app-state__card">
+          <div className="app-state__logo" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+              <polyline points="17 6 23 6 23 12"/>
+            </svg>
+          </div>
+          <h1 className="app-state__title">Budget Dashboard</h1>
+          <p className="app-state__sub">Select your Budget.xlsx file to get started.</p>
+          <button className="btn-primary" onClick={handleSelectFile}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Select File
+          </button>
         </div>
-        <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 24 }}>Select your Budget.xlsx file to get started.</p>
-        <button className="btn-primary" onClick={handleSelectFile}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          Select File
-        </button>
       </div>
     )
   }
@@ -549,8 +585,9 @@ export default function App(): JSX.Element {
       )
     }
     return (
-      <div style={styles.center}>
-        <p style={{ color: 'var(--text-muted)' }}>Loading...</p>
+      <div className="app-state">
+        <div className="app-state__spinner" aria-hidden="true" />
+        <p className="app-state__sub" role="status">Loading your budget…</p>
       </div>
     )
   }
@@ -558,11 +595,15 @@ export default function App(): JSX.Element {
   // Hard error state (no data yet)
   if (status === 'error' && !parseResult) {
     return (
-      <div style={{ background: 'var(--bg-app)', minHeight: '100vh' }}>
+      <div className="app-state">
         {banner && <Banner {...banner} onDismiss={() => setBanner(null)} />}
-        <div style={styles.center}>
-          <p style={{ color: 'var(--color-expense)' }}>{parseError?.message}</p>
-          <button style={styles.button} onClick={handleSelectFile}>
+        <div className="glass-card app-state__card app-state__card--error">
+          <div className="app-state__logo app-state__logo--error" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <h1 className="app-state__title">Couldn&apos;t read that file</h1>
+          <p className="app-state__sub" role="alert">{parseError?.message}</p>
+          <button className="btn-primary" onClick={handleSelectFile}>
             Select Different File
           </button>
         </div>
@@ -575,19 +616,52 @@ export default function App(): JSX.Element {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-base)' }}>
       {banner && <Banner {...banner} onDismiss={() => setBanner(null)} />}
 
-      {/* Slim header */}
+      {/* Slim glass header */}
       <header className="app-header">
         <div className="app-header__brand">
-          <div className="app-header__logo-dot" />
+          <div className="app-header__logo" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+              <polyline points="17 6 23 6 23 12"/>
+            </svg>
+          </div>
           <span className="app-header__title">Budget</span>
+          {filePath && (
+            <span className="app-header__filepath" title={filePath}>
+              {filePath}
+            </span>
+          )}
         </div>
-        <span className="app-header__filepath">
-          {filePath ?? ''}
-        </span>
+
+        {/* Floating glass pill navigation — centered in the header */}
+        <nav className="tab-nav" role="tablist" aria-label="Main navigation" onKeyDown={handleTabKeyDown}>
+          {TABS.map(({ key, label, icon }) => (
+            <button
+              key={key}
+              id={`tab-${key}`}
+              role="tab"
+              aria-selected={activeTab === key}
+              aria-controls={`panel-${key}`}
+              tabIndex={activeTab === key ? 0 : -1}
+              className={`tab-btn${activeTab === key ? ' tab-btn--active' : ''}`}
+              onClick={() => selectTab(key)}
+            >
+              {icon}
+              <span className="tab-label">{label}</span>
+              {key === 'budget' && isAnyOverBudget && (
+                <span className="budget-tab-badge" role="status" aria-label="Some categories over budget" />
+              )}
+            </button>
+          ))}
+        </nav>
+
         <div className="app-header__actions">
           {user && (
             <span className="app-header__user" title={user.email}>
-              {user.name}
+              <span className="app-header__avatar" aria-hidden="true">
+                {(user.name || user.email || '?').trim().charAt(0)}
+              </span>
+              <span className="app-header__name">{user.name}</span>
               {user.role === 'admin' && <span className="app-header__role">admin</span>}
               <button className="app-header__signout" onClick={() => { void logout() }}>
                 Sign out
@@ -595,6 +669,9 @@ export default function App(): JSX.Element {
             </span>
           )}
           <button className="btn-ghost" onClick={handleSelectFile}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            </svg>
             Change File
           </button>
         </div>
@@ -607,66 +684,8 @@ export default function App(): JSX.Element {
         onRestart={handleServerRestart}
       />
 
-      {/* Tab navigation */}
-      <nav className="tab-nav" role="tablist" aria-label="Main navigation">
-        <button
-          role="tab"
-          aria-selected={activeTab === 'dashboard'}
-          aria-controls="panel-dashboard"
-          className={`tab-btn${activeTab === 'dashboard' ? ' tab-btn--active' : ''}`}
-          onClick={() => setActiveTab('dashboard')}
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          <span className="tab-label">Dashboard</span>
-        </button>
-        <button
-          role="tab"
-          aria-selected={activeTab === 'budget'}
-          aria-controls="panel-budget"
-          className={`tab-btn${activeTab === 'budget' ? ' tab-btn--active' : ''}`}
-          onClick={() => setActiveTab('budget')}
-          style={{ position: 'relative' }}
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          <span className="tab-label">Budget</span>
-          {isAnyOverBudget && (
-            <span className="budget-tab-badge" role="status" aria-label="Some categories over budget" />
-          )}
-        </button>
-        <button
-          role="tab"
-          aria-selected={activeTab === 'log'}
-          aria-controls="panel-log"
-          className={`tab-btn${activeTab === 'log' ? ' tab-btn--active' : ''}`}
-          onClick={() => setActiveTab('log')}
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-          <span className="tab-label">Log</span>
-        </button>
-        <button
-          role="tab"
-          aria-selected={activeTab === 'goals'}
-          aria-controls="panel-goals"
-          className={`tab-btn${activeTab === 'goals' ? ' tab-btn--active' : ''}`}
-          onClick={() => { setActiveTab('goals'); setSelectedGoalId(null) }}
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-          <span className="tab-label">Goals</span>
-        </button>
-        <button
-          role="tab"
-          aria-selected={activeTab === 'assets'}
-          aria-controls="panel-assets"
-          className={`tab-btn${activeTab === 'assets' ? ' tab-btn--active' : ''}`}
-          onClick={() => setActiveTab('assets')}
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-          <span className="tab-label">Assets</span>
-        </button>
-      </nav>
-
-      {/* Offline badge — browser mode only, when disconnected */}
-      {wsState === 'disconnected' && (
+      {/* Offline badge — browser mode only, when the connection has failed */}
+      {wsState === 'failed' && (
         <div style={{
           position: 'fixed',
           bottom: 16,

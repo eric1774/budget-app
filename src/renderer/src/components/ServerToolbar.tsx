@@ -53,21 +53,18 @@ export function ServerToolbar({ serverInfo, lastSyncedAt, onRestart }: Props): J
 
   return (
     <div className="server-toolbar">
-      {/* Online dot */}
-      <span className={`status-dot ${serverInfo ? 'status-dot--online' : 'status-dot--offline'}`} />
+      {/* Status chip */}
+      <span className="server-toolbar__status">
+        <span className={`status-dot ${serverInfo ? 'status-dot--online' : 'status-dot--offline'}`} />
+        {serverInfo ? 'Live' : 'Starting…'}
+      </span>
 
       {/* URL + QR toggle */}
-      {serverInfo ? (
+      {serverInfo && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, position: 'relative' }}>
-          <span style={{ color: 'var(--text-muted)' }}>Network</span>
-          <span style={{ color: 'var(--border)', userSelect: 'none' }}>·</span>
           <button
+            className="server-toolbar__url"
             onClick={() => setShowQR((v) => !v)}
-            style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: 'var(--accent)', fontSize: 11, fontFamily: 'monospace',
-              padding: 0,
-            }}
             title="Click to show QR code"
           >
             {serverInfo.url}
@@ -75,42 +72,21 @@ export function ServerToolbar({ serverInfo, lastSyncedAt, onRestart }: Props): J
 
           {/* QR popup */}
           {showQR && qrDataUrl && (
-            <div
-              ref={qrRef}
-              style={{
-                position: 'absolute',
-                top: '100%',
-                left: 0,
-                zIndex: 1000,
-                background: '#fff',
-                borderRadius: 12,
-                padding: 14,
-                marginTop: 8,
-                boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 8,
-              }}
-            >
+            <div ref={qrRef} className="server-toolbar__qr">
               <img src={qrDataUrl} alt="QR code for mobile access" width={200} height={200} />
-              <span style={{ color: '#555', fontSize: 11, fontFamily: 'monospace' }}>{serverInfo.url}</span>
+              <span style={{ color: '#555', fontSize: 11, fontFamily: 'var(--font-mono)' }}>{serverInfo.url}</span>
             </div>
           )}
         </div>
-      ) : (
-        <span style={{ color: 'var(--text-muted)', opacity: 0.5 }}>Server starting…</span>
       )}
 
       {/* Sync timestamp */}
-      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5 }}>
+      <div className="server-toolbar__sync">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5 }} aria-hidden="true">
           <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
           <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
         </svg>
-        <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>
-          Synced {relTime}
-        </span>
+        Synced {relTime}
       </div>
 
       {/* Restart button */}
