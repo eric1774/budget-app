@@ -1081,15 +1081,6 @@ html, body, #root {
   opacity: 1;
 }
 
-/* Bottom-bleed sparkline strip */
-.summary-card__spark {
-  margin: 6px -16px -14px;
-  margin-top: auto;
-  padding-top: 4px;
-  pointer-events: none;
-  line-height: 0;
-}
-
 .summary-card__icon,
 .summary-card__icon svg {
   transition: transform var(--transition-base);
