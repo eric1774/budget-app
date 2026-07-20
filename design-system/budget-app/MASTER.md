@@ -230,7 +230,7 @@ One section at a time, per page. Status updated as stages land:
 6. ✅ Log tab (search-first filter bar + responsive table) — DONE
 7. ✅ Goals tab (family hero + accent goal cards + pace insights) — DONE (af08504)
 8. ✅ Assets tab (net-worth summary row + ChartCard history/donut + typed asset cards) — DONE (af08504)
-9. Welcome/loading/error states, modals polish
+9. ✅ Welcome/loading/error states + detail views (goal/account/mortgage) — DONE. Overhaul complete.
 
 ---
 
