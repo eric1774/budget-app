@@ -226,7 +226,7 @@ One section at a time, per page. Status updated as stages land:
 2. ✅ Dashboard — time selectors + pill chips (FilterBar) — DONE (4e5bbe8)
 3. ✅ Dashboard — insight cards (SummaryCards) — DONE (0a93a6b)
 4. ✅ Dashboard — graph cards (Monthly/CategoryBreakdown/Balance; shared ChartCard.tsx) — DONE (a481fe2)
-5. Budget tab sections
+5. ✅ Budget tab (hero overview + category insight cards + modal polish) — DONE (291db2b)
 6. Log tab sections
 7. Goals tab sections
 8. Assets tab sections
