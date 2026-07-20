@@ -227,7 +227,7 @@ One section at a time, per page. Status updated as stages land:
 3. ✅ Dashboard — insight cards (SummaryCards) — DONE (0a93a6b)
 4. ✅ Dashboard — graph cards (Monthly/CategoryBreakdown/Balance; shared ChartCard.tsx) — DONE (a481fe2)
 5. ✅ Budget tab (hero overview + category insight cards + modal polish) — DONE (291db2b)
-6. Log tab sections
+6. ✅ Log tab (search-first filter bar + responsive table) — DONE
 7. Goals tab sections
 8. Assets tab sections
 9. Welcome/loading/error states, modals polish
