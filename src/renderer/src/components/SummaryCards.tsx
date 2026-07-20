@@ -40,35 +40,43 @@ const icons = {
   ),
 }
 
+const pctOf = (part: number, whole: number): string | undefined =>
+  whole > 0 ? `${Math.round((part / whole) * 100)}%` : undefined
+
 export function SummaryCards({ transactions, onCardClick }: SummaryCardsProps): JSX.Element {
   const totalIncome    = transactions.reduce((s, t) => s + t.income, 0)
   const totalSavings   = transactions.reduce((s, t) => SAVINGS_CATEGORIES.has(t.category) ? s + t.debit : s, 0)
   const totalExpenses  = transactions.reduce((s, t) => SAVINGS_CATEGORIES.has(t.category) ? s : s + t.debit, 0)
   const netCashFlow    = totalIncome - totalExpenses
   const currentBalance = transactions.length > 0 ? transactions[transactions.length - 1].balance : 0
+  const depositCount   = transactions.reduce((n, t) => (t.income > 0 ? n + 1 : n), 0)
+
+  const expensesPct = pctOf(totalExpenses, totalIncome)
+  const savingsPct  = pctOf(totalSavings, totalIncome)
+  const netPct      = pctOf(Math.abs(netCashFlow), totalIncome)
 
   const cards: {
     label: string
     value: number
     icon: React.ReactNode
     color: string
-    iconBg: string
+    sub?: string
     clickType?: 'income' | 'expenses' | 'savings'
   }[] = [
     {
-      label: 'Total Income',
+      label: 'Income',
       value: totalIncome,
       icon: icons.income,
       color: 'var(--income)',
-      iconBg: 'rgba(52,211,153,0.10)',
+      sub: depositCount > 0 ? `${depositCount} deposit${depositCount === 1 ? '' : 's'}` : undefined,
       clickType: 'income',
     },
     {
-      label: 'Total Expenses',
+      label: 'Expenses',
       value: totalExpenses,
       icon: icons.expenses,
       color: 'var(--expense)',
-      iconBg: 'rgba(248,113,113,0.10)',
+      sub: expensesPct ? `${expensesPct} of income` : undefined,
       clickType: 'expenses',
     },
     {
@@ -76,79 +84,60 @@ export function SummaryCards({ transactions, onCardClick }: SummaryCardsProps): 
       value: totalSavings,
       icon: icons.savings,
       color: 'var(--savings)',
-      iconBg: 'rgba(167,139,250,0.10)',
+      sub: savingsPct ? `${savingsPct} of income` : undefined,
       clickType: 'savings',
     },
     {
-      label: 'Net Cash Flow',
+      label: 'Cash Flow',
       value: netCashFlow,
       icon: icons.cashflow,
       color: netCashFlow >= 0 ? 'var(--income)' : 'var(--expense)',
-      iconBg: netCashFlow >= 0 ? 'rgba(52,211,153,0.10)' : 'rgba(248,113,113,0.10)',
+      sub: netPct ? (netCashFlow >= 0 ? `${netPct} of income kept` : `${netPct} over income`) : undefined,
     },
     {
       label: 'Balance',
       value: currentBalance,
       icon: icons.balance,
       color: currentBalance >= 0 ? 'var(--balance)' : 'var(--expense)',
-      iconBg: 'rgba(96,165,250,0.10)',
     },
   ]
 
   return (
     <div className="summary-cards">
-      {cards.map((card) => (
-        <GlassCard
-          key={card.label}
-          style={{
-            padding: '16px 18px',
-            cursor: card.clickType ? 'pointer' : 'default',
-            transition: 'transform 150ms ease, box-shadow 150ms ease',
-          }}
-          onClick={card.clickType && onCardClick ? () => onCardClick(card.clickType!) : undefined}
-          className={card.clickType ? 'summary-card-clickable' : undefined}
-        >
-          {/* Label row */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <span style={{
-              fontSize: 11,
-              fontWeight: 500,
-              color: 'var(--text-muted)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.07em',
-            }}>
-              {card.label}
-            </span>
-            <span style={{
-              width: 28,
-              height: 28,
-              borderRadius: 8,
-              background: card.iconBg,
-              color: card.color,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}>
-              {card.icon}
-            </span>
-          </div>
-
-          {/* Value */}
-          <div style={{
-            fontSize: 'clamp(14px, 1.4vw, 20px)',
-            fontWeight: 700,
-            color: card.color,
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            letterSpacing: '-0.01em',
-            fontVariantNumeric: 'tabular-nums',
-          }}>
-            {fmt(card.value)}
-          </div>
-        </GlassCard>
-      ))}
+      {cards.map((card) => {
+        // padding included so GlassCard's inline default doesn't override .summary-card
+        const accentStyle = { '--card-accent': card.color, padding: '14px 16px' } as React.CSSProperties
+        const body = (
+          <>
+            <div className="summary-card__top">
+              <span className="summary-card__label">{card.label}</span>
+              <span className="summary-card__icon" aria-hidden="true">{card.icon}</span>
+            </div>
+            <div className="summary-card__value">{fmt(card.value)}</div>
+            {card.sub && <div className="summary-card__sub">{card.sub}</div>}
+          </>
+        )
+        // Clickable cards are real buttons so they work with keyboard + screen readers
+        if (card.clickType && onCardClick) {
+          const type = card.clickType
+          return (
+            <button
+              key={card.label}
+              className="glass-card summary-card summary-card-clickable"
+              style={accentStyle}
+              onClick={() => onCardClick(type)}
+              aria-label={`${card.label} ${fmt(card.value)} — view matching transactions`}
+            >
+              {body}
+            </button>
+          )
+        }
+        return (
+          <GlassCard key={card.label} className="summary-card" style={accentStyle}>
+            {body}
+          </GlassCard>
+        )
+      })}
     </div>
   )
 }
