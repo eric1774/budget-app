@@ -1,15 +1,15 @@
-import {
-  LineChart, Line,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
-} from 'recharts'
+import { useState } from 'react'
+import type { CSSProperties } from 'react'
+import { ArrowLeft, Plus, PencilSimple, Trash } from '@phosphor-icons/react'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import type { AssetAccount, Transaction } from '../../../shared/types'
 import { GlassCard } from './GlassCard'
+import { ChartCard, ChartStat, TooltipShell, chartGridProps, axisTick, axisTickSmall } from './ChartCard'
 import {
   AddTransactionModal,
   EditTransactionModal,
   DeleteTransactionModal,
 } from './AccountModals'
-import { useState } from 'react'
 
 interface AccountDetailPanelProps {
   account: AssetAccount
@@ -19,8 +19,30 @@ interface AccountDetailPanelProps {
 
 const fmtCAD = (v: number): string =>
   new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v)
+const fmtShort = (v: number): string =>
+  new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 }).format(v)
 
-// Use CSS class btn-primary instead
+// Matches the assets grid / net-worth donut colors
+const TYPE_COLORS: Record<string, string> = {
+  Checkings: '#2DD4BF',
+  Savings: '#60A5FA',
+  Retirement: '#FBBF24',
+  'Hard Asset': '#F87171',
+  Investing: '#A78BFA',
+  Goal: '#34D399',
+}
+
+function AccountTip({ active, payload, label, color }: {
+  active?: boolean
+  payload?: { value?: number }[]
+  label?: string
+  color: string
+}): JSX.Element | null {
+  if (!active || !payload?.length) return null
+  const value = payload[0]?.value
+  if (typeof value !== 'number') return null
+  return <TooltipShell label={label} rows={[{ name: 'Balance', value: fmtCAD(value), color }]} />
+}
 
 type ModalState =
   | { kind: 'add' }
@@ -31,17 +53,23 @@ type ModalState =
 export function AccountDetailPanel({ account, onClose, onTransactionChange }: AccountDetailPanelProps): JSX.Element {
   const [modal, setModal] = useState<ModalState>(null)
 
-  const sorted = [...(account.transactions ?? [])].sort((a, b) => a.date.localeCompare(b.date))
+  const accent = TYPE_COLORS[account.type] ?? '#2DD4BF'
+  const sorted = [...(account.transactions ?? [])].sort((a, b) =>
+    (a.date as unknown as string).localeCompare(b.date as unknown as string))
 
-  // Running balance line chart data (ascending by date)
+  // Running balance area chart data (ascending by date)
   let running = 0
   const lineData = sorted.map(t => {
     running += t.type === 'deposit' ? t.amount : -t.amount
-    return { date: t.date, balance: running }
+    return { date: t.date as unknown as string, balance: running }
   })
+  const currentBalance = running
+  const totalIn = sorted.reduce((s, t) => (t.type === 'deposit' ? s + t.amount : s), 0)
+  const totalOut = sorted.reduce((s, t) => (t.type === 'deposit' ? s : s + t.amount), 0)
 
   // Transaction log: descending by date
-  const descSorted = [...(account.transactions ?? [])].sort((a, b) => b.date.localeCompare(a.date))
+  const descSorted = [...(account.transactions ?? [])].sort((a, b) =>
+    (b.date as unknown as string).localeCompare(a.date as unknown as string))
 
   function handleSuccess(): void {
     setModal(null)
@@ -49,140 +77,133 @@ export function AccountDetailPanel({ account, onClose, onTransactionChange }: Ac
   }
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px', overflowY: 'auto', overflowX: 'hidden', maxWidth: '100%', boxSizing: 'border-box' }}>
-      {/* Header with back button */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 8, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}>
-          <button
-            className="btn-ghost"
-            onClick={onClose}
-            aria-label="Go back to accounts list"
-            style={{ flexShrink: 0 }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-            Back
-          </button>
-          <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {account.name}
-          </h2>
-        </div>
-        <button
-          className="btn-primary"
-          onClick={() => setModal({ kind: 'add' })}
-          style={{ flexShrink: 0, whiteSpace: 'nowrap' }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    <div className="detail-outer">
+      {/* Header */}
+      <div className="detail-head">
+        <button className="btn-ghost" onClick={onClose} aria-label="Go back to accounts list">
+          <ArrowLeft size={14} weight="bold" />
+          Back
+        </button>
+        <h2 className="page-title">{account.name}</h2>
+        <span className="asset-chip" style={{ '--card-accent': accent } as CSSProperties}>{account.type}</span>
+        <button className="btn-primary" style={{ marginLeft: 'auto' }} onClick={() => setModal({ kind: 'add' })}>
+          <Plus size={13} weight="bold" />
           Add
         </button>
       </div>
 
-      <GlassCard style={{ padding: '20px', overflow: 'hidden', maxWidth: '100%', boxSizing: 'border-box' }}>
-
       {(account.transactions ?? []).length === 0 ? (
-        <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
-          No transactions yet. Add a deposit or withdrawal to get started.
-        </p>
+        <GlassCard style={{ padding: 20 }}>
+          <div className="asset-empty">No transactions yet. Add a deposit or withdrawal to get started.</div>
+        </GlassCard>
       ) : (
         <>
-          {/* Running Balance Line Chart */}
-          <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 8, marginTop: 8 }}>
-            Running Balance
-          </div>
-          <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={lineData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-              <XAxis
-                dataKey="date"
-                tick={{ fill: 'var(--text-muted)', fontSize: 10 }}
-                tickFormatter={(v: string) => v.slice(5)}
-                interval="preserveStartEnd"
-              />
-              <YAxis
-                tick={{ fill: 'var(--text-muted)', fontSize: 10 }}
-                tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`}
-                width={45}
-              />
-              <Tooltip
-                contentStyle={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}
-                labelStyle={{ color: 'var(--text-muted)', fontSize: 12 }}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                formatter={((value: number) => [fmtCAD(value), 'Balance']) as any}
-              />
-              <Line
-                type="monotone"
-                dataKey="balance"
-                stroke="var(--color-accent)"
-                strokeWidth={2}
-                dot={{ fill: 'var(--color-accent)', r: 3 }}
-                activeDot={{ r: 5 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-
-          {/* Transaction Log */}
-          <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 8, marginTop: 16 }}>
-            Transaction Log
-          </div>
-          <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {descSorted.map((tx) => (
-              <li
-                key={tx.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: 6,
-                  padding: '8px 10px',
-                  fontSize: 13,
-                  color: 'var(--text-primary)',
-                  gap: 8,
-                  minWidth: 0,
-                }}
+          {/* Stat cards */}
+          <div className="summary-cards">
+            {[
+              { label: 'Balance', value: currentBalance, color: accent, sub: `${sorted.length} transaction${sorted.length === 1 ? '' : 's'}` },
+              { label: 'Deposits', value: totalIn, color: 'var(--income)', sub: undefined },
+              { label: 'Withdrawals', value: totalOut, color: 'var(--expense)', sub: undefined },
+            ].map((card) => (
+              <div
+                key={card.label}
+                className="glass-card summary-card"
+                style={{ '--card-accent': card.color, padding: '14px 16px' } as CSSProperties}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0, flexWrap: 'wrap' }}>
-                  <span style={{ color: 'var(--text-muted)', fontSize: 12, whiteSpace: 'nowrap' }}>{tx.date}</span>
-                  <span style={{
-                    fontSize: 11,
-                    borderRadius: 4,
-                    padding: '2px 6px',
-                    background: tx.type === 'deposit' ? 'rgba(32,200,160,0.15)' : 'rgba(239,68,68,0.15)',
-                    color: tx.type === 'deposit' ? 'var(--color-accent)' : '#ef4444',
-                    fontWeight: 600,
-                    whiteSpace: 'nowrap',
-                  }}>
-                    {tx.type === 'deposit' ? '+' : '-'}{fmtCAD(tx.amount)}
-                  </span>
-                  {tx.note && (
-                    <span style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
-                      {tx.note}
-                    </span>
-                  )}
+                <div className="summary-card__top">
+                  <span className="summary-card__label">{card.label}</span>
                 </div>
-                <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
-                  <button
-                    className="btn-icon"
-                    title="Edit transaction"
-                    aria-label="Edit transaction"
-                    onClick={() => setModal({ kind: 'edit', transaction: tx })}
-                    style={{ width: 30, height: 30, minWidth: 30, minHeight: 30 }}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                  </button>
-                  <button
-                    className="btn-icon btn-icon--danger"
-                    title="Delete transaction"
-                    aria-label="Delete transaction"
-                    onClick={() => setModal({ kind: 'delete', transactionId: tx.id })}
-                    style={{ width: 30, height: 30, minWidth: 30, minHeight: 30 }}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                  </button>
-                </div>
-              </li>
+                <div className="summary-card__value">{fmtCAD(card.value)}</div>
+                {card.sub && <div className="summary-card__sub">{card.sub}</div>}
+              </div>
             ))}
-          </ul>
+          </div>
+
+          {/* Running balance */}
+          <ChartCard
+            title="Running Balance"
+            stat={lineData.length > 1 ? (
+              <ChartStat color={currentBalance >= lineData[0].balance ? 'var(--income)' : 'var(--expense)'}>
+                {currentBalance >= lineData[0].balance ? '↑' : '↓'} {fmtShort(Math.abs(currentBalance - lineData[0].balance))} all time
+              </ChartStat>
+            ) : undefined}
+          >
+            <ResponsiveContainer width="100%" height={220}>
+              <AreaChart data={lineData} margin={{ top: 8, right: 16, bottom: 4, left: 8 }}>
+                <defs>
+                  <linearGradient id="gradAccount" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={accent} stopOpacity={0.26} />
+                    <stop offset="100%" stopColor={accent} stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid {...chartGridProps} />
+                <XAxis
+                  dataKey="date"
+                  tick={axisTickSmall}
+                  tickFormatter={(v: string) => v.slice(5)}
+                  axisLine={false}
+                  tickLine={false}
+                  interval="preserveStartEnd"
+                />
+                <YAxis
+                  tick={axisTick}
+                  tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`}
+                  axisLine={false}
+                  tickLine={false}
+                  width={48}
+                />
+                <Tooltip content={<AccountTip color={accent} />} />
+                <Area
+                  type="monotone"
+                  dataKey="balance"
+                  stroke={accent}
+                  strokeWidth={2}
+                  fill="url(#gradAccount)"
+                  dot={false}
+                  activeDot={{ r: 5 }}
+                  animationDuration={700}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </ChartCard>
+
+          {/* Transaction log */}
+          <GlassCard style={{ padding: 20 }}>
+            <div className="chart-card__header">
+              <span className="chart-card__title">Transaction Log</span>
+            </div>
+            <div className="pay-list">
+              {descSorted.map((tx) => (
+                <div key={tx.id} className="pay-row">
+                  <span className="pay-row__date">{tx.date as unknown as string}</span>
+                  <span className={`pay-row__amt ${tx.type === 'deposit' ? 'pay-row__amt--principal' : 'pay-row__amt--out'}`}>
+                    {tx.type === 'deposit' ? '+' : '−'}{fmtCAD(tx.amount)}
+                  </span>
+                  {tx.note && <span className="pay-row__note">{tx.note}</span>}
+                  <div className="pay-row__actions">
+                    <button
+                      className="btn-icon"
+                      title="Edit transaction"
+                      aria-label="Edit transaction"
+                      onClick={() => setModal({ kind: 'edit', transaction: tx })}
+                      style={{ width: 32, height: 32, minWidth: 32, minHeight: 32 }}
+                    >
+                      <PencilSimple size={13} />
+                    </button>
+                    <button
+                      className="btn-icon btn-icon--danger"
+                      title="Delete transaction"
+                      aria-label="Delete transaction"
+                      onClick={() => setModal({ kind: 'delete', transactionId: tx.id })}
+                      style={{ width: 32, height: 32, minWidth: 32, minHeight: 32 }}
+                    >
+                      <Trash size={13} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </GlassCard>
         </>
       )}
 
@@ -210,7 +231,6 @@ export function AccountDetailPanel({ account, onClose, onTransactionChange }: Ac
           onDeleted={handleSuccess}
         />
       )}
-    </GlassCard>
     </div>
   )
 }

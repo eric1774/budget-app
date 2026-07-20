@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BudgetTab } from '../src/renderer/src/components/BudgetTab'
 import { GoalsTab } from '../src/renderer/src/components/GoalsTab'
 import { AssetsTab } from '../src/renderer/src/components/AssetsTab'
+import { MortgageDetailView } from '../src/renderer/src/components/MortgageDetailView'
 import { LogTab } from '../src/renderer/src/components/LogTab'
 import { LogFilterBar, DEFAULT_LOG_FILTER } from '../src/renderer/src/components/LogFilterBar'
 import type { LogFilterState } from '../src/renderer/src/components/LogFilterBar'
@@ -87,7 +88,15 @@ const MOCK_ACCOUNTS = [
 ]
 
 const MOCK_MORTGAGES = [
-  { id: 'm1', name: 'Primary Home', marketValue: 380000, principalBalance: 291000, payments: [], createdAt: '' },
+  { id: 'm1', name: 'Primary Home', marketValue: 380000, principalBalance: 291000, payments: [
+    { id: 'p1', date: '2026-01-01', principal: 610.11, interest: 1189.89, escrow: 410, note: '' },
+    { id: 'p2', date: '2026-02-01', principal: 613.42, interest: 1186.58, escrow: 410, note: '' },
+    { id: 'p3', date: '2026-03-01', principal: 616.75, interest: 1183.25, escrow: 410, note: 'Escrow adjusted' },
+    { id: 'p4', date: '2026-04-01', principal: 620.09, interest: 1179.91, escrow: 410, note: '' },
+    { id: 'p5', date: '2026-05-01', principal: 823.46, interest: 1176.54, escrow: 410, note: 'Extra $200 principal' },
+    { id: 'p6', date: '2026-06-01', principal: 827.02, interest: 1172.98, escrow: 410, note: '' },
+    { id: 'p7', date: '2026-07-01', principal: 830.60, interest: 1169.40, escrow: 410, note: '' },
+  ], createdAt: '' },
 ]
 
 const realFetch = window.fetch.bind(window)
@@ -162,7 +171,38 @@ function LogPreview(): JSX.Element {
 
 createRoot(document.getElementById('root')!).render(
   <div style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
-    {page === 'goals' ? (
+    {page === 'mortgage' ? (
+      <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <MortgageDetailView
+          mortgage={MOCK_MORTGAGES[0] as never}
+          onBack={() => {}}
+          onReload={async () => {}}
+        />
+      </div>
+    ) : page === 'states' ? (
+      <div className="app-state" style={{ gap: 32 }}>
+        <div className="glass-card app-state__card">
+          <div className="app-state__logo" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          </div>
+          <h1 className="app-state__title">Budget Dashboard</h1>
+          <p className="app-state__sub">Select your Budget.xlsx file to get started.</p>
+          <button className="btn-primary">Select File</button>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+          <div className="app-state__spinner" />
+          <p className="app-state__sub">Loading your budget…</p>
+        </div>
+        <div className="glass-card app-state__card app-state__card--error">
+          <div className="app-state__logo app-state__logo--error" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <h1 className="app-state__title">Couldn't read that file</h1>
+          <p className="app-state__sub">Missing required sheet "Transactions" in workbook.</p>
+          <button className="btn-primary">Select Different File</button>
+        </div>
+      </div>
+    ) : page === 'goals' ? (
       <GoalsPreview />
     ) : page === 'assets' ? (
       <AssetsTab onAccountSelect={() => {}} selectedAccountId={null} dashboardBalance={14211.22} />

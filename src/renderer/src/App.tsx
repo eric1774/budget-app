@@ -85,31 +85,6 @@ function Banner({ type, message, dismissible, onDismiss }: BannerProps): JSX.Ele
   )
 }
 
-// --- Styles ---
-
-const styles = {
-  center: {
-    display: 'flex' as const,
-    flexDirection: 'column' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    height: '100vh',
-    gap: 16,
-    background: 'var(--bg-app)',
-    color: 'var(--text-primary)',
-  },
-  button: {
-    padding: '10px 24px',
-    fontSize: 16,
-    cursor: 'pointer',
-    backgroundColor: 'var(--color-accent)',
-    color: '#1a1d23',
-    border: 'none',
-    borderRadius: 4,
-    fontWeight: 600,
-  },
-}
-
 // --- Helpers ---
 
 function formatRelTime(d: Date): string {
@@ -577,19 +552,24 @@ export default function App(): JSX.Element {
   // Welcome state
   if (status === 'welcome') {
     return (
-      <div style={styles.center}>
+      <div className="app-state">
         {banner && (
           <Banner {...banner} onDismiss={() => setBanner(null)} />
         )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-          <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--accent)', boxShadow: '0 0 12px var(--accent-glow)' }} />
-          <h1 style={{ color: 'var(--text-primary)', fontSize: 22, fontWeight: 600, letterSpacing: '0.01em' }}>Budget Dashboard</h1>
+        <div className="glass-card app-state__card">
+          <div className="app-state__logo" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+              <polyline points="17 6 23 6 23 12"/>
+            </svg>
+          </div>
+          <h1 className="app-state__title">Budget Dashboard</h1>
+          <p className="app-state__sub">Select your Budget.xlsx file to get started.</p>
+          <button className="btn-primary" onClick={handleSelectFile}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Select File
+          </button>
         </div>
-        <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 24 }}>Select your Budget.xlsx file to get started.</p>
-        <button className="btn-primary" onClick={handleSelectFile}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          Select File
-        </button>
       </div>
     )
   }
@@ -605,8 +585,9 @@ export default function App(): JSX.Element {
       )
     }
     return (
-      <div style={styles.center}>
-        <p style={{ color: 'var(--text-muted)' }}>Loading...</p>
+      <div className="app-state">
+        <div className="app-state__spinner" aria-hidden="true" />
+        <p className="app-state__sub" role="status">Loading your budget…</p>
       </div>
     )
   }
@@ -614,11 +595,15 @@ export default function App(): JSX.Element {
   // Hard error state (no data yet)
   if (status === 'error' && !parseResult) {
     return (
-      <div style={{ background: 'var(--bg-app)', minHeight: '100vh' }}>
+      <div className="app-state">
         {banner && <Banner {...banner} onDismiss={() => setBanner(null)} />}
-        <div style={styles.center}>
-          <p style={{ color: 'var(--color-expense)' }}>{parseError?.message}</p>
-          <button style={styles.button} onClick={handleSelectFile}>
+        <div className="glass-card app-state__card app-state__card--error">
+          <div className="app-state__logo app-state__logo--error" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <h1 className="app-state__title">Couldn&apos;t read that file</h1>
+          <p className="app-state__sub" role="alert">{parseError?.message}</p>
+          <button className="btn-primary" onClick={handleSelectFile}>
             Select Different File
           </button>
         </div>

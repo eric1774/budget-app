@@ -1,16 +1,20 @@
 import { useState } from 'react'
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import type { CSSProperties } from 'react'
+import { ArrowLeft, Plus, PencilSimple, Trash } from '@phosphor-icons/react'
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import type { Mortgage, MortgagePayment } from '../../../shared/types'
 import { GlassCard } from './GlassCard'
+import { ChartCard, ChartStat, TooltipShell, chartGridProps, axisTick, axisTickSmall } from './ChartCard'
 import { EditMortgagePaymentModal } from './MortgageModals'
 import * as api from '../api'
 
-const cadFormatter = new Intl.NumberFormat('en-CA', {
+const cad = new Intl.NumberFormat('en-CA', {
   style: 'currency',
   currency: 'CAD',
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 })
+const cadShort = new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 })
 
 function todayISO(): string {
   const d = new Date()
@@ -29,6 +33,17 @@ function balanceChartData(mortgage: Mortgage): { date: string; balance: number }
   })
 }
 
+function BalanceTip({ active, payload, label }: {
+  active?: boolean
+  payload?: { value?: number }[]
+  label?: string
+}): JSX.Element | null {
+  if (!active || !payload?.length) return null
+  const value = payload[0]?.value
+  if (typeof value !== 'number') return null
+  return <TooltipShell label={label} rows={[{ name: 'Principal', value: cad.format(value), color: '#FB923C' }]} />
+}
+
 interface MortgageDetailViewProps {
   mortgage: Mortgage
   onBack: () => void
@@ -45,11 +60,58 @@ export function MortgageDetailView({ mortgage, onBack, onReload }: MortgageDetai
   const [saving, setSaving] = useState(false)
   const [editingPayment, setEditingPayment] = useState<MortgagePayment | null>(null)
 
+  // ── Key insights ──
   const equity = mortgage.marketValue - mortgage.principalBalance
+  const equityPct = mortgage.marketValue > 0 ? (equity / mortgage.marketValue) * 100 : 0
+  const totalPrincipalPaid = mortgage.payments.reduce((sum, p) => sum + p.principal, 0)
   const totalInterest = mortgage.payments.reduce((sum, p) => sum + p.interest, 0)
   const totalEscrow = mortgage.payments.reduce((sum, p) => sum + p.escrow, 0)
+  const startingBalance = mortgage.principalBalance + totalPrincipalPaid
+  const paidOffPct = startingBalance > 0 ? (totalPrincipalPaid / startingBalance) * 100 : 0
+
+  // Pace: average principal per distinct payment month → payoff projection
+  const paymentMonths = new Set(mortgage.payments.map((p) => p.date.slice(0, 7))).size
+  const avgPrincipalPerMonth = paymentMonths > 0 ? totalPrincipalPaid / paymentMonths : 0
+  let payoffProjection: string | null = null
+  if (avgPrincipalPerMonth > 0 && mortgage.principalBalance > 0) {
+    const monthsLeft = Math.ceil(mortgage.principalBalance / avgPrincipalPerMonth)
+    if (monthsLeft < 12 * 80) {
+      const d = new Date()
+      d.setMonth(d.getMonth() + monthsLeft)
+      payoffProjection = d.toLocaleDateString('en-CA', { month: 'short', year: 'numeric' })
+    }
+  }
+  const interestPerDollar = totalPrincipalPaid > 0 ? totalInterest / totalPrincipalPaid : null
+
   const chartData = balanceChartData(mortgage)
   const sortedPayments = [...mortgage.payments].sort((a, b) => b.date.localeCompare(a.date))
+
+  const statCards: { label: string; value: string; color: string; sub?: string }[] = [
+    {
+      label: 'Principal Remaining',
+      value: cad.format(mortgage.principalBalance),
+      color: 'var(--expense)',
+      sub: payoffProjection ? `≈ paid off ${payoffProjection} at current pace` : undefined,
+    },
+    {
+      label: 'Principal / Month',
+      value: avgPrincipalPerMonth > 0 ? cad.format(avgPrincipalPerMonth) : '—',
+      color: 'var(--income)',
+      sub: paymentMonths > 0 ? `avg over ${paymentMonths} month${paymentMonths === 1 ? '' : 's'}` : 'no payments yet',
+    },
+    {
+      label: 'Interest Paid',
+      value: cad.format(totalInterest),
+      color: 'var(--warning)',
+      sub: interestPerDollar !== null ? `$${interestPerDollar.toFixed(2)} per $1 of principal` : undefined,
+    },
+    {
+      label: 'Escrow Paid',
+      value: cad.format(totalEscrow),
+      color: 'var(--balance)',
+      sub: mortgage.payments.length > 0 ? `across ${mortgage.payments.length} payment${mortgage.payments.length === 1 ? '' : 's'}` : undefined,
+    },
+  ]
 
   async function handleSave(): Promise<void> {
     const principal = parseFloat(formPrincipal) || 0
@@ -78,130 +140,114 @@ export function MortgageDetailView({ mortgage, onBack, onReload }: MortgageDetai
   }
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px', overflowY: 'auto' }}>
+    <div className="detail-outer">
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
-        <button
-          className="btn-ghost"
-          onClick={onBack}
-          aria-label="Go back to assets list"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      <div className="detail-head">
+        <button className="btn-ghost" onClick={onBack} aria-label="Go back to assets list">
+          <ArrowLeft size={14} weight="bold" />
           Back
         </button>
-        <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--text-primary)' }}>
-          {mortgage.name}
-        </h2>
-        <span style={{
-          display: 'inline-block',
-          background: 'rgba(249,115,22,0.15)',
-          color: '#f97316',
-          borderRadius: 6,
-          padding: '3px 10px',
-          fontSize: 13,
-          fontWeight: 600,
-        }}>
-          Mortgage
-        </span>
+        <h2 className="page-title">{mortgage.name}</h2>
+        <span className="asset-chip" style={{ '--card-accent': '#FB923C' } as CSSProperties}>Mortgage</span>
       </div>
 
-      {/* Stats grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-        gap: 12,
-        marginBottom: 20,
-      }}>
-        <GlassCard>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
-            Equity
+      {/* Payoff hero */}
+      <GlassCard className="budget-hero">
+        <div className="budget-hero__main">
+          <div className="budget-hero__label">Loan paid off</div>
+          <div className="budget-hero__value">
+            {cad.format(totalPrincipalPaid)}
+            <span className="budget-hero__of"> of {cad.format(startingBalance)} principal</span>
           </div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-accent)' }}>
-            {cadFormatter.format(equity)}
+          <div
+            className="budget-bar budget-bar--hero"
+            role="progressbar"
+            aria-valuenow={Math.round(paidOffPct)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`${Math.round(paidOffPct)}% of the loan principal paid off`}
+          >
+            <div className="budget-bar__fill asset-card__equity-fill" style={{ width: `${Math.min(paidOffPct, 100)}%` }} />
           </div>
-        </GlassCard>
-
-        <GlassCard>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
-            Principal Remaining
+          <div className="budget-hero__meta">
+            {paidOffPct.toFixed(1)}% of principal
+            {payoffProjection && ` · on pace for ${payoffProjection}`}
           </div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--expense)' }}>
-            {cadFormatter.format(mortgage.principalBalance)}
-          </div>
-        </GlassCard>
-
-        <GlassCard>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
-            Total Interest Paid
-          </div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>
-            {cadFormatter.format(totalInterest)}
-          </div>
-        </GlassCard>
-
-        <GlassCard>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
-            Total Escrow Paid
-          </div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>
-            {cadFormatter.format(totalEscrow)}
-          </div>
-        </GlassCard>
-      </div>
-
-      {/* Principal Balance Over Time chart */}
-      <GlassCard style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: 12 }}>
-          Principal Balance Over Time
         </div>
-        {chartData.length > 0 ? (
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={chartData} margin={{ top: 4, right: 16, bottom: 4, left: 8 }}>
-              <XAxis
-                dataKey="date"
-                tick={{ fill: 'var(--text-muted)', fontSize: 10 }}
-                axisLine={false}
-                tickLine={false}
-                interval="preserveStartEnd"
-              />
-              <YAxis
-                tickFormatter={(v) => cadFormatter.format(v as number)}
-                tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
-                axisLine={false}
-                tickLine={false}
-                width={80}
-              />
-              <Tooltip
-                contentStyle={{ background: 'rgba(30,34,45,0.95)', border: '1px solid var(--border-accent)', borderRadius: 8, fontSize: 12 }}
-                labelStyle={{ color: 'var(--text-primary)', marginBottom: 4 }}
-                formatter={(value) => [cadFormatter.format(value as number), 'Balance'] as unknown as [string, string]}
-              />
-              <Line
-                type="monotone"
-                dataKey="balance"
-                stroke="var(--color-accent)"
-                strokeWidth={2}
-                dot={false}
-                activeDot={{ r: 4 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        ) : (
-          <div style={{ color: 'var(--text-muted)', fontSize: 14, padding: '16px 0' }}>
-            No payments yet — log your first payment below
-          </div>
-        )}
+        <div className="budget-hero__side">
+          <div className="budget-hero__side-label">Home Equity</div>
+          <div className="budget-hero__side-value">{cad.format(equity)}</div>
+          <span className="budget-chip budget-chip--ok">{Math.round(equityPct)}% of market value</span>
+        </div>
       </GlassCard>
 
-      {/* Payment log section */}
-      <GlassCard>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <div style={{ fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
-            Payments
+      {/* Insight stat cards */}
+      <div className="summary-cards">
+        {statCards.map((card) => (
+          <div
+            key={card.label}
+            className="glass-card summary-card"
+            style={{ '--card-accent': card.color, padding: '14px 16px' } as CSSProperties}
+          >
+            <div className="summary-card__top">
+              <span className="summary-card__label">{card.label}</span>
+            </div>
+            <div className="summary-card__value">{card.value}</div>
+            {card.sub && <div className="summary-card__sub">{card.sub}</div>}
           </div>
+        ))}
+      </div>
+
+      {/* Principal curve */}
+      <ChartCard
+        title="Principal Balance Over Time"
+        stat={totalPrincipalPaid > 0 ? (
+          <ChartStat color="var(--income)">↓ {cadShort.format(totalPrincipalPaid)} paid down</ChartStat>
+        ) : undefined}
+      >
+        {chartData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={220}>
+            <AreaChart data={chartData} margin={{ top: 8, right: 16, bottom: 4, left: 8 }}>
+              <defs>
+                <linearGradient id="gradMortgage" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#FB923C" stopOpacity={0.26} />
+                  <stop offset="100%" stopColor="#FB923C" stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid {...chartGridProps} />
+              <XAxis dataKey="date" tick={axisTickSmall} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+              <YAxis
+                tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`}
+                tick={axisTick}
+                axisLine={false}
+                tickLine={false}
+                width={52}
+              />
+              <Tooltip content={<BalanceTip />} />
+              <Area
+                type="monotone"
+                dataKey="balance"
+                stroke="#FB923C"
+                strokeWidth={2}
+                fill="url(#gradMortgage)"
+                dot={false}
+                activeDot={{ r: 5, stroke: 'rgba(251,146,60,0.3)', strokeWidth: 6 }}
+                animationDuration={700}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="chart-empty">No payments yet — log your first payment below</div>
+        )}
+      </ChartCard>
+
+      {/* Payment ledger */}
+      <GlassCard style={{ padding: 20 }}>
+        <div className="chart-card__header">
+          <span className="chart-card__title">Payments</span>
           {!showAddForm && (
             <button className="btn-primary" onClick={() => setShowAddForm(true)}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <Plus size={13} weight="bold" />
               Add Payment
             </button>
           )}
@@ -209,116 +255,32 @@ export function MortgageDetailView({ mortgage, onBack, onReload }: MortgageDetai
 
         {/* Add form */}
         {showAddForm && (
-          <div style={{
-            background: 'rgba(255,255,255,0.04)',
-            borderRadius: 8,
-            padding: 16,
-            marginBottom: 16,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 10,
-          }}>
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 120 }}>
-                <label style={{ fontSize: 12, color: 'var(--text-muted)' }}>Date</label>
-                <input
-                  type="date"
-                  value={formDate}
-                  onChange={(e) => setFormDate(e.target.value)}
-                  required
-                  style={{
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    borderRadius: 6,
-                    padding: '6px 10px',
-                    color: 'var(--text-primary)',
-                    fontSize: 14,
-                  }}
-                />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 100 }}>
-                <label style={{ fontSize: 12, color: 'var(--text-muted)' }}>Principal</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formPrincipal}
-                  onChange={(e) => setFormPrincipal(e.target.value)}
-                  placeholder="0.00"
-                  style={{
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    borderRadius: 6,
-                    padding: '6px 10px',
-                    color: 'var(--text-primary)',
-                    fontSize: 14,
-                  }}
-                />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 100 }}>
-                <label style={{ fontSize: 12, color: 'var(--text-muted)' }}>Interest</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formInterest}
-                  onChange={(e) => setFormInterest(e.target.value)}
-                  placeholder="0.00"
-                  style={{
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    borderRadius: 6,
-                    padding: '6px 10px',
-                    color: 'var(--text-primary)',
-                    fontSize: 14,
-                  }}
-                />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 100 }}>
-                <label style={{ fontSize: 12, color: 'var(--text-muted)' }}>Escrow</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formEscrow}
-                  onChange={(e) => setFormEscrow(e.target.value)}
-                  placeholder="0.00"
-                  style={{
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    borderRadius: 6,
-                    padding: '6px 10px',
-                    color: 'var(--text-primary)',
-                    fontSize: 14,
-                  }}
-                />
-              </div>
+          <div className="pay-form">
+            <div className="pay-form__row">
+              <label className="pay-form__field">
+                <span>Date</span>
+                <input type="date" className="date-input" value={formDate} onChange={(e) => setFormDate(e.target.value)} required />
+              </label>
+              <label className="pay-form__field">
+                <span>Principal</span>
+                <input type="number" step="0.01" min="0" className="date-input" value={formPrincipal} onChange={(e) => setFormPrincipal(e.target.value)} placeholder="0.00" />
+              </label>
+              <label className="pay-form__field">
+                <span>Interest</span>
+                <input type="number" step="0.01" min="0" className="date-input" value={formInterest} onChange={(e) => setFormInterest(e.target.value)} placeholder="0.00" />
+              </label>
+              <label className="pay-form__field">
+                <span>Escrow</span>
+                <input type="number" step="0.01" min="0" className="date-input" value={formEscrow} onChange={(e) => setFormEscrow(e.target.value)} placeholder="0.00" />
+              </label>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <label style={{ fontSize: 12, color: 'var(--text-muted)' }}>Note (optional)</label>
-              <input
-                type="text"
-                value={formNote}
-                onChange={(e) => setFormNote(e.target.value)}
-                placeholder="e.g. March 2026 payment"
-                style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  borderRadius: 6,
-                  padding: '6px 10px',
-                  color: 'var(--text-primary)',
-                  fontSize: 14,
-                }}
-              />
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                className="btn-primary"
-                onClick={handleSave}
-                disabled={saving || !formDate}
-                style={{ opacity: saving ? 0.7 : 1, cursor: saving ? 'not-allowed' : undefined }}
-              >
-                {saving ? 'Saving...' : 'Save'}
+            <label className="pay-form__field">
+              <span>Note (optional)</span>
+              <input type="text" className="date-input" style={{ fontFamily: 'inherit' }} value={formNote} onChange={(e) => setFormNote(e.target.value)} placeholder="e.g. March 2026 payment" />
+            </label>
+            <div className="pay-form__actions">
+              <button className="btn-primary" onClick={handleSave} disabled={saving || !formDate}>
+                {saving ? 'Saving…' : 'Save'}
               </button>
               <button
                 className="btn-ghost"
@@ -332,56 +294,32 @@ export function MortgageDetailView({ mortgage, onBack, onReload }: MortgageDetai
 
         {/* Payment list */}
         {sortedPayments.length === 0 ? (
-          <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>No payments yet</div>
+          <div className="asset-empty">No payments yet</div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div className="pay-list">
             {sortedPayments.map((p) => (
-              <div
-                key={p.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '8px 10px',
-                  background: 'rgba(255,255,255,0.03)',
-                  borderRadius: 6,
-                  gap: 12,
-                  flexWrap: 'wrap',
-                }}
-              >
-                <div style={{ display: 'flex', gap: 12, alignItems: 'center', flex: 1, minWidth: 0, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 13, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{p.date}</span>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--success)', whiteSpace: 'nowrap' }}>
-                    P: {cadFormatter.format(p.principal)}
-                  </span>
-                  <span style={{ fontSize: 13, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                    I: {cadFormatter.format(p.interest)}
-                  </span>
-                  <span style={{ fontSize: 13, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                    E: {cadFormatter.format(p.escrow)}
-                  </span>
-                  {p.note && (
-                    <span style={{ fontSize: 13, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {p.note}
-                    </span>
-                  )}
-                </div>
-                <div style={{ display: 'flex', gap: 4 }}>
+              <div key={p.id} className="pay-row">
+                <span className="pay-row__date">{p.date}</span>
+                <span className="pay-row__amt pay-row__amt--principal" title="Principal">P {cad.format(p.principal)}</span>
+                <span className="pay-row__amt pay-row__amt--interest" title="Interest">I {cad.format(p.interest)}</span>
+                <span className="pay-row__amt pay-row__amt--escrow" title="Escrow">E {cad.format(p.escrow)}</span>
+                {p.note && <span className="pay-row__note">{p.note}</span>}
+                <div className="pay-row__actions">
                   <button
                     className="btn-icon"
                     onClick={() => setEditingPayment(p)}
                     aria-label="Edit payment"
-                    style={{ width: 34, height: 34, minWidth: 34, minHeight: 34 }}
+                    style={{ width: 32, height: 32, minWidth: 32, minHeight: 32 }}
                   >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    <PencilSimple size={13} />
                   </button>
                   <button
                     className="btn-icon btn-icon--danger"
                     onClick={() => handleDelete(p.id)}
                     aria-label="Delete payment"
-                    style={{ width: 34, height: 34, minWidth: 34, minHeight: 34 }}
+                    style={{ width: 32, height: 32, minWidth: 32, minHeight: 32 }}
                   >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    <Trash size={13} />
                   </button>
                 </div>
               </div>
