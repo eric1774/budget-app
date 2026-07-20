@@ -26,19 +26,78 @@ export const axisTickSmall = { fill: 'var(--text-secondary)', fontSize: 10 }
 
 interface ChartCardProps {
   title: string
+  /** Small insight badge rendered next to the title (use ChartStat) */
+  stat?: React.ReactNode
   actions?: React.ReactNode
   children: React.ReactNode
 }
 
-export function ChartCard({ title, actions, children }: ChartCardProps): JSX.Element {
+export function ChartCard({ title, stat, actions, children }: ChartCardProps): JSX.Element {
   return (
     <GlassCard style={{ padding: 20 }}>
       <div className="chart-card__header">
-        <span className="chart-card__title">{title}</span>
+        <div className="chart-card__heading">
+          <span className="chart-card__title">{title}</span>
+          {stat}
+        </div>
         {actions}
       </div>
       <div className="chart-container">{children}</div>
     </GlassCard>
+  )
+}
+
+// ── Insight stat badge for chart headers ──
+
+interface ChartStatProps {
+  /** Semantic color token, e.g. 'var(--income)' */
+  color: string
+  children: React.ReactNode
+}
+
+export function ChartStat({ color, children }: ChartStatProps): JSX.Element {
+  return (
+    <span className="chart-stat" style={{ '--stat-color': color } as React.CSSProperties}>
+      {children}
+    </span>
+  )
+}
+
+// ── Custom glass tooltip ──
+
+export interface TipRow {
+  name: string
+  value: string
+  color?: string
+}
+
+interface TooltipShellProps {
+  label?: React.ReactNode
+  rows: TipRow[]
+  footer?: TipRow
+}
+
+export function TooltipShell({ label, rows, footer }: TooltipShellProps): JSX.Element {
+  return (
+    <div className="chart-tip">
+      {label != null && label !== '' && <div className="chart-tip__label">{label}</div>}
+      {rows.map((r) => (
+        <div className="chart-tip__row" key={r.name}>
+          {r.color && <span className="chart-tip__dot" style={{ background: r.color }} />}
+          <span className="chart-tip__name">{r.name}</span>
+          <span className="chart-tip__value">{r.value}</span>
+        </div>
+      ))}
+      {footer && (
+        <div className="chart-tip__row chart-tip__row--footer">
+          {footer.color && <span className="chart-tip__dot" style={{ background: footer.color }} />}
+          <span className="chart-tip__name">{footer.name}</span>
+          <span className="chart-tip__value" style={footer.color ? { color: footer.color } : undefined}>
+            {footer.value}
+          </span>
+        </div>
+      )}
+    </div>
   )
 }
 

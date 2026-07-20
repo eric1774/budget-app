@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import {
+  ComposedChart,
   LineChart,
   Line,
-  BarChart,
   Bar,
   XAxis,
   YAxis,
@@ -10,9 +10,10 @@ import {
   ResponsiveContainer,
   Legend,
   CartesianGrid,
+  ReferenceLine,
 } from 'recharts'
 import type { Transaction } from '../../../shared/types'
-import { ChartCard, ChartToggle, chartIcons, chartTooltipProps, chartGridProps, axisTick } from './ChartCard'
+import { ChartCard, ChartToggle, ChartStat, TooltipShell, chartIcons, chartGridProps, axisTick } from './ChartCard'
 
 interface MonthlyChartProps {
   transactions: Transaction[]
@@ -22,6 +23,36 @@ type ChartType = 'bar' | 'line'
 
 const fmt = (v: number): string =>
   new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v)
+
+const fmtShort = (v: number): string =>
+  new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 }).format(v)
+
+interface MonthDatum {
+  month: string
+  income: number
+  expense: number
+  net: number
+}
+
+function MonthlyTip({ active, payload, label }: {
+  active?: boolean
+  payload?: { payload?: MonthDatum }[]
+  label?: string
+}): JSX.Element | null {
+  if (!active || !payload?.length) return null
+  const d = payload[0]?.payload
+  if (!d) return null
+  return (
+    <TooltipShell
+      label={label}
+      rows={[
+        { name: 'Income', value: fmt(d.income), color: 'var(--income)' },
+        { name: 'Expenses', value: fmt(d.expense), color: 'var(--expense)' },
+      ]}
+      footer={{ name: 'Net', value: fmt(d.net), color: d.net >= 0 ? 'var(--income)' : 'var(--expense)' }}
+    />
+  )
+}
 
 export function MonthlyChart({ transactions }: MonthlyChartProps): JSX.Element {
   const [chartType, setChartType] = useState<ChartType>('bar')
@@ -38,18 +69,16 @@ export function MonthlyChart({ transactions }: MonthlyChartProps): JSX.Element {
     entry.income += t.income
     if (!EXPENSE_EXCLUDE.has(t.category)) entry.expense += t.debit
   }
-  const data = Array.from(monthMap.entries())
+  const data: MonthDatum[] = Array.from(monthMap.entries())
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([, v]) => ({ month: v.label, income: v.income, expense: v.expense }))
+    .map(([, v]) => ({ month: v.label, income: v.income, expense: v.expense, net: v.income - v.expense }))
 
-  const tooltipProps = {
-    ...chartTooltipProps,
-    formatter: (value: number | undefined, name: string | undefined): [string, string] => [fmt(value ?? 0), name === 'income' ? 'Income' : 'Expenses'],
-    cursor: { fill: 'rgba(255,255,255,0.05)' },
-  }
+  // Insight: average monthly net across the visible range
+  const avgNet = data.length > 0 ? data.reduce((s, d) => s + d.net, 0) / data.length : 0
+  const hasNegativeNet = data.some((d) => d.net < 0)
 
   const legendProps = {
-    formatter: (v: string) => (v === 'income' ? 'Income' : 'Expenses'),
+    formatter: (v: string) => (v === 'income' ? 'Income' : v === 'expense' ? 'Expenses' : 'Net'),
     wrapperStyle: { fontSize: 12, color: 'var(--text-secondary)' },
     iconType: 'circle' as const,
     iconSize: 8,
@@ -73,6 +102,13 @@ export function MonthlyChart({ transactions }: MonthlyChartProps): JSX.Element {
   return (
     <ChartCard
       title="Monthly Income vs Expenses"
+      stat={
+        data.length > 0 ? (
+          <ChartStat color={avgNet >= 0 ? 'var(--income)' : 'var(--expense)'}>
+            {avgNet >= 0 ? '↑' : '↓'} {fmtShort(Math.abs(avgNet))}/mo avg net
+          </ChartStat>
+        ) : undefined
+      }
       actions={
         <ChartToggle<ChartType>
           value={chartType}
@@ -86,34 +122,46 @@ export function MonthlyChart({ transactions }: MonthlyChartProps): JSX.Element {
     >
       <ResponsiveContainer width="100%" height={260}>
         {chartType === 'bar' ? (
-          <BarChart data={data} margin={{ top: 4, right: 16, bottom: 4, left: 8 }}>
+          <ComposedChart data={data} margin={{ top: 4, right: 16, bottom: 4, left: 8 }}>
             <defs>
               <linearGradient id="gradIncome" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#34D399" stopOpacity={0.95} />
-                <stop offset="100%" stopColor="#34D399" stopOpacity={0.55} />
+                <stop offset="100%" stopColor="#34D399" stopOpacity={0.5} />
               </linearGradient>
               <linearGradient id="gradExpense" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#F87171" stopOpacity={0.95} />
-                <stop offset="100%" stopColor="#F87171" stopOpacity={0.55} />
+                <stop offset="100%" stopColor="#F87171" stopOpacity={0.5} />
               </linearGradient>
             </defs>
             <CartesianGrid {...chartGridProps} />
             <XAxis {...xAxisProps} />
             <YAxis {...yAxisProps} />
-            <Tooltip {...tooltipProps} />
+            {hasNegativeNet && <ReferenceLine y={0} stroke="rgba(255,255,255,0.12)" strokeDasharray="4 4" />}
+            <Tooltip content={<MonthlyTip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
             <Legend {...legendProps} />
-            <Bar dataKey="income" fill="url(#gradIncome)" radius={[4, 4, 0, 0]} maxBarSize={32} />
-            <Bar dataKey="expense" fill="url(#gradExpense)" radius={[4, 4, 0, 0]} maxBarSize={32} />
-          </BarChart>
+            <Bar dataKey="income" fill="url(#gradIncome)" radius={[4, 4, 0, 0]} maxBarSize={32} animationDuration={600} />
+            <Bar dataKey="expense" fill="url(#gradExpense)" radius={[4, 4, 0, 0]} maxBarSize={32} animationDuration={600} />
+            <Line
+              type="monotone"
+              dataKey="net"
+              stroke="var(--accent)"
+              strokeWidth={2}
+              dot={{ r: 3, fill: 'var(--accent)', strokeWidth: 0 }}
+              activeDot={{ r: 5, stroke: 'rgba(45,212,191,0.3)', strokeWidth: 6 }}
+              animationDuration={700}
+            />
+          </ComposedChart>
         ) : (
           <LineChart data={data} margin={{ top: 4, right: 16, bottom: 4, left: 8 }}>
             <CartesianGrid {...chartGridProps} />
             <XAxis {...xAxisProps} />
             <YAxis {...yAxisProps} />
-            <Tooltip {...tooltipProps} />
+            {hasNegativeNet && <ReferenceLine y={0} stroke="rgba(255,255,255,0.12)" strokeDasharray="4 4" />}
+            <Tooltip content={<MonthlyTip />} />
             <Legend {...legendProps} />
-            <Line type="monotone" dataKey="income" stroke="var(--color-income)" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-            <Line type="monotone" dataKey="expense" stroke="var(--color-expense)" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+            <Line type="monotone" dataKey="income" stroke="var(--color-income)" strokeWidth={2} dot={false} activeDot={{ r: 4 }} animationDuration={600} />
+            <Line type="monotone" dataKey="expense" stroke="var(--color-expense)" strokeWidth={2} dot={false} activeDot={{ r: 4 }} animationDuration={600} />
+            <Line type="monotone" dataKey="net" stroke="var(--accent)" strokeWidth={2} strokeDasharray="5 4" dot={false} activeDot={{ r: 4 }} animationDuration={700} />
           </LineChart>
         )}
       </ResponsiveContainer>
