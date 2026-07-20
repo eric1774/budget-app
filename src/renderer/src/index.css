@@ -1063,6 +1063,41 @@ html, body, #root {
   pointer-events: none;
 }
 
+/* Ambient glow washing from the icon corner */
+.summary-card::after {
+  content: '';
+  position: absolute;
+  top: -30px;
+  right: -30px;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--card-accent, var(--accent)) 13%, transparent), transparent 70%);
+  pointer-events: none;
+  transition: opacity var(--transition-slow);
+  opacity: 0.75;
+}
+.summary-card-clickable:hover::after {
+  opacity: 1;
+}
+
+/* Bottom-bleed sparkline strip */
+.summary-card__spark {
+  margin: 6px -16px -14px;
+  margin-top: auto;
+  padding-top: 4px;
+  pointer-events: none;
+  line-height: 0;
+}
+
+.summary-card__icon,
+.summary-card__icon svg {
+  transition: transform var(--transition-base);
+}
+.summary-card-clickable:hover .summary-card__icon {
+  transform: scale(1.12);
+}
+
 .summary-card__top {
   display: flex;
   align-items: center;
