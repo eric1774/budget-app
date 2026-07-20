@@ -1,7 +1,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* ── IBM Plex Sans — financial, trustworthy, professional ── */
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+/* ── IBM Plex Sans (UI) + IBM Plex Mono (data) — financial, trustworthy, professional ── */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
 :root {
   /* Base surfaces */
@@ -73,6 +73,9 @@
 
   /* Touch target */
   --touch-min: 44px;
+
+  /* Fonts */
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', monospace;
 
   font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 16px;
@@ -167,13 +170,19 @@ html, body, #root {
 
 /* ── App Header ── */
 .app-header {
+  position: sticky;
+  top: 0;
+  z-index: 60;
   padding: 0 var(--space-xl);
-  height: 52px;
+  height: 56px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid var(--border-subtle);
-  background: var(--bg-base);
+  gap: var(--space-lg);
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(to bottom, rgba(15, 22, 35, 0.88), rgba(8, 11, 16, 0.82));
+  -webkit-backdrop-filter: blur(var(--card-blur));
+  backdrop-filter: blur(var(--card-blur));
   flex-shrink: 0;
 }
 
@@ -181,72 +190,91 @@ html, body, #root {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
-.app-header__logo-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 8px var(--accent-glow);
+.app-header__logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  background: linear-gradient(135deg, rgba(45, 212, 191, 0.20), rgba(45, 212, 191, 0.05));
+  border: 1px solid rgba(45, 212, 191, 0.35);
+  box-shadow: 0 0 16px rgba(45, 212, 191, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   flex-shrink: 0;
 }
 
 .app-header__title {
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 650;
   color: var(--text-primary);
-  letter-spacing: 0.01em;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
 }
 
 .app-header__filepath {
   font-size: 11px;
-  color: var(--text-muted);
-  max-width: 320px;
+  color: var(--text-secondary);
+  max-width: 340px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-mono);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 4px 10px;
+  line-height: 1.4;
 }
 
 .app-header__actions {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
+  flex-shrink: 0;
 }
 
-/* ── Tab Navigation ── */
+/* ── Tab Navigation — segmented pill rail ── */
 .tab-nav {
   display: flex;
-  gap: 0;
+  gap: 4px;
+  align-items: center;
   border-bottom: 1px solid var(--border-subtle);
   width: 100%;
-  background: var(--bg-base);
+  background: rgba(8, 11, 16, 0.72);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   flex-shrink: 0;
-  padding: 0;
+  padding: 6px var(--space-lg);
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+.tab-nav::-webkit-scrollbar { display: none; }
 
 .tab-btn {
   position: relative;
-  padding: 0 12px;
+  padding: 0 16px;
   height: var(--touch-min);
   min-height: var(--touch-min);
   background: none;
   border: none;
-  color: var(--text-muted);
+  border-radius: 10px;
+  color: var(--text-secondary);
   font-size: 13px;
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
-  transition: color var(--transition-base);
-  flex: 1;
+  transition: color var(--transition-base), background var(--transition-base),
+              box-shadow var(--transition-base);
+  flex: 0 1 auto;
   min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 7px;
   white-space: nowrap;
-  overflow: hidden;
 }
 
 @media (max-width: 480px) {
@@ -259,30 +287,28 @@ html, body, #root {
   }
 }
 
-.tab-btn:hover { color: var(--text-secondary); }
+.tab-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
 
-.tab-btn--active { color: var(--accent); }
-
-.tab-btn--active::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 12px;
-  right: 12px;
-  height: 2px;
-  background: var(--accent);
-  border-radius: 2px 2px 0 0;
+.tab-btn--active,
+.tab-btn--active:hover {
+  color: var(--accent);
+  background: var(--accent-dim);
+  box-shadow: inset 0 0 0 1px rgba(45, 212, 191, 0.28), 0 0 14px rgba(45, 212, 191, 0.07);
+  font-weight: 600;
 }
 
 .budget-tab-badge {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 9px;
+  right: 9px;
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: var(--expense);
-  box-shadow: 0 0 6px rgba(248,113,113,0.6);
+  box-shadow: 0 0 0 2px rgba(8, 11, 16, 0.85), 0 0 6px rgba(248, 113, 113, 0.6);
 }
 
 /* ── Buttons ── */
@@ -583,6 +609,63 @@ html, body, #root {
   flex-shrink: 0;
 }
 
+.server-toolbar__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 9px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.server-toolbar__url {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: background var(--transition-base);
+}
+.server-toolbar__url:hover {
+  background: var(--accent-dim);
+}
+
+.server-toolbar__qr {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px;
+  margin-top: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  animation: filterBarFadeIn 160ms ease;
+}
+
+.server-toolbar__sync {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 /* ── Status badges ── */
 .status-dot {
   width: 7px;
@@ -731,20 +814,22 @@ html, body, #root {
 @media (max-width: 640px) {
   .app-header {
     padding: 0 var(--space-md);
-    height: 48px;
+    height: 50px;
   }
-  .app-header__filepath {
+  .app-header__filepath,
+  .app-header__name,
+  .app-header__role {
     display: none;
   }
 
+  .tab-nav {
+    padding: 5px var(--space-sm);
+  }
   .tab-btn {
     font-size: 12px;
     padding: 0 8px;
     gap: 4px;
-  }
-  .tab-btn--active::after {
-    left: 6px;
-    right: 6px;
+    flex: 1 1 0;
   }
 
   .dashboard-main {
@@ -822,12 +907,30 @@ html, body, #root {
   color: var(--text-secondary);
   font-size: 13px;
 }
+.app-header__avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--accent-dim);
+  border: 1px solid rgba(45, 212, 191, 0.3);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  user-select: none;
+}
 .app-header__role {
-  border: 1px solid var(--border-hover);
+  border: 1px solid rgba(45, 212, 191, 0.3);
+  background: var(--accent-dim);
+  color: var(--accent);
   border-radius: 999px;
   padding: 1px 8px;
-  font-size: 11px;
-  letter-spacing: 0.04em;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 .app-header__signout {
@@ -835,11 +938,15 @@ html, body, #root {
   border: 1px solid var(--border);
   color: var(--text-secondary);
   border-radius: 6px;
-  padding: 3px 10px;
+  padding: 4px 10px;
   font-size: 12px;
+  font-family: inherit;
   cursor: pointer;
+  transition: color var(--transition-base), border-color var(--transition-base),
+              background var(--transition-base);
 }
 .app-header__signout:hover {
   color: var(--text-primary);
   border-color: var(--border-hover);
+  background: rgba(255, 255, 255, 0.05);
 }
