@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { MagnifyingGlass } from '@phosphor-icons/react'
 import type { Transaction } from '../../../shared/types'
 
 type SortCol = 'date' | 'description' | 'category' | 'income' | 'debit' | 'balance'
@@ -15,28 +16,27 @@ function fmtDate(d: Date): string {
   return d.toLocaleDateString('en-CA')
 }
 
-const thBase: React.CSSProperties = {
-  padding: '9px 14px',
-  textAlign: 'left',
-  fontSize: 11,
-  fontWeight: 600,
-  color: 'var(--text-muted)',
-  textTransform: 'uppercase',
-  letterSpacing: '0.07em',
-  cursor: 'pointer',
-  userSelect: 'none',
-  borderBottom: '1px solid var(--border)',
-  whiteSpace: 'nowrap',
-  background: 'var(--bg-surface)',
-  transition: 'color 150ms ease',
-}
+const COLUMNS: { col: SortCol; label: string; right?: boolean }[] = [
+  { col: 'date', label: 'Date' },
+  { col: 'description', label: 'Description' },
+  { col: 'category', label: 'Category' },
+  { col: 'income', label: 'Income', right: true },
+  { col: 'debit', label: 'Debit', right: true },
+  { col: 'balance', label: 'Balance', right: true },
+]
 
-const thRight: React.CSSProperties = { ...thBase, textAlign: 'right' }
+// Mobile sort dropdown options (thead is hidden on small screens)
+const MOBILE_SORTS: { value: string; label: string; col: SortCol; dir: SortDir }[] = [
+  { value: 'date-desc', label: 'Newest first', col: 'date', dir: 'desc' },
+  { value: 'date-asc', label: 'Oldest first', col: 'date', dir: 'asc' },
+  { value: 'debit-desc', label: 'Largest debit', col: 'debit', dir: 'desc' },
+  { value: 'income-desc', label: 'Largest income', col: 'income', dir: 'desc' },
+  { value: 'description-asc', label: 'Description A–Z', col: 'description', dir: 'asc' },
+]
 
 export function LogTab({ transactions, totalCount }: LogTabProps): JSX.Element {
   const [sortCol, setSortCol] = useState<SortCol>('date')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
-  const [hoveredRow, setHoveredRow] = useState<number | null>(null)
 
   function handleSort(col: SortCol): void {
     if (col === sortCol) {
@@ -60,154 +60,90 @@ export function LogTab({ transactions, totalCount }: LogTabProps): JSX.Element {
     })
   }, [transactions, sortCol, sortDir])
 
+  // Filtered-view money totals — the answer to "how much is this search?"
+  const totalIn  = useMemo(() => transactions.reduce((s, t) => s + t.income, 0), [transactions])
+  const totalOut = useMemo(() => transactions.reduce((s, t) => s + t.debit, 0), [transactions])
+
+  const mobileSortValue = MOBILE_SORTS.find((o) => o.col === sortCol && o.dir === sortDir)?.value ?? 'date-desc'
+
   function SortArrow({ col }: { col: SortCol }): JSX.Element | null {
     if (col !== sortCol) return null
     return (
-      <svg
-        style={{ marginLeft: 4, opacity: 0.7, verticalAlign: 'middle' }}
-        width="9" height="9" viewBox="0 0 24 24" fill="currentColor"
-      >
-        {sortDir === 'asc'
-          ? <path d="M12 4l8 16H4z"/>
-          : <path d="M12 20L4 4h16z"/>
-        }
+      <svg className="log-th__arrow" width="9" height="9" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        {sortDir === 'asc' ? <path d="M12 4l8 16H4z"/> : <path d="M12 20L4 4h16z"/>}
       </svg>
     )
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Row count */}
-      <div style={{
-        padding: '8px 20px 6px',
-        fontSize: 11,
-        color: 'var(--text-muted)',
-        flexShrink: 0,
-        letterSpacing: '0.03em',
-      }}>
-        {transactions.length} of {totalCount} transactions
+    <div className="log-tab">
+      {/* Result count + filtered totals + mobile sort */}
+      <div className="log-count">
+        <span className="log-count__n">
+          {transactions.length.toLocaleString('en-CA')} of {totalCount.toLocaleString('en-CA')} transactions
+        </span>
+        {transactions.length > 0 && (
+          <span className="log-count__sums">
+            {totalIn > 0 && <span className="log-count__in">↑ {fmt.format(totalIn)}</span>}
+            {totalOut > 0 && <span className="log-count__out">↓ {fmt.format(totalOut)}</span>}
+          </span>
+        )}
+        <select
+          className="log-sort-mobile"
+          value={mobileSortValue}
+          onChange={(e) => {
+            const opt = MOBILE_SORTS.find((o) => o.value === e.target.value)
+            if (opt) { setSortCol(opt.col); setSortDir(opt.dir) }
+          }}
+          aria-label="Sort transactions"
+        >
+          {MOBILE_SORTS.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
       </div>
 
-      {/* Table scroll */}
-      <div style={{ overflowX: 'auto', overflowY: 'auto', flex: 1, WebkitOverflowScrolling: 'touch' }}>
+      {/* Table scroll region */}
+      <div className="log-scroll">
         {sorted.length === 0 ? (
-          <div style={{
-            padding: '60px 20px',
-            textAlign: 'center',
-            color: 'var(--text-muted)',
-            fontSize: 14,
-          }}>
-            No transactions match your filters
+          <div className="log-empty">
+            <MagnifyingGlass size={26} weight="duotone" />
+            <p>No transactions match your filters</p>
+            <span>Try a broader date range or clear the search.</span>
           </div>
         ) : (
-          <table style={{ width: '100%', minWidth: 640, borderCollapse: 'collapse' }}>
+          <table className="log-table">
             <thead>
               <tr>
-                <th style={thBase} onClick={() => handleSort('date')}>
-                  Date<SortArrow col="date" />
-                </th>
-                <th style={thBase} onClick={() => handleSort('description')}>
-                  Description<SortArrow col="description" />
-                </th>
-                <th style={thBase} onClick={() => handleSort('category')}>
-                  Category<SortArrow col="category" />
-                </th>
-                <th style={thRight} onClick={() => handleSort('income')}>
-                  Income<SortArrow col="income" />
-                </th>
-                <th style={thRight} onClick={() => handleSort('debit')}>
-                  Debit<SortArrow col="debit" />
-                </th>
-                <th style={thRight} onClick={() => handleSort('balance')}>
-                  Balance<SortArrow col="balance" />
-                </th>
+                {COLUMNS.map(({ col, label, right }) => (
+                  <th
+                    key={col}
+                    className={`log-th${right ? ' log-th--right' : ''}`}
+                    aria-sort={col === sortCol ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
+                  >
+                    <button className="log-th__btn" onClick={() => handleSort(col)}>
+                      {label}
+                      <SortArrow col={col} />
+                    </button>
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {sorted.map((t, i) => {
-                const isHovered = hoveredRow === i
-                return (
-                  <tr
-                    key={`${t.rowIndex}`}
-                    onMouseEnter={() => setHoveredRow(i)}
-                    onMouseLeave={() => setHoveredRow(null)}
-                    style={{
-                      backgroundColor: isHovered
-                        ? 'rgba(255,255,255,0.04)'
-                        : i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)',
-                      transition: 'background-color 100ms ease',
-                    }}
-                  >
-                    <td style={{
-                      padding: '7px 14px',
-                      fontSize: 12,
-                      color: 'var(--text-muted)',
-                      borderBottom: '1px solid var(--border-subtle)',
-                      whiteSpace: 'nowrap',
-                      fontVariantNumeric: 'tabular-nums',
-                    }}>
-                      {fmtDate(t.date)}
-                    </td>
-                    <td style={{
-                      padding: '7px 14px',
-                      fontSize: 13,
-                      color: 'var(--text-primary)',
-                      borderBottom: '1px solid var(--border-subtle)',
-                      maxWidth: 260,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}>
-                      {t.description}
-                    </td>
-                    <td style={{
-                      padding: '7px 14px',
-                      borderBottom: '1px solid var(--border-subtle)',
-                      whiteSpace: 'nowrap',
-                    }}>
-                      <span className="cat-pill">{t.category}</span>
-                    </td>
-                    <td style={{
-                      padding: '7px 14px',
-                      fontSize: 13,
-                      textAlign: 'right',
-                      borderBottom: '1px solid var(--border-subtle)',
-                      whiteSpace: 'nowrap',
-                      fontVariantNumeric: 'tabular-nums',
-                    }}>
-                      {t.income > 0
-                        ? <span style={{ color: 'var(--income)', fontWeight: 500 }}>{fmt.format(t.income)}</span>
-                        : <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>—</span>
-                      }
-                    </td>
-                    <td style={{
-                      padding: '7px 14px',
-                      fontSize: 13,
-                      textAlign: 'right',
-                      borderBottom: '1px solid var(--border-subtle)',
-                      whiteSpace: 'nowrap',
-                      fontVariantNumeric: 'tabular-nums',
-                    }}>
-                      {t.debit > 0
-                        ? <span style={{ color: 'var(--expense)', fontWeight: 500 }}>{fmt.format(t.debit)}</span>
-                        : <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>—</span>
-                      }
-                    </td>
-                    <td style={{
-                      padding: '7px 14px',
-                      fontSize: 13,
-                      textAlign: 'right',
-                      borderBottom: '1px solid var(--border-subtle)',
-                      whiteSpace: 'nowrap',
-                      fontVariantNumeric: 'tabular-nums',
-                      color: 'var(--balance)',
-                      fontWeight: 500,
-                    }}>
-                      {fmt.format(t.balance)}
-                    </td>
-                  </tr>
-                )
-              })}
+              {sorted.map((t) => (
+                <tr key={t.rowIndex} className="log-row">
+                  <td className="log-td log-td--date">{fmtDate(t.date)}</td>
+                  <td className="log-td log-td--desc" title={t.description}>{t.description}</td>
+                  <td className="log-td log-td--cat"><span className="cat-pill">{t.category}</span></td>
+                  <td className={`log-td log-td--income${t.income > 0 ? '' : ' log-td--blank'}`}>
+                    {t.income > 0 ? <span className="log-amt log-amt--in">{fmt.format(t.income)}</span> : <span className="log-dash">—</span>}
+                  </td>
+                  <td className={`log-td log-td--debit${t.debit > 0 ? '' : ' log-td--blank'}`}>
+                    {t.debit > 0 ? <span className="log-amt log-amt--out">−{fmt.format(t.debit)}</span> : <span className="log-dash">—</span>}
+                  </td>
+                  <td className="log-td log-td--balance">{fmt.format(t.balance)}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         )}

@@ -1,4 +1,5 @@
-import React from 'react'
+import { useRef, useEffect } from 'react'
+import { CategoryFilter } from './CategoryFilter'
 
 export type LogDatePreset = 'this-month' | 'specific-month' | 'all'
 
@@ -27,223 +28,124 @@ interface LogFilterBarProps {
   onChange: (state: LogFilterState) => void
 }
 
-const TOP_PRESETS: { key: LogDatePreset; label: string }[] = [
-  { key: 'this-month', label: 'This Month' },
-  { key: 'all', label: 'All' },
-]
-
 const INCOME_EXPENSE_OPTIONS: { key: LogFilterState['incomeExpense']; label: string }[] = [
   { key: 'all',      label: 'All' },
   { key: 'income',   label: 'Income' },
   { key: 'expenses', label: 'Expenses' },
 ]
 
-function segmentGroup(children: React.ReactNode): JSX.Element {
-  return (
-    <div style={{
-      display: 'flex',
-      borderRadius: 8,
-      overflow: 'hidden',
-      border: '1px solid var(--border)',
-      background: 'rgba(255,255,255,0.03)',
-    }}>
-      {children}
-    </div>
-  )
-}
-
-function segBtn(
-  label: string,
-  isActive: boolean,
-  onClick: () => void,
-  isLast = false,
-): JSX.Element {
-  return (
-    <button
-      key={label}
-      className="preset-segment"
-      onClick={onClick}
-      style={{
-        padding: '5px 12px',
-        fontSize: 12,
-        fontWeight: isActive ? 600 : 400,
-        fontFamily: 'inherit',
-        cursor: 'pointer',
-        background: isActive ? 'var(--accent)' : 'transparent',
-        color: isActive ? '#080B10' : 'var(--text-muted)',
-        border: 'none',
-        borderRight: !isLast ? '1px solid var(--border)' : 'none',
-        whiteSpace: 'nowrap',
-        minHeight: 34,
-        transition: 'background 150ms ease, color 150ms ease',
-      }}
-    >
-      {label}
-    </button>
-  )
+function monthLabel(ym: string): string {
+  const [y, m] = ym.split('-')
+  return `${MONTH_NAMES[parseInt(m, 10) - 1]} ${y}`
 }
 
 export function LogFilterBar({ filterState, allCategories, availableMonths, onChange }: LogFilterBarProps): JSX.Element {
-  function handleChipToggle(cat: string): void {
-    const next = new Set(filterState.activeCategories)
-    if (next.has(cat)) next.delete(cat)
-    else next.add(cat)
-    onChange({ ...filterState, activeCategories: next })
+  const searchRef = useRef<HTMLInputElement>(null)
+
+  // "/" focuses search from anywhere on the page (unless already typing)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key !== '/') return
+      const target = e.target as HTMLElement | null
+      const tag = target?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) return
+      e.preventDefault()
+      searchRef.current?.focus()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [])
+
+  // Month dropdown value: preset or a specific YYYY-MM
+  const monthValue = filterState.datePreset === 'specific-month' && filterState.selectedMonthYear
+    ? filterState.selectedMonthYear
+    : filterState.datePreset
+
+  const handleMonthChange = (value: string): void => {
+    if (value === 'all' || value === 'this-month') {
+      onChange({ ...filterState, datePreset: value, selectedMonthYear: null })
+    } else {
+      onChange({ ...filterState, datePreset: 'specific-month', selectedMonthYear: value })
+    }
   }
 
   return (
     <div className="log-filter-bar">
-      {/* Row 1: date + type toggle + search */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-
-        {segmentGroup(
-          TOP_PRESETS.map((preset, i) =>
-            segBtn(
-              preset.label,
-              filterState.datePreset === preset.key,
-              () => onChange({ ...filterState, datePreset: preset.key, selectedMonthYear: null }),
-              i === TOP_PRESETS.length - 1,
-            )
-          )
-        )}
-
-        {segmentGroup(
-          INCOME_EXPENSE_OPTIONS.map((opt, i) =>
-            segBtn(
-              opt.label,
-              filterState.incomeExpense === opt.key,
-              () => onChange({ ...filterState, incomeExpense: opt.key }),
-              i === INCOME_EXPENSE_OPTIONS.length - 1,
-            )
-          )
-        )}
-
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+      <div className="filter-bar-top">
+        {/* Search — the primary control */}
+        <div className="log-search">
           <svg
-            width="12" height="12"
+            className="log-search__icon"
+            width="13" height="13"
             viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
             strokeLinecap="round" strokeLinejoin="round"
-            style={{ position: 'absolute', left: 9, color: 'var(--text-muted)', pointerEvents: 'none' }}
+            aria-hidden="true"
           >
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
           <input
-            type="text"
-            placeholder="Search..."
+            ref={searchRef}
+            type="search"
+            className="log-search__input"
+            placeholder="Search transactions…  ( / )"
+            aria-label="Search transaction descriptions"
             value={filterState.descriptionSearch}
             onChange={(e) => onChange({ ...filterState, descriptionSearch: e.target.value })}
-            style={{
-              fontSize: 12,
-              padding: '5px 10px 5px 28px',
-              background: 'var(--bg-elevated)',
-              border: '1px solid var(--border)',
-              borderRadius: 8,
-              color: 'var(--text-primary)',
-              outline: 'none',
-              width: 160,
-              fontFamily: 'inherit',
+            onKeyDown={(e) => {
+              if (e.key === 'Escape' && filterState.descriptionSearch !== '') {
+                e.stopPropagation()
+                onChange({ ...filterState, descriptionSearch: '' })
+              }
             }}
           />
+          {filterState.descriptionSearch !== '' && (
+            <button
+              className="log-search__clear"
+              onClick={() => onChange({ ...filterState, descriptionSearch: '' })}
+              aria-label="Clear search"
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          )}
         </div>
-      </div>
 
-      {/* Month picker chips */}
-      {availableMonths.length > 0 && (
-        <div
-          className="log-category-chips"
-          style={{
-            display: 'flex',
-            gap: 5,
-            overflowX: 'auto',
-            overflowY: 'hidden',
-            WebkitOverflowScrolling: 'touch',
-            paddingBottom: 1,
-            scrollbarWidth: 'none',
-          }}
+        {/* Month dropdown — replaces the scrolling month chip row */}
+        <select
+          className="log-month-select"
+          value={monthValue}
+          onChange={(e) => handleMonthChange(e.target.value)}
+          aria-label="Filter by month"
         >
-          {availableMonths.map((ym) => {
-            const [y, m] = ym.split('-')
-            const label    = `${MONTH_NAMES[parseInt(m, 10) - 1]} ${y.slice(2)}`
-            const isActive = filterState.datePreset === 'specific-month' && filterState.selectedMonthYear === ym
+          <option value="all">All time</option>
+          <option value="this-month">This month</option>
+          {availableMonths.map((ym) => (
+            <option key={ym} value={ym}>{monthLabel(ym)}</option>
+          ))}
+        </select>
+
+        {/* Income / expense segmented toggle */}
+        <div className="date-preset-group" role="group" aria-label="Transaction type">
+          {INCOME_EXPENSE_OPTIONS.map((opt) => {
+            const isActive = filterState.incomeExpense === opt.key
             return (
               <button
-                key={ym}
-                onClick={() => onChange({ ...filterState, datePreset: 'specific-month', selectedMonthYear: ym })}
-                style={{
-                  borderRadius: 99,
-                  padding: '3px 11px',
-                  fontSize: 11,
-                  fontWeight: isActive ? 600 : 400,
-                  fontFamily: 'inherit',
-                  cursor: 'pointer',
-                  border: `1px solid ${isActive ? 'var(--accent)' : 'var(--border)'}`,
-                  background: isActive ? 'var(--accent-dim)' : 'transparent',
-                  color: isActive ? 'var(--accent)' : 'var(--text-muted)',
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0,
-                  transition: 'background 150ms ease, border-color 150ms ease, color 150ms ease',
-                }}
+                key={opt.key}
+                className={`preset-segment${isActive ? ' preset-segment--active' : ''}`}
+                aria-pressed={isActive}
+                onClick={() => onChange({ ...filterState, incomeExpense: opt.key })}
               >
-                {label}
+                {opt.label}
               </button>
             )
           })}
         </div>
-      )}
 
-      {/* Category chips */}
-      <div
-        className="log-category-chips"
-        style={{
-          display: 'flex',
-          gap: 5,
-          overflowX: 'auto',
-          overflowY: 'hidden',
-          WebkitOverflowScrolling: 'touch',
-          paddingBottom: 1,
-          scrollbarWidth: 'none',
-        }}
-      >
-        {filterState.activeCategories.size > 0 && (
-          <button
-            onClick={() => onChange({ ...filterState, activeCategories: new Set() })}
-            style={{
-              borderRadius: 99, padding: '3px 11px', fontSize: 11,
-              fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
-              border: '1px solid rgba(45,212,191,0.35)', background: 'transparent',
-              color: 'var(--accent)', whiteSpace: 'nowrap', flexShrink: 0,
-            }}
-          >
-            Clear
-          </button>
-        )}
-
-        {allCategories.map((cat) => {
-          const isActive = filterState.activeCategories.has(cat)
-          return (
-            <button
-              key={cat}
-              className="filter-chip"
-              onClick={() => handleChipToggle(cat)}
-              style={{
-                borderRadius: 99,
-                padding: '3px 11px',
-                fontSize: 11,
-                fontWeight: isActive ? 600 : 400,
-                fontFamily: 'inherit',
-                cursor: 'pointer',
-                border: `1px solid ${isActive ? 'var(--accent)' : 'var(--border)'}`,
-                background: isActive ? 'var(--accent-dim)' : 'transparent',
-                color: isActive ? 'var(--accent)' : 'var(--text-muted)',
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
-                transition: 'background 150ms ease, border-color 150ms ease, color 150ms ease',
-              }}
-            >
-              {cat}
-            </button>
-          )
-        })}
+        <CategoryFilter
+          mode="filter"
+          allCategories={allCategories}
+          activeCategories={filterState.activeCategories}
+          onChange={(next) => onChange({ ...filterState, activeCategories: next })}
+        />
       </div>
     </div>
   )

@@ -1,5 +1,9 @@
+import { useState, useMemo } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BudgetTab } from '../src/renderer/src/components/BudgetTab'
+import { LogTab } from '../src/renderer/src/components/LogTab'
+import { LogFilterBar, DEFAULT_LOG_FILTER } from '../src/renderer/src/components/LogFilterBar'
+import type { LogFilterState } from '../src/renderer/src/components/LogFilterBar'
 import { MonthlyChart } from '../src/renderer/src/components/MonthlyChart'
 import { CategoryBreakdownChart } from '../src/renderer/src/components/CategoryBreakdownChart'
 import { BalanceChart } from '../src/renderer/src/components/BalanceChart'
@@ -64,9 +68,49 @@ window.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
 
 const page = new URLSearchParams(location.search).get('page') ?? 'dashboard'
 
+function LogPreview(): JSX.Element {
+  const [filter, setFilter] = useState<LogFilterState>(DEFAULT_LOG_FILTER)
+  const filtered = useMemo(() => {
+    let out = txns
+    const now = new Date()
+    if (filter.datePreset === 'this-month') {
+      out = out.filter((t) => t.date.getFullYear() === now.getFullYear() && t.date.getMonth() === now.getMonth())
+    } else if (filter.datePreset === 'specific-month' && filter.selectedMonthYear) {
+      const [y, m] = filter.selectedMonthYear.split('-').map(Number)
+      out = out.filter((t) => t.date.getFullYear() === y && t.date.getMonth() === m - 1)
+    }
+    if (filter.activeCategories.size > 0) out = out.filter((t) => filter.activeCategories.has(t.category))
+    if (filter.incomeExpense === 'income') out = out.filter((t) => t.income > 0)
+    else if (filter.incomeExpense === 'expenses') out = out.filter((t) => t.debit > 0)
+    if (filter.descriptionSearch.trim() !== '') {
+      const needle = filter.descriptionSearch.trim().toLowerCase()
+      out = out.filter((t) => t.description.toLowerCase().includes(needle))
+    }
+    return out
+  }, [filter])
+  const months = useMemo(() => {
+    const seen = new Set<string>()
+    for (const t of txns) seen.add(`${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`)
+    return Array.from(seen).sort((a, b) => b.localeCompare(a))
+  }, [])
+  return (
+    <div className="log-tab-outer" style={{ height: '100vh' }}>
+      <LogFilterBar
+        filterState={filter}
+        allCategories={[...CATS].sort()}
+        availableMonths={months}
+        onChange={setFilter}
+      />
+      <LogTab transactions={filtered} totalCount={txns.length} />
+    </div>
+  )
+}
+
 createRoot(document.getElementById('root')!).render(
   <div style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
-    {page === 'budget' ? (
+    {page === 'log' ? (
+      <LogPreview />
+    ) : page === 'budget' ? (
       <main className="budget-tab-outer">
         <BudgetTab
           transactions={txns}
