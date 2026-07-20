@@ -267,6 +267,69 @@ html, body, #root {
   justify-content: center;
 }
 
+/* ── Chart cards ── */
+.chart-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.chart-card__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chart-toggle {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  flex-shrink: 0;
+}
+
+.chart-toggle__btn {
+  width: 30px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color var(--transition-base), background var(--transition-base),
+              box-shadow var(--transition-base);
+}
+.chart-toggle__btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+.chart-toggle__btn--active,
+.chart-toggle__btn--active:hover {
+  background: var(--accent-dim);
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1px rgba(45, 212, 191, 0.28);
+}
+
+@media (pointer: coarse) {
+  .chart-toggle__btn {
+    width: 40px;
+    height: 36px;
+  }
+}
+
 .filter-bar {
   animation: filterBarFadeIn 180ms ease forwards;
 }
