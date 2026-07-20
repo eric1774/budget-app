@@ -330,13 +330,36 @@ html, body, #root {
 .filter-popover__action:hover { background: var(--accent-dim); }
 
 .filter-popover__list {
-  max-height: 260px;
+  /* Tall enough for ~16 categories before scrolling kicks in */
+  max-height: min(56vh, 520px);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 1px;
   margin: 0 -4px;
   padding: 0 4px;
+  scrollbar-gutter: stable;
+}
+/* Visible scrollbar inside the popover so overflow is discoverable */
+.filter-popover__list::-webkit-scrollbar { width: 8px; }
+.filter-popover__list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 99px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+/* Bottom fade hints there is more to scroll */
+.filter-popover--overflowing::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 6px;
+  height: 28px;
+  border-radius: 0 0 8px 8px;
+  background: linear-gradient(to bottom, transparent, rgba(15, 22, 35, 0.95));
+  pointer-events: none;
 }
 
 .filter-popover__item {

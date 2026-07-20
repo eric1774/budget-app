@@ -34,6 +34,15 @@ export function FilterBar({ filterState, allCategories, onChange }: FilterBarPro
   const [catOpen, setCatOpen] = useState(false)
   const [catSearch, setCatSearch] = useState('')
   const catRef = useRef<HTMLDivElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
+  // True while the list has more content below the fold (drives the fade hint)
+  const [listOverflows, setListOverflows] = useState(false)
+
+  const updateOverflow = (): void => {
+    const el = listRef.current
+    if (!el) return
+    setListOverflows(el.scrollHeight - el.scrollTop - el.clientHeight > 4)
+  }
 
   // Close popover on outside click or Escape
   useEffect(() => {
@@ -56,6 +65,11 @@ export function FilterBar({ filterState, allCategories, onChange }: FilterBarPro
   useEffect(() => {
     if (catOpen) setCatSearch('')
   }, [catOpen])
+
+  // Recompute the scroll hint when the popover opens or the list changes
+  useEffect(() => {
+    if (catOpen) updateOverflow()
+  }, [catOpen, catSearch, allCategories])
 
   const handlePresetClick = (preset: FilterState['datePreset']): void => {
     onChange({
@@ -149,7 +163,7 @@ export function FilterBar({ filterState, allCategories, onChange }: FilterBarPro
           </button>
 
           {catOpen && (
-            <div className="filter-popover" role="dialog" aria-label="Filter categories">
+            <div className={`filter-popover${listOverflows ? ' filter-popover--overflowing' : ''}`} role="dialog" aria-label="Filter categories">
               <input
                 type="search"
                 className="filter-popover__search"
@@ -162,7 +176,7 @@ export function FilterBar({ filterState, allCategories, onChange }: FilterBarPro
                 <button className="filter-popover__action" onClick={handleAll}>Select all</button>
                 <button className="filter-popover__action" onClick={handleNone}>Clear</button>
               </div>
-              <div className="filter-popover__list">
+              <div className="filter-popover__list" ref={listRef} onScroll={updateOverflow}>
                 {visibleCategories.length === 0 && (
                   <span className="filter-popover__empty">No matches</span>
                 )}
