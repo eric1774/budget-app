@@ -641,12 +641,35 @@ export default function App(): JSX.Element {
             </svg>
           </div>
           <span className="app-header__title">Budget</span>
+          {filePath && (
+            <span className="app-header__filepath" title={filePath}>
+              {filePath}
+            </span>
+          )}
         </div>
-        {filePath && (
-          <span className="app-header__filepath" title={filePath}>
-            {filePath}
-          </span>
-        )}
+
+        {/* Floating glass pill navigation — centered in the header */}
+        <nav className="tab-nav" role="tablist" aria-label="Main navigation" onKeyDown={handleTabKeyDown}>
+          {TABS.map(({ key, label, icon }) => (
+            <button
+              key={key}
+              id={`tab-${key}`}
+              role="tab"
+              aria-selected={activeTab === key}
+              aria-controls={`panel-${key}`}
+              tabIndex={activeTab === key ? 0 : -1}
+              className={`tab-btn${activeTab === key ? ' tab-btn--active' : ''}`}
+              onClick={() => selectTab(key)}
+            >
+              {icon}
+              <span className="tab-label">{label}</span>
+              {key === 'budget' && isAnyOverBudget && (
+                <span className="budget-tab-badge" role="status" aria-label="Some categories over budget" />
+              )}
+            </button>
+          ))}
+        </nav>
+
         <div className="app-header__actions">
           {user && (
             <span className="app-header__user" title={user.email}>
@@ -675,28 +698,6 @@ export default function App(): JSX.Element {
         lastSyncedAt={lastSyncedAt}
         onRestart={handleServerRestart}
       />
-
-      {/* Tab navigation — segmented pill rail */}
-      <nav className="tab-nav" role="tablist" aria-label="Main navigation" onKeyDown={handleTabKeyDown}>
-        {TABS.map(({ key, label, icon }) => (
-          <button
-            key={key}
-            id={`tab-${key}`}
-            role="tab"
-            aria-selected={activeTab === key}
-            aria-controls={`panel-${key}`}
-            tabIndex={activeTab === key ? 0 : -1}
-            className={`tab-btn${activeTab === key ? ' tab-btn--active' : ''}`}
-            onClick={() => selectTab(key)}
-          >
-            {icon}
-            <span className="tab-label">{label}</span>
-            {key === 'budget' && isAnyOverBudget && (
-              <span className="budget-tab-badge" role="status" aria-label="Some categories over budget" />
-            )}
-          </button>
-        ))}
-      </nav>
 
       {/* Offline badge — browser mode only, when the connection has failed */}
       {wsState === 'failed' && (
