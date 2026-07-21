@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { CSSProperties } from 'react'
 import { ArrowLeft, Plus, PencilSimple, Trash } from '@phosphor-icons/react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import type { AssetAccount, Transaction } from '../../../shared/types'
+import type { AssetAccount, AssetTransaction } from '../../../shared/types'
 import { GlassCard } from './GlassCard'
 import { ChartCard, ChartStat, TooltipShell, chartGridProps, axisTick, axisTickSmall } from './ChartCard'
 import {
@@ -46,7 +46,7 @@ function AccountTip({ active, payload, label, color }: {
 
 type ModalState =
   | { kind: 'add' }
-  | { kind: 'edit'; transaction: Transaction }
+  | { kind: 'edit'; transaction: AssetTransaction }
   | { kind: 'delete'; transactionId: string }
   | null
 
@@ -57,13 +57,13 @@ export function AccountDetailPanel({ account, onClose, onTransactionChange }: Ac
 
   const accent = TYPE_COLORS[account.type] ?? '#2DD4BF'
   const sorted = [...(account.transactions ?? [])].sort((a, b) =>
-    (a.date as unknown as string).localeCompare(b.date as unknown as string))
+    a.date.localeCompare(b.date))
 
   // Running balance area chart data (ascending by date)
   let running = 0
   const runningLineData = sorted.map(t => {
     running += t.type === 'deposit' ? t.amount : -t.amount
-    return { date: t.date as unknown as string, balance: running }
+    return { date: t.date, balance: running }
   })
   // Linked accounts chart daily snapshots instead of the running ledger.
   const lineData = isLinked
@@ -75,7 +75,7 @@ export function AccountDetailPanel({ account, onClose, onTransactionChange }: Ac
 
   // Transaction log: descending by date
   const descSorted = [...(account.transactions ?? [])].sort((a, b) =>
-    (b.date as unknown as string).localeCompare(a.date as unknown as string))
+    b.date.localeCompare(a.date))
 
   function handleSuccess(): void {
     setModal(null)
@@ -197,7 +197,7 @@ export function AccountDetailPanel({ account, onClose, onTransactionChange }: Ac
                   <div className="pay-list" style={{ marginTop: 12 }}>
                     {descSorted.map((tx) => (
                       <div key={tx.id} className="pay-row">
-                        <span className="pay-row__date">{tx.date as unknown as string}</span>
+                        <span className="pay-row__date">{tx.date}</span>
                         <span className={`pay-row__amt ${tx.type === 'deposit' ? 'pay-row__amt--principal' : 'pay-row__amt--out'}`}>
                           {tx.type === 'deposit' ? '+' : '−'}{fmtCAD(tx.amount)}
                         </span>
@@ -216,7 +216,7 @@ export function AccountDetailPanel({ account, onClose, onTransactionChange }: Ac
               <div className="pay-list">
                 {descSorted.map((tx) => (
                   <div key={tx.id} className="pay-row">
-                    <span className="pay-row__date">{tx.date as unknown as string}</span>
+                    <span className="pay-row__date">{tx.date}</span>
                     <span className={`pay-row__amt ${tx.type === 'deposit' ? 'pay-row__amt--principal' : 'pay-row__amt--out'}`}>
                       {tx.type === 'deposit' ? '+' : '−'}{fmtCAD(tx.amount)}
                     </span>

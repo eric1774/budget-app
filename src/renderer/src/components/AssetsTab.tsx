@@ -55,13 +55,11 @@ const TYPE_COLORS: Record<string, string> = {
 }
 
 function lastTransactionDate(account: AssetAccount): string | null {
-  // Asset transaction dates are ISO strings on disk; the shared type erroneously
-  // resolves to the Excel Transaction (Date) — compare as strings
   if ((account.transactions ?? []).length === 0) return null
-  return account.transactions.reduce<string>((best, t) => {
-    const d = t.date as unknown as string
-    return d.localeCompare(best) > 0 ? d : best
-  }, account.transactions[0].date as unknown as string)
+  return account.transactions.reduce<string>(
+    (best, t) => (t.date.localeCompare(best) > 0 ? t.date : best),
+    account.transactions[0].date,
+  )
 }
 
 // Use CSS class btn-primary instead
