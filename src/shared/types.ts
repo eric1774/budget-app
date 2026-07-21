@@ -46,7 +46,7 @@ export interface ServerInfo {
 
 export type AccountType = 'Checkings' | 'Savings' | 'Retirement' | 'Hard Asset' | 'Investing' | 'Goal'
 
-export interface Transaction {
+export interface AssetTransaction {
   id: string                        // UUID v4
   type: 'deposit' | 'withdrawal'
   amount: number                    // always positive
@@ -58,7 +58,7 @@ export interface AssetAccount {
   id: string          // UUID v4
   name: string        // display name, e.g. "TFSA"
   type: AccountType
-  transactions: Transaction[]
+  transactions: AssetTransaction[]
   createdAt: string   // ISO datetime string
   syncedWithDashboard?: boolean  // if true, balance is sourced from dashboard
   simplefin?: SimplefinLink      // present = balance is sourced from SimpleFIN

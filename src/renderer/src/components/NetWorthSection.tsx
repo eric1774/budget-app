@@ -74,7 +74,7 @@ export function NetWorthSection({ accounts, dashboardBalance, mortgages = [] }: 
   const monthSet = new Set<string>()
   for (const acct of accounts) {
     for (const t of acct.transactions ?? []) {
-      const dateStr = t.date as unknown as string
+      const dateStr = t.date
       monthSet.add(dateStr.slice(0, 7))
     }
     for (const s of acct.snapshots ?? []) {
@@ -87,7 +87,7 @@ export function NetWorthSection({ accounts, dashboardBalance, mortgages = [] }: 
     const [y, m] = yearMonth.split('-').map(Number)
     const lastDay = new Date(y, m, 0).toISOString().slice(0, 10)
     return (acct.transactions ?? [])
-      .filter((t) => (t.date as unknown as string) <= lastDay)
+      .filter((t) => t.date <= lastDay)
       .reduce((sum, t) => (t.type === 'deposit' ? sum + t.amount : sum - t.amount), 0)
   }
 
@@ -106,7 +106,7 @@ export function NetWorthSection({ accounts, dashboardBalance, mortgages = [] }: 
           // Linked account with sync history covering this month → snapshot wins
           lastKnown[acct.id] = snap
         } else {
-          const hasTxn = (acct.transactions ?? []).some((t) => (t.date as unknown as string) <= lastDay)
+          const hasTxn = (acct.transactions ?? []).some((t) => t.date <= lastDay)
           if (hasTxn) {
             lastKnown[acct.id] = balanceAtEndOfMonth(acct, ym)
           }

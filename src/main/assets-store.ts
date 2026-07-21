@@ -2,7 +2,7 @@ import { join } from 'path'
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs'
 import { randomUUID } from 'crypto'
 import { getDataDir } from './data-dir'
-import type { AssetsData, AssetAccount, Transaction, AccountType, SimplefinLink } from '../shared/types'
+import type { AssetsData, AssetAccount, AssetTransaction, AccountType, SimplefinLink } from '../shared/types'
 
 function assetsPath(): string {
   return join(getDataDir(), 'assets.json')
@@ -107,12 +107,12 @@ export function addTransaction(
   amount: number,
   date: string,
   note?: string
-): Transaction | null {
+): AssetTransaction | null {
   const data = readAssets()
   const account = data.accounts.find(a => a.id === accountId)
   if (!account) return null
   if (account.simplefin) return null   // linked accounts have a frozen ledger
-  const transaction: Transaction = {
+  const transaction: AssetTransaction = {
     id: randomUUID(),
     type,
     amount,
@@ -128,7 +128,7 @@ export function updateTransaction(
   accountId: string,
   transactionId: string,
   fields: { type?: 'deposit' | 'withdrawal'; amount?: number; date?: string; note?: string }
-): Transaction | null {
+): AssetTransaction | null {
   const data = readAssets()
   const account = data.accounts.find(a => a.id === accountId)
   if (!account) return null

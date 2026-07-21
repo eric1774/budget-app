@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { AccountType, AssetAccount, Transaction } from '../../../shared/types'
+import type { AccountType, AssetAccount, AssetTransaction } from '../../../shared/types'
 import * as api from '../api'
 
 const overlayStyle: React.CSSProperties = {
@@ -389,7 +389,7 @@ export function AddTransactionModal({ accountId, onClose, onSaved }: AddTransact
 
 interface EditTransactionModalProps {
   accountId: string
-  transaction: Transaction
+  transaction: AssetTransaction
   onClose: () => void
   onSaved: () => void
 }
