@@ -99,3 +99,6 @@ balances appear live and accurate on the Asset Page.
 ## Branch
 `feature/plaid-assets` off master (ac25db2). Name predates the provider
 decision; the feature is SimpleFIN.
+
+## Status
+Implemented on `feature/plaid-assets` — see plan `docs/superpowers/plans/2026-07-20-simplefin-live-balances.md`. E2E verified against the live bridge on 2026-07-21 (LXC deployment: Navy Federal + Fidelity accounts discovered, mapped, and syncing; cooldown and admin gating confirmed).
