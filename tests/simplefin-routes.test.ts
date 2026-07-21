@@ -7,8 +7,8 @@ import { initAuth, type OidcFlow } from '../src/server/auth/runtime'
 import { createSession } from '../src/server/auth/session-store'
 import { startServer, stopServer } from '../src/main/server'
 import { initDataDir } from '../src/main/data-dir'
-import { updateSimplefinData } from '../src/main/simplefin-store'
-import { addAccount } from '../src/main/assets-store'
+import { getSimplefinData, updateSimplefinData } from '../src/main/simplefin-store'
+import { addAccount, getAccounts, linkSimplefin, applySyncedBalance } from '../src/main/assets-store'
 import type { AuthEnvConfig } from '../src/server/config'
 
 const env: AuthEnvConfig = {
@@ -163,5 +163,36 @@ describe('simplefin routes', () => {
     const byId = Object.fromEntries(status.discovered.map((d: { id: string }) => [d.id, d]))
     expect(byId['SF-1'].state).toBe('linked')
     expect(byId['SF-2'].state).toBe('ignored')
+  })
+
+  it('disconnect unlinks accounts and resets sync state', async () => {
+    updateSimplefinData({
+      accessUrl: 'https://u:p@bridge.example/simplefin',
+      connectedAt: '2026-07-20T12:00:00Z',
+      lastSyncAt: '2026-07-20T12:00:00Z',
+      lastSyncError: 'boom',
+      lastScheduledSlot: 'am',
+      ignoredAccountIds: ['SF-9'],
+      discovered: [
+        { id: 'SF-6', org: 'Test Org', name: 'Checking', balance: 400, balanceDate: '2026-07-20T12:00:00Z' },
+      ],
+    })
+    const acct = addAccount('Disconnect Test Account', 'Checkings')
+    linkSimplefin(acct.id, { accountId: 'SF-6', org: 'Test Org' })
+    applySyncedBalance('SF-6', 400, '2026-07-20', false)
+
+    const r = await fetch(`${base}/api/simplefin`, { method: 'DELETE', headers: { cookie: adminCookie } })
+    expect(r.status).toBe(200)
+
+    const fresh = getAccounts().find(a => a.id === acct.id)!
+    expect(fresh.simplefin).toBeUndefined()
+    expect(fresh.syncedBalance).toBeUndefined()
+    expect(fresh.snapshots).toEqual([{ date: '2026-07-20', balance: 400 }])
+
+    const data = getSimplefinData()
+    expect(data.ignoredAccountIds).toEqual([])
+    expect(data.lastSyncAt).toBeNull()
+    expect(data.lastSyncError).toBeNull()
+    expect(data.lastScheduledSlot).toBeNull()
   })
 })

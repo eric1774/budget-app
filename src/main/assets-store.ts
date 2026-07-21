@@ -132,6 +132,7 @@ export function updateTransaction(
   const data = readAssets()
   const account = data.accounts.find(a => a.id === accountId)
   if (!account) return null
+  if (account.simplefin) return null   // linked accounts have a frozen ledger
   const transaction = account.transactions.find(t => t.id === transactionId)
   if (!transaction) return null
   if (fields.type !== undefined) transaction.type = fields.type
@@ -146,6 +147,7 @@ export function deleteTransaction(accountId: string, transactionId: string): boo
   const data = readAssets()
   const account = data.accounts.find(a => a.id === accountId)
   if (!account) return false
+  if (account.simplefin) return false   // linked accounts have a frozen ledger
   const before = account.transactions.length
   account.transactions = account.transactions.filter(t => t.id !== transactionId)
   if (account.transactions.length === before) return false

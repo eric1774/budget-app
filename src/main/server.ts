@@ -416,7 +416,19 @@ export async function startServer(opts: StartServerOptions): Promise<ServerInfo>
 
     if (urlPath === '/api/simplefin' && req.method === 'DELETE') {
       if (!sfIsAdmin) { sfForbid(); return }
-      updateSimplefinData({ accessUrl: null, connectedAt: null, errors: [], discovered: [] })
+      for (const account of getAccounts()) {
+        if (account.simplefin) unlinkSimplefin(account.id)
+      }
+      updateSimplefinData({
+        accessUrl: null,
+        connectedAt: null,
+        errors: [],
+        discovered: [],
+        lastSyncAt: null,
+        lastSyncError: null,
+        lastScheduledSlot: null,
+        ignoredAccountIds: [],
+      })
       sfStatus()
       return
     }

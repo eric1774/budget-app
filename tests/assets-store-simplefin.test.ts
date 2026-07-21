@@ -4,7 +4,7 @@ import { tmpdir } from 'os'
 import { join } from 'path'
 import { initDataDir } from '../src/main/data-dir'
 import {
-  getAccounts, addAccount, addTransaction, accountBalance,
+  getAccounts, addAccount, addTransaction, updateTransaction, deleteTransaction, accountBalance,
   linkSimplefin, createLinkedAccount, unlinkSimplefin, applySyncedBalance,
 } from '../src/main/assets-store'
 
@@ -39,6 +39,18 @@ describe('linked accounts', () => {
     const acct = addAccount('NFCU Savings', 'Savings')
     linkSimplefin(acct.id, LINK)
     expect(addTransaction(acct.id, 'deposit', 50, '2026-07-20')).toBeNull()
+  })
+
+  it('updateTransaction and deleteTransaction are rejected on linked accounts (frozen ledger)', () => {
+    const acct = addAccount('NFCU Savings', 'Savings')
+    const txn = addTransaction(acct.id, 'deposit', 100, '2026-01-05')!
+    linkSimplefin(acct.id, LINK)
+
+    expect(updateTransaction(acct.id, txn.id, { amount: 999 })).toBeNull()
+    expect(deleteTransaction(acct.id, txn.id)).toBe(false)
+
+    const fresh = getAccounts().find(a => a.id === acct.id)!
+    expect(fresh.transactions).toEqual([txn])
   })
 
   it('applySyncedBalance upserts one snapshot per day and sets needsAttention', () => {

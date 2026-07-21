@@ -11,6 +11,7 @@ export function accountBalance(account: AssetAccount): number {
 }
 
 export function getDisplayBalance(account: AssetAccount, dashboardBalance?: number): number {
+  if (account.simplefin && account.syncedBalance !== undefined) return accountBalance(account)
   if (account.syncedWithDashboard && dashboardBalance !== undefined) return dashboardBalance
   return accountBalance(account)
 }
