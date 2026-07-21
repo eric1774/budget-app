@@ -23,11 +23,29 @@ const DEFAULTS: SimplefinData = {
 }
 
 export function getSimplefinData(): SimplefinData {
-  if (!existsSync(simplefinPath())) return { ...DEFAULTS }
+  if (!existsSync(simplefinPath())) {
+    return {
+      ...DEFAULTS,
+      errors: [],
+      ignoredAccountIds: [],
+      discovered: [],
+    }
+  }
   try {
-    return { ...DEFAULTS, ...(JSON.parse(readFileSync(simplefinPath(), 'utf-8')) as Partial<SimplefinData>) }
+    return {
+      ...DEFAULTS,
+      errors: [],
+      ignoredAccountIds: [],
+      discovered: [],
+      ...(JSON.parse(readFileSync(simplefinPath(), 'utf-8')) as Partial<SimplefinData>)
+    }
   } catch {
-    return { ...DEFAULTS }
+    return {
+      ...DEFAULTS,
+      errors: [],
+      ignoredAccountIds: [],
+      discovered: [],
+    }
   }
 }
 
@@ -42,5 +60,5 @@ export function updateSimplefinData(patch: Partial<SimplefinData>): SimplefinDat
 // can backfill from history (spec §2). Twice-daily syncs ≈ 730 lines/year.
 export function appendRawSync(raw: unknown): void {
   mkdirSync(getDataDir(), { recursive: true })
-  appendFileSync(rawLogPath(), JSON.stringify({ at: new Date().toISOString(), ...(raw as Record<string, unknown>) }) + '\n', 'utf-8')
+  appendFileSync(rawLogPath(), JSON.stringify({ at: new Date().toISOString(), raw }) + '\n', 'utf-8')
 }

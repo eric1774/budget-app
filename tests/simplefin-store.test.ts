@@ -32,7 +32,7 @@ describe('simplefin-store', () => {
     appendRawSync({ errors: [], accounts: [{ id: 'a2' }] })
     const raw = readFileSync(join(dir, 'simplefin-raw.jsonl'), 'utf-8').trim().split('\n')
     expect(raw).toHaveLength(2)
-    expect(JSON.parse(raw[1]).accounts[0].id).toBe('a2')
+    expect(JSON.parse(raw[1]).raw.accounts[0].id).toBe('a2')
   })
 
   it('recovers from a corrupt simplefin.json with defaults', () => {
