@@ -53,17 +53,23 @@ type ModalState =
 export function AccountDetailPanel({ account, onClose, onTransactionChange }: AccountDetailPanelProps): JSX.Element {
   const [modal, setModal] = useState<ModalState>(null)
 
+  const isLinked = !!account.simplefin
+
   const accent = TYPE_COLORS[account.type] ?? '#2DD4BF'
   const sorted = [...(account.transactions ?? [])].sort((a, b) =>
     (a.date as unknown as string).localeCompare(b.date as unknown as string))
 
   // Running balance area chart data (ascending by date)
   let running = 0
-  const lineData = sorted.map(t => {
+  const runningLineData = sorted.map(t => {
     running += t.type === 'deposit' ? t.amount : -t.amount
     return { date: t.date as unknown as string, balance: running }
   })
-  const currentBalance = running
+  // Linked accounts chart daily snapshots instead of the running ledger.
+  const lineData = isLinked
+    ? (account.snapshots ?? []).map((s) => ({ date: s.date, balance: s.balance }))
+    : runningLineData
+  const currentBalance = isLinked && account.syncedBalance !== undefined ? account.syncedBalance : running
   const totalIn = sorted.reduce((s, t) => (t.type === 'deposit' ? s + t.amount : s), 0)
   const totalOut = sorted.reduce((s, t) => (t.type === 'deposit' ? s : s + t.amount), 0)
 
@@ -86,13 +92,20 @@ export function AccountDetailPanel({ account, onClose, onTransactionChange }: Ac
         </button>
         <h2 className="page-title">{account.name}</h2>
         <span className="asset-chip" style={{ '--card-accent': accent } as CSSProperties}>{account.type}</span>
-        <button className="btn-primary" style={{ marginLeft: 'auto' }} onClick={() => setModal({ kind: 'add' })}>
-          <Plus size={13} weight="bold" />
-          Add
-        </button>
+        {isLinked ? (
+          <span className="asset-card__meta" style={{ marginLeft: 'auto' }}>
+            <span className="status-dot status-dot--online" />
+            Live · {account.simplefin!.org}
+          </span>
+        ) : (
+          <button className="btn-primary" style={{ marginLeft: 'auto' }} onClick={() => setModal({ kind: 'add' })}>
+            <Plus size={13} weight="bold" />
+            Add
+          </button>
+        )}
       </div>
 
-      {(account.transactions ?? []).length === 0 ? (
+      {(account.transactions ?? []).length === 0 && !isLinked ? (
         <GlassCard style={{ padding: 20 }}>
           <div className="asset-empty">No transactions yet. Add a deposit or withdrawal to get started.</div>
         </GlassCard>
@@ -102,8 +115,10 @@ export function AccountDetailPanel({ account, onClose, onTransactionChange }: Ac
           <div className="summary-cards">
             {[
               { label: 'Balance', value: currentBalance, color: accent, sub: `${sorted.length} transaction${sorted.length === 1 ? '' : 's'}` },
-              { label: 'Deposits', value: totalIn, color: 'var(--income)', sub: undefined },
-              { label: 'Withdrawals', value: totalOut, color: 'var(--expense)', sub: undefined },
+              ...(!isLinked ? [
+                { label: 'Deposits', value: totalIn, color: 'var(--income)', sub: undefined },
+                { label: 'Withdrawals', value: totalOut, color: 'var(--expense)', sub: undefined },
+              ] : []),
             ].map((card) => (
               <div
                 key={card.label}
@@ -119,91 +134,118 @@ export function AccountDetailPanel({ account, onClose, onTransactionChange }: Ac
             ))}
           </div>
 
-          {/* Running balance */}
+          {/* Running balance / balance history */}
           <ChartCard
-            title="Running Balance"
+            title={isLinked ? 'Balance History' : 'Running Balance'}
             stat={lineData.length > 1 ? (
               <ChartStat color={currentBalance >= lineData[0].balance ? 'var(--income)' : 'var(--expense)'}>
                 {currentBalance >= lineData[0].balance ? '↑' : '↓'} {fmtShort(Math.abs(currentBalance - lineData[0].balance))} all time
               </ChartStat>
             ) : undefined}
           >
-            <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={lineData} margin={{ top: 8, right: 16, bottom: 4, left: 8 }}>
-                <defs>
-                  <linearGradient id="gradAccount" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={accent} stopOpacity={0.26} />
-                    <stop offset="100%" stopColor={accent} stopOpacity={0.02} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid {...chartGridProps} />
-                <XAxis
-                  dataKey="date"
-                  tick={axisTickSmall}
-                  tickFormatter={(v: string) => v.slice(5)}
-                  axisLine={false}
-                  tickLine={false}
-                  interval="preserveStartEnd"
-                />
-                <YAxis
-                  tick={axisTick}
-                  tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`}
-                  axisLine={false}
-                  tickLine={false}
-                  width={48}
-                />
-                <Tooltip content={<AccountTip color={accent} />} />
-                <Area
-                  type="monotone"
-                  dataKey="balance"
-                  stroke={accent}
-                  strokeWidth={2}
-                  fill="url(#gradAccount)"
-                  dot={false}
-                  activeDot={{ r: 5 }}
-                  animationDuration={700}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            {isLinked && lineData.length < 2 ? (
+              <div className="chart-empty">Balance history builds up as syncs run — check back tomorrow.</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={220}>
+                <AreaChart data={lineData} margin={{ top: 8, right: 16, bottom: 4, left: 8 }}>
+                  <defs>
+                    <linearGradient id="gradAccount" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={accent} stopOpacity={0.26} />
+                      <stop offset="100%" stopColor={accent} stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid {...chartGridProps} />
+                  <XAxis
+                    dataKey="date"
+                    tick={axisTickSmall}
+                    tickFormatter={(v: string) => v.slice(5)}
+                    axisLine={false}
+                    tickLine={false}
+                    interval="preserveStartEnd"
+                  />
+                  <YAxis
+                    tick={axisTick}
+                    tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`}
+                    axisLine={false}
+                    tickLine={false}
+                    width={48}
+                  />
+                  <Tooltip content={<AccountTip color={accent} />} />
+                  <Area
+                    type="monotone"
+                    dataKey="balance"
+                    stroke={accent}
+                    strokeWidth={2}
+                    fill="url(#gradAccount)"
+                    dot={false}
+                    activeDot={{ r: 5 }}
+                    animationDuration={700}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </ChartCard>
 
           {/* Transaction log */}
-          <GlassCard style={{ padding: 20 }}>
-            <div className="chart-card__header">
-              <span className="chart-card__title">Transaction Log</span>
-            </div>
-            <div className="pay-list">
-              {descSorted.map((tx) => (
-                <div key={tx.id} className="pay-row">
-                  <span className="pay-row__date">{tx.date as unknown as string}</span>
-                  <span className={`pay-row__amt ${tx.type === 'deposit' ? 'pay-row__amt--principal' : 'pay-row__amt--out'}`}>
-                    {tx.type === 'deposit' ? '+' : '−'}{fmtCAD(tx.amount)}
-                  </span>
-                  {tx.note && <span className="pay-row__note">{tx.note}</span>}
-                  <div className="pay-row__actions">
-                    <button
-                      className="btn-icon"
-                      title="Edit transaction"
-                      aria-label="Edit transaction"
-                      onClick={() => setModal({ kind: 'edit', transaction: tx })}
-                      style={{ width: 32, height: 32, minWidth: 32, minHeight: 32 }}
-                    >
-                      <PencilSimple size={13} />
-                    </button>
-                    <button
-                      className="btn-icon btn-icon--danger"
-                      title="Delete transaction"
-                      aria-label="Delete transaction"
-                      onClick={() => setModal({ kind: 'delete', transactionId: tx.id })}
-                      style={{ width: 32, height: 32, minWidth: 32, minHeight: 32 }}
-                    >
-                      <Trash size={13} />
-                    </button>
+          {isLinked ? (
+            (account.transactions ?? []).length > 0 && (
+              <GlassCard style={{ padding: 20 }}>
+                <details>
+                  <summary className="chart-card__title" style={{ cursor: 'pointer' }}>
+                    Historical entries ({account.transactions.length}) — frozen since linking
+                  </summary>
+                  <div className="pay-list" style={{ marginTop: 12 }}>
+                    {descSorted.map((tx) => (
+                      <div key={tx.id} className="pay-row">
+                        <span className="pay-row__date">{tx.date as unknown as string}</span>
+                        <span className={`pay-row__amt ${tx.type === 'deposit' ? 'pay-row__amt--principal' : 'pay-row__amt--out'}`}>
+                          {tx.type === 'deposit' ? '+' : '−'}{fmtCAD(tx.amount)}
+                        </span>
+                        {tx.note && <span className="pay-row__note">{tx.note}</span>}
+                      </div>
+                    ))}
                   </div>
-                </div>
-              ))}
-            </div>
-          </GlassCard>
+                </details>
+              </GlassCard>
+            )
+          ) : (
+            <GlassCard style={{ padding: 20 }}>
+              <div className="chart-card__header">
+                <span className="chart-card__title">Transaction Log</span>
+              </div>
+              <div className="pay-list">
+                {descSorted.map((tx) => (
+                  <div key={tx.id} className="pay-row">
+                    <span className="pay-row__date">{tx.date as unknown as string}</span>
+                    <span className={`pay-row__amt ${tx.type === 'deposit' ? 'pay-row__amt--principal' : 'pay-row__amt--out'}`}>
+                      {tx.type === 'deposit' ? '+' : '−'}{fmtCAD(tx.amount)}
+                    </span>
+                    {tx.note && <span className="pay-row__note">{tx.note}</span>}
+                    <div className="pay-row__actions">
+                      <button
+                        className="btn-icon"
+                        title="Edit transaction"
+                        aria-label="Edit transaction"
+                        onClick={() => setModal({ kind: 'edit', transaction: tx })}
+                        style={{ width: 32, height: 32, minWidth: 32, minHeight: 32 }}
+                      >
+                        <PencilSimple size={13} />
+                      </button>
+                      <button
+                        className="btn-icon btn-icon--danger"
+                        title="Delete transaction"
+                        aria-label="Delete transaction"
+                        onClick={() => setModal({ kind: 'delete', transactionId: tx.id })}
+                        style={{ width: 32, height: 32, minWidth: 32, minHeight: 32 }}
+                      >
+                        <Trash size={13} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </GlassCard>
+          )}
         </>
       )}
 
