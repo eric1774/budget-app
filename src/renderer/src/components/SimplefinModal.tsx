@@ -189,7 +189,7 @@ export function SimplefinModal({ status, accounts, onClose, onChanged }: Simplef
                         <select
                           style={{ ...selectStyle, width: 'auto', flex: 1 }}
                           disabled={busy}
-                          defaultValue=""
+                          value=""
                           onChange={(e) => {
                             const v = e.target.value
                             if (v === '') return
