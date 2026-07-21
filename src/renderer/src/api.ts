@@ -183,11 +183,15 @@ export function claimSimplefin(setupToken: string): Promise<SimplefinStatus> {
 
 /** Manual sync. Distinguishes cooldown (429) and bridge failure (502) from success. */
 export async function syncSimplefin(): Promise<{ ok: true; status: SimplefinStatus } | { ok: false; error: string; httpStatus: number }> {
-  const r = await fetch('/api/simplefin/sync', { method: 'POST' })
-  bounceToLoginOn401(r)
-  const body = await r.json().catch(() => ({}))
-  if (r.ok) return { ok: true, status: body as SimplefinStatus }
-  return { ok: false, error: (body as { error?: string }).error ?? `HTTP ${r.status}`, httpStatus: r.status }
+  try {
+    const r = await fetch('/api/simplefin/sync', { method: 'POST' })
+    bounceToLoginOn401(r)
+    const body = await r.json().catch(() => ({}))
+    if (r.ok) return { ok: true, status: body as SimplefinStatus }
+    return { ok: false, error: (body as { error?: string }).error ?? `HTTP ${r.status}`, httpStatus: r.status }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Network error', httpStatus: 0 }
+  }
 }
 
 export function mapSimplefin(action: SimplefinMapAction): Promise<SimplefinStatus> {
