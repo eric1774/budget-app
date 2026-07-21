@@ -85,6 +85,62 @@ describe('simplefin routes', () => {
     expect(r.status).toBe(400)
   })
 
+  it('400s claim with a malformed JSON body (does not hang)', async () => {
+    const r = await fetch(`${base}/api/simplefin/claim`, {
+      method: 'POST',
+      headers: { cookie: adminCookie, 'Content-Type': 'application/json' },
+      body: '{not valid json',
+    })
+    expect(r.status).toBe(400)
+  })
+
+  it('404s map attach with an unknown accountId', async () => {
+    updateSimplefinData({
+      accessUrl: 'https://u:p@bridge.example/simplefin',
+      discovered: [
+        { id: 'SF-3', org: 'Test Org', name: 'Checking', balance: 100, balanceDate: '2026-07-20T12:00:00Z' },
+      ],
+    })
+    const r = await fetch(`${base}/api/simplefin/map`, {
+      method: 'POST',
+      headers: { cookie: adminCookie, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ simplefinAccountId: 'SF-3', action: 'attach', accountId: 'does-not-exist' }),
+    })
+    expect(r.status).toBe(404)
+  })
+
+  it('400s map create with a missing name', async () => {
+    updateSimplefinData({
+      accessUrl: 'https://u:p@bridge.example/simplefin',
+      discovered: [
+        { id: 'SF-4', org: 'Test Org', name: 'Savings', balance: 200, balanceDate: '2026-07-20T12:00:00Z' },
+      ],
+    })
+    const r = await fetch(`${base}/api/simplefin/map`, {
+      method: 'POST',
+      headers: { cookie: adminCookie, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ simplefinAccountId: 'SF-4', action: 'create', type: 'Savings' }),
+    })
+    expect(r.status).toBe(400)
+    const json = await r.json()
+    expect(json.error).toMatch(/name/i)
+  })
+
+  it('400s map with an unknown action value', async () => {
+    updateSimplefinData({
+      accessUrl: 'https://u:p@bridge.example/simplefin',
+      discovered: [
+        { id: 'SF-5', org: 'Test Org', name: 'Card', balance: 300, balanceDate: '2026-07-20T12:00:00Z' },
+      ],
+    })
+    const r = await fetch(`${base}/api/simplefin/map`, {
+      method: 'POST',
+      headers: { cookie: adminCookie, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ simplefinAccountId: 'SF-5', action: 'bogus' }),
+    })
+    expect(r.status).toBe(400)
+  })
+
   it('map ignore + attach round-trip via admin', async () => {
     updateSimplefinData({
       accessUrl: 'https://u:p@bridge.example/simplefin',
