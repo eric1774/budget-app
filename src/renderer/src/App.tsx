@@ -804,6 +804,7 @@ export default function App(): JSX.Element {
             dashboardBalance={filteredTransactions.length > 0
               ? filteredTransactions[filteredTransactions.length - 1].balance
               : undefined}
+            user={user}
           />
         </div>
       )}

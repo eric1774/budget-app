@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { Plus, PencilSimple, Trash } from '@phosphor-icons/react'
-import type { AssetAccount, Mortgage } from '../../../shared/types'
+import type { AssetAccount, AuthUser, Mortgage } from '../../../shared/types'
 import { AccountDetailPanel } from './AccountDetailPanel'
+import { getDisplayBalance } from '../lib/balances'
 import {
   AddAccountModal,
   EditAccountModal,
@@ -21,6 +22,7 @@ interface AssetsTabProps {
   onAccountSelect: (account: AssetAccount | null) => void
   selectedAccountId: string | null
   dashboardBalance?: number
+  user: AuthUser | null
 }
 
 type ModalState =
@@ -50,12 +52,6 @@ const TYPE_COLORS: Record<string, string> = {
   Goal: '#34D399',
 }
 
-function accountBalance(account: AssetAccount): number {
-  return (account.transactions ?? []).reduce((sum, t) => {
-    return t.type === 'deposit' ? sum + t.amount : sum - t.amount
-  }, 0)
-}
-
 function lastTransactionDate(account: AssetAccount): string | null {
   // Asset transaction dates are ISO strings on disk; the shared type erroneously
   // resolves to the Excel Transaction (Date) — compare as strings
@@ -68,7 +64,7 @@ function lastTransactionDate(account: AssetAccount): string | null {
 
 // Use CSS class btn-primary instead
 
-export function AssetsTab({ onAccountSelect, selectedAccountId, dashboardBalance }: AssetsTabProps): JSX.Element {
+export function AssetsTab({ onAccountSelect, selectedAccountId, dashboardBalance, user }: AssetsTabProps): JSX.Element {
   const [accounts, setAccounts] = useState<AssetAccount[]>([])
   const [mortgages, setMortgages] = useState<Mortgage[]>([])
   const [modal, setModal] = useState<ModalState>(null)
@@ -100,11 +96,6 @@ export function AssetsTab({ onAccountSelect, selectedAccountId, dashboardBalance
   }, [])
 
   const selectedAccount = accounts.find(a => a.id === selectedAccountId) ?? null
-
-  const getDisplayBalance = (account: AssetAccount): number => {
-    if (account.syncedWithDashboard && dashboardBalance !== undefined) return dashboardBalance
-    return accountBalance(account)
-  }
 
   // Full-page detail view when an account is selected (like GoalDetailView)
   if (selectedAccount) {
@@ -145,7 +136,7 @@ export function AssetsTab({ onAccountSelect, selectedAccountId, dashboardBalance
       ) : (
         <div className="assets-account-grid">
           {accounts.map((account) => {
-            const balance = getDisplayBalance(account)
+            const balance = getDisplayBalance(account, dashboardBalance)
             const isSynced = account.syncedWithDashboard && dashboardBalance !== undefined
             const lastDate = lastTransactionDate(account)
             const accent = TYPE_COLORS[account.type] ?? 'var(--accent)'

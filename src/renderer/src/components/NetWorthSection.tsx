@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react'
 import { Scales, Bank, HandCoins } from '@phosphor-icons/react'
 import type { AssetAccount, Mortgage } from '../../../shared/types'
 import { ChartCard, ChartStat, TooltipShell, chartGridProps, axisTick, axisTickSmall } from './ChartCard'
+import { getDisplayBalance, accountBalance } from '../lib/balances'
 import {
   PieChart,
   Pie,
@@ -28,18 +29,6 @@ const cad = new Intl.NumberFormat('en-CA', {
   maximumFractionDigits: 2,
 })
 const cadShort = new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 })
-
-function accountBalance(account: AssetAccount): number {
-  return (account.transactions ?? []).reduce(
-    (sum, t) => (t.type === 'deposit' ? sum + t.amount : sum - t.amount),
-    0,
-  )
-}
-
-function getDisplayBalance(account: AssetAccount, dashboardBalance?: number): number {
-  if (account.syncedWithDashboard && dashboardBalance !== undefined) return dashboardBalance
-  return accountBalance(account)
-}
 
 const TYPE_COLORS: Record<string, string> = {
   Checkings: '#2DD4BF',
