@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { CSSProperties } from 'react'
-import { Plus, PencilSimple, Trash } from '@phosphor-icons/react'
-import type { AssetAccount, AuthUser, Mortgage } from '../../../shared/types'
+import { Plus, PencilSimple, Trash, ArrowsClockwise, LinkSimple, WarningCircle } from '@phosphor-icons/react'
+import type { AssetAccount, AuthUser, Mortgage, SimplefinStatus } from '../../../shared/types'
 import { AccountDetailPanel } from './AccountDetailPanel'
-import { getDisplayBalance } from '../lib/balances'
+import { getDisplayBalance, relTime, isStale } from '../lib/balances'
 import {
   AddAccountModal,
   EditAccountModal,
@@ -32,6 +32,7 @@ type ModalState =
   | { kind: 'add-mortgage' }
   | { kind: 'edit-mortgage'; mortgage: Mortgage }
   | { kind: 'delete-mortgage'; mortgage: Mortgage }
+  | { kind: 'simplefin' }
   | null
 
 const cadFormatter = new Intl.NumberFormat('en-CA', {
@@ -69,6 +70,9 @@ export function AssetsTab({ onAccountSelect, selectedAccountId, dashboardBalance
   const [mortgages, setMortgages] = useState<Mortgage[]>([])
   const [modal, setModal] = useState<ModalState>(null)
   const [selectedMortgageId, setSelectedMortgageId] = useState<string | null>(null)
+  const [simplefinStatus, setSimplefinStatus] = useState<SimplefinStatus | null>(null)
+  const [syncing, setSyncing] = useState(false)
+  const [syncNote, setSyncNote] = useState<string | null>(null)
 
   const reloadAccounts = useCallback(async () => {
     try {
@@ -94,6 +98,28 @@ export function AssetsTab({ onAccountSelect, selectedAccountId, dashboardBalance
       .catch(() => { if (!cancelled) setMortgages([]) })
     return () => { cancelled = true }
   }, [])
+
+  const reloadSimplefin = useCallback(async () => {
+    try { setSimplefinStatus(await api.getSimplefinStatus()) } catch { /* web-mode only */ }
+  }, [])
+
+  useEffect(() => { void reloadSimplefin() }, [reloadSimplefin])
+
+  async function handleSyncNow(): Promise<void> {
+    setSyncing(true)
+    setSyncNote(null)
+    const result = await api.syncSimplefin()
+    setSyncing(false)
+    if (result.ok) {
+      setSimplefinStatus(result.status)
+      await reloadAccounts()
+    } else {
+      setSyncNote(result.error)   // cooldown / bridge failure — quiet inline note, no toast
+    }
+  }
+
+  const isAdmin = simplefinStatus?.isAdmin ?? false
+  const showSyncControls = simplefinStatus?.connected || isAdmin
 
   const selectedAccount = accounts.find(a => a.id === selectedAccountId) ?? null
 
@@ -126,6 +152,28 @@ export function AssetsTab({ onAccountSelect, selectedAccountId, dashboardBalance
       {/* Accounts section */}
       <div className="asset-section-head">
         <span className="asset-section-head__title">Accounts</span>
+        {showSyncControls && (
+          <div className="sf-syncbar">
+            {simplefinStatus?.lastSyncAt && (
+              <span className={`asset-card__meta${isStale(simplefinStatus.lastSyncAt) ? ' sf-meta--stale' : ''}`}>
+                Synced {relTime(simplefinStatus.lastSyncAt)}
+              </span>
+            )}
+            {syncNote && <span className="asset-card__meta sf-meta--stale">{syncNote}</span>}
+            {simplefinStatus?.connected && (
+              <button className="btn-ghost" onClick={() => void handleSyncNow()} disabled={syncing} aria-label="Sync balances now">
+                <ArrowsClockwise size={13} weight="bold" className={syncing ? 'sf-spin' : undefined} />
+                {syncing ? 'Syncing…' : 'Sync now'}
+              </button>
+            )}
+            {isAdmin && (
+              <button className="btn-ghost" onClick={() => setModal({ kind: 'simplefin' })}>
+                <LinkSimple size={13} weight="bold" />
+                Linked accounts
+              </button>
+            )}
+          </div>
+        )}
         <button className="btn-ghost" onClick={() => setModal({ kind: 'add-account' })}>
           <Plus size={13} weight="bold" />
           Add Account
@@ -185,7 +233,20 @@ export function AssetsTab({ onAccountSelect, selectedAccountId, dashboardBalance
                     )}
                   </div>
                   <div className="asset-card__meta">
-                    {isSynced ? (
+                    {account.simplefin ? (
+                      account.needsAttention ? (
+                        <>
+                          <WarningCircle size={12} weight="fill" className="sf-badge-attention" />
+                          {account.simplefin.org} · needs attention
+                        </>
+                      ) : (
+                        <>
+                          <span className={`status-dot ${isStale(simplefinStatus?.lastSyncAt ?? null) ? '' : 'status-dot--online'}`} />
+                          {account.simplefin.org}
+                          {simplefinStatus?.lastSyncAt ? ` · synced ${relTime(simplefinStatus.lastSyncAt)}` : ''}
+                        </>
+                      )
+                    ) : isSynced ? (
                       <>
                         <span className="status-dot status-dot--online" />
                         Synced with Dashboard
@@ -297,6 +358,7 @@ export function AssetsTab({ onAccountSelect, selectedAccountId, dashboardBalance
       {modal?.kind === 'delete-mortgage' && (
         <DeleteMortgageModal mortgage={modal.mortgage} onClose={() => setModal(null)} onDeleted={() => { setModal(null); reloadMortgages() }} />
       )}
+      {modal?.kind === 'simplefin' && null}
     </div>
   )
 }

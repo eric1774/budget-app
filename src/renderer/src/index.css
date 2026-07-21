@@ -2344,6 +2344,26 @@ html, body, #root {
 .status-dot--offline { background: var(--text-muted); }
 .status-dot--warn    { background: var(--warning); }
 
+/* ── SimpleFIN sync UI ── */
+.sf-syncbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+.sf-syncbar + .btn-ghost { margin-left: 12px; }
+.sf-syncbar .btn-ghost:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.sf-meta--stale { color: var(--warning); }
+.sf-badge-attention { color: var(--warning); flex-shrink: 0; }
+.sf-spin {
+  animation: sf-rotate 900ms linear infinite;
+  transform-origin: center;
+}
+@keyframes sf-rotate { to { transform: rotate(360deg); } }
+
 /* ── Category pill ── */
 .cat-pill {
   display: inline-flex;
