@@ -2,7 +2,7 @@ import { join } from 'path'
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs'
 import { randomUUID } from 'crypto'
 import { getDataDir } from './data-dir'
-import type { AssetsData, AssetAccount, Transaction, AccountType } from '../shared/types'
+import type { AssetsData, AssetAccount, Transaction, AccountType, SimplefinLink } from '../shared/types'
 
 function assetsPath(): string {
   return join(getDataDir(), 'assets.json')
@@ -36,8 +36,11 @@ function writeAssets(data: AssetsData): void {
   writeFileSync(assetsPath(), JSON.stringify(data, null, 2), 'utf-8')
 }
 
-// Running sum of all transactions: deposits add, withdrawals subtract
+// Running sum of all transactions: deposits add, withdrawals subtract.
+// Linked accounts short-circuit to the last synced balance — their manual
+// ledger is frozen (spec §6: keep, but stop driving the balance).
 function accountBalance(account: AssetAccount): number {
+  if (account.simplefin && account.syncedBalance !== undefined) return account.syncedBalance
   return account.transactions.reduce((sum, t) => {
     return t.type === 'deposit' ? sum + t.amount : sum - t.amount
   }, 0)
@@ -108,6 +111,7 @@ export function addTransaction(
   const data = readAssets()
   const account = data.accounts.find(a => a.id === accountId)
   if (!account) return null
+  if (account.simplefin) return null   // linked accounts have a frozen ledger
   const transaction: Transaction = {
     id: randomUUID(),
     type,
@@ -128,6 +132,7 @@ export function updateTransaction(
   const data = readAssets()
   const account = data.accounts.find(a => a.id === accountId)
   if (!account) return null
+  if (account.simplefin) return null   // linked accounts have a frozen ledger
   const transaction = account.transactions.find(t => t.id === transactionId)
   if (!transaction) return null
   if (fields.type !== undefined) transaction.type = fields.type
@@ -142,11 +147,72 @@ export function deleteTransaction(accountId: string, transactionId: string): boo
   const data = readAssets()
   const account = data.accounts.find(a => a.id === accountId)
   if (!account) return false
+  if (account.simplefin) return false   // linked accounts have a frozen ledger
   const before = account.transactions.length
   account.transactions = account.transactions.filter(t => t.id !== transactionId)
   if (account.transactions.length === before) return false
   writeAssets(data)
   return true
+}
+
+// ── SimpleFIN links ──────────────────────────────────────────────────────────
+
+export function linkSimplefin(accountId: string, link: SimplefinLink): AssetAccount | null {
+  const data = readAssets()
+  const account = data.accounts.find(a => a.id === accountId)
+  if (!account) return null
+  account.simplefin = link
+  writeAssets(data)
+  return account
+}
+
+export function createLinkedAccount(name: string, type: AccountType, link: SimplefinLink): AssetAccount {
+  const data = readAssets()
+  const account: AssetAccount = {
+    id: randomUUID(),
+    name: name.trim(),
+    type,
+    transactions: [],
+    createdAt: new Date().toISOString(),
+    simplefin: link,
+  }
+  data.accounts.push(account)
+  writeAssets(data)
+  return account
+}
+
+// Unlink reverts to the transaction-derived balance; synced state is cleared
+// but snapshots are kept as historical record (nothing is ever deleted).
+export function unlinkSimplefin(accountId: string): AssetAccount | null {
+  const data = readAssets()
+  const account = data.accounts.find(a => a.id === accountId)
+  if (!account) return null
+  delete account.simplefin
+  delete account.syncedBalance
+  delete account.needsAttention
+  writeAssets(data)
+  return account
+}
+
+export function applySyncedBalance(
+  simplefinAccountId: string,
+  balance: number,
+  snapshotDate: string,
+  needsAttention: boolean
+): AssetAccount | null {
+  const data = readAssets()
+  const account = data.accounts.find(a => a.simplefin?.accountId === simplefinAccountId)
+  if (!account) return null
+  account.syncedBalance = balance
+  account.needsAttention = needsAttention
+  const snapshots = account.snapshots ?? []
+  const existing = snapshots.find(s => s.date === snapshotDate)
+  if (existing) existing.balance = balance
+  else snapshots.push({ date: snapshotDate, balance })
+  snapshots.sort((a, b) => a.date.localeCompare(b.date))
+  account.snapshots = snapshots
+  writeAssets(data)
+  return account
 }
 
 // Export helper for use in IPC or other modules

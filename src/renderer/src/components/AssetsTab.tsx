@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { CSSProperties } from 'react'
-import { Plus, PencilSimple, Trash } from '@phosphor-icons/react'
-import type { AssetAccount, Mortgage } from '../../../shared/types'
+import { Plus, PencilSimple, Trash, ArrowsClockwise, LinkSimple, WarningCircle } from '@phosphor-icons/react'
+import type { AssetAccount, AuthUser, Mortgage, SimplefinStatus } from '../../../shared/types'
 import { AccountDetailPanel } from './AccountDetailPanel'
+import { getDisplayBalance, relTime, isStale } from '../lib/balances'
 import {
   AddAccountModal,
   EditAccountModal,
@@ -14,6 +15,7 @@ import {
   DeleteMortgageModal,
 } from './MortgageModals'
 import { MortgageDetailView } from './MortgageDetailView'
+import { SimplefinModal } from './SimplefinModal'
 import * as api from '../api'
 import { NetWorthSection } from './NetWorthSection'
 
@@ -21,6 +23,7 @@ interface AssetsTabProps {
   onAccountSelect: (account: AssetAccount | null) => void
   selectedAccountId: string | null
   dashboardBalance?: number
+  user: AuthUser | null
 }
 
 type ModalState =
@@ -30,6 +33,7 @@ type ModalState =
   | { kind: 'add-mortgage' }
   | { kind: 'edit-mortgage'; mortgage: Mortgage }
   | { kind: 'delete-mortgage'; mortgage: Mortgage }
+  | { kind: 'simplefin' }
   | null
 
 const cadFormatter = new Intl.NumberFormat('en-CA', {
@@ -50,12 +54,6 @@ const TYPE_COLORS: Record<string, string> = {
   Goal: '#34D399',
 }
 
-function accountBalance(account: AssetAccount): number {
-  return (account.transactions ?? []).reduce((sum, t) => {
-    return t.type === 'deposit' ? sum + t.amount : sum - t.amount
-  }, 0)
-}
-
 function lastTransactionDate(account: AssetAccount): string | null {
   // Asset transaction dates are ISO strings on disk; the shared type erroneously
   // resolves to the Excel Transaction (Date) — compare as strings
@@ -68,11 +66,14 @@ function lastTransactionDate(account: AssetAccount): string | null {
 
 // Use CSS class btn-primary instead
 
-export function AssetsTab({ onAccountSelect, selectedAccountId, dashboardBalance }: AssetsTabProps): JSX.Element {
+export function AssetsTab({ onAccountSelect, selectedAccountId, dashboardBalance, user }: AssetsTabProps): JSX.Element {
   const [accounts, setAccounts] = useState<AssetAccount[]>([])
   const [mortgages, setMortgages] = useState<Mortgage[]>([])
   const [modal, setModal] = useState<ModalState>(null)
   const [selectedMortgageId, setSelectedMortgageId] = useState<string | null>(null)
+  const [simplefinStatus, setSimplefinStatus] = useState<SimplefinStatus | null>(null)
+  const [syncing, setSyncing] = useState(false)
+  const [syncNote, setSyncNote] = useState<string | null>(null)
 
   const reloadAccounts = useCallback(async () => {
     try {
@@ -99,12 +100,29 @@ export function AssetsTab({ onAccountSelect, selectedAccountId, dashboardBalance
     return () => { cancelled = true }
   }, [])
 
-  const selectedAccount = accounts.find(a => a.id === selectedAccountId) ?? null
+  const reloadSimplefin = useCallback(async () => {
+    try { setSimplefinStatus(await api.getSimplefinStatus()) } catch { /* web-mode only */ }
+  }, [])
 
-  const getDisplayBalance = (account: AssetAccount): number => {
-    if (account.syncedWithDashboard && dashboardBalance !== undefined) return dashboardBalance
-    return accountBalance(account)
+  useEffect(() => { void reloadSimplefin() }, [reloadSimplefin])
+
+  async function handleSyncNow(): Promise<void> {
+    setSyncing(true)
+    setSyncNote(null)
+    const result = await api.syncSimplefin()
+    setSyncing(false)
+    if (result.ok) {
+      setSimplefinStatus(result.status)
+      await reloadAccounts()
+    } else {
+      setSyncNote(result.error)   // cooldown / bridge failure — quiet inline note, no toast
+    }
   }
+
+  const isAdmin = simplefinStatus?.isAdmin ?? false
+  const showSyncControls = simplefinStatus?.connected || isAdmin
+
+  const selectedAccount = accounts.find(a => a.id === selectedAccountId) ?? null
 
   // Full-page detail view when an account is selected (like GoalDetailView)
   if (selectedAccount) {
@@ -135,6 +153,28 @@ export function AssetsTab({ onAccountSelect, selectedAccountId, dashboardBalance
       {/* Accounts section */}
       <div className="asset-section-head">
         <span className="asset-section-head__title">Accounts</span>
+        {showSyncControls && (
+          <div className="sf-syncbar">
+            {simplefinStatus?.lastSyncAt && (
+              <span className={`asset-card__meta${isStale(simplefinStatus.lastSyncAt) ? ' sf-meta--stale' : ''}`}>
+                Synced {relTime(simplefinStatus.lastSyncAt)}
+              </span>
+            )}
+            {syncNote && <span className="asset-card__meta sf-meta--stale">{syncNote}</span>}
+            {simplefinStatus?.connected && (
+              <button className="btn-ghost" onClick={() => void handleSyncNow()} disabled={syncing} aria-label="Sync balances now">
+                <ArrowsClockwise size={13} weight="bold" className={syncing ? 'sf-spin' : undefined} />
+                {syncing ? 'Syncing…' : 'Sync now'}
+              </button>
+            )}
+            {isAdmin && (
+              <button className="btn-ghost" onClick={() => setModal({ kind: 'simplefin' })}>
+                <LinkSimple size={13} weight="bold" />
+                Linked accounts
+              </button>
+            )}
+          </div>
+        )}
         <button className="btn-ghost" onClick={() => setModal({ kind: 'add-account' })}>
           <Plus size={13} weight="bold" />
           Add Account
@@ -145,7 +185,7 @@ export function AssetsTab({ onAccountSelect, selectedAccountId, dashboardBalance
       ) : (
         <div className="assets-account-grid">
           {accounts.map((account) => {
-            const balance = getDisplayBalance(account)
+            const balance = getDisplayBalance(account, dashboardBalance)
             const isSynced = account.syncedWithDashboard && dashboardBalance !== undefined
             const lastDate = lastTransactionDate(account)
             const accent = TYPE_COLORS[account.type] ?? 'var(--accent)'
@@ -194,7 +234,20 @@ export function AssetsTab({ onAccountSelect, selectedAccountId, dashboardBalance
                     )}
                   </div>
                   <div className="asset-card__meta">
-                    {isSynced ? (
+                    {account.simplefin ? (
+                      account.needsAttention ? (
+                        <>
+                          <WarningCircle size={12} weight="fill" className="sf-badge-attention" />
+                          {account.simplefin.org} · needs attention
+                        </>
+                      ) : (
+                        <>
+                          <span className={`status-dot ${isStale(simplefinStatus?.lastSyncAt ?? null) ? '' : 'status-dot--online'}`} />
+                          {account.simplefin.org}
+                          {simplefinStatus?.lastSyncAt ? ` · synced ${relTime(simplefinStatus.lastSyncAt)}` : ''}
+                        </>
+                      )
+                    ) : isSynced ? (
                       <>
                         <span className="status-dot status-dot--online" />
                         Synced with Dashboard
@@ -305,6 +358,14 @@ export function AssetsTab({ onAccountSelect, selectedAccountId, dashboardBalance
       )}
       {modal?.kind === 'delete-mortgage' && (
         <DeleteMortgageModal mortgage={modal.mortgage} onClose={() => setModal(null)} onDeleted={() => { setModal(null); reloadMortgages() }} />
+      )}
+      {modal?.kind === 'simplefin' && simplefinStatus && (
+        <SimplefinModal
+          status={simplefinStatus}
+          accounts={accounts}
+          onClose={() => setModal(null)}
+          onChanged={async () => { await reloadSimplefin(); await reloadAccounts() }}
+        />
       )}
     </div>
   )

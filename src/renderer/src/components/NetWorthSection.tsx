@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react'
 import { Scales, Bank, HandCoins } from '@phosphor-icons/react'
 import type { AssetAccount, Mortgage } from '../../../shared/types'
 import { ChartCard, ChartStat, TooltipShell, chartGridProps, axisTick, axisTickSmall } from './ChartCard'
+import { getDisplayBalance, snapshotAtOrBefore } from '../lib/balances'
 import {
   PieChart,
   Pie,
@@ -28,18 +29,6 @@ const cad = new Intl.NumberFormat('en-CA', {
   maximumFractionDigits: 2,
 })
 const cadShort = new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 })
-
-function accountBalance(account: AssetAccount): number {
-  return (account.transactions ?? []).reduce(
-    (sum, t) => (t.type === 'deposit' ? sum + t.amount : sum - t.amount),
-    0,
-  )
-}
-
-function getDisplayBalance(account: AssetAccount, dashboardBalance?: number): number {
-  if (account.syncedWithDashboard && dashboardBalance !== undefined) return dashboardBalance
-  return accountBalance(account)
-}
 
 const TYPE_COLORS: Record<string, string> = {
   Checkings: '#2DD4BF',
@@ -88,6 +77,9 @@ export function NetWorthSection({ accounts, dashboardBalance, mortgages = [] }: 
       const dateStr = t.date as unknown as string
       monthSet.add(dateStr.slice(0, 7))
     }
+    for (const s of acct.snapshots ?? []) {
+      monthSet.add(s.date.slice(0, 7))
+    }
   }
   const months = Array.from(monthSet).sort()
 
@@ -109,9 +101,15 @@ export function NetWorthSection({ accounts, dashboardBalance, mortgages = [] }: 
       const [y, m] = ym.split('-').map(Number)
       const lastDay = new Date(y, m, 0).toISOString().slice(0, 10)
       for (const acct of accounts) {
-        const hasTxn = (acct.transactions ?? []).some((t) => (t.date as unknown as string) <= lastDay)
-        if (hasTxn) {
-          lastKnown[acct.id] = balanceAtEndOfMonth(acct, ym)
+        const snap = snapshotAtOrBefore(acct, lastDay)
+        if (acct.simplefin && snap !== null) {
+          // Linked account with sync history covering this month → snapshot wins
+          lastKnown[acct.id] = snap
+        } else {
+          const hasTxn = (acct.transactions ?? []).some((t) => (t.date as unknown as string) <= lastDay)
+          if (hasTxn) {
+            lastKnown[acct.id] = balanceAtEndOfMonth(acct, ym)
+          }
         }
         total += lastKnown[acct.id]
       }

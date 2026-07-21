@@ -2,7 +2,7 @@
  * API layer — tries Electron IPC first, falls back to HTTP for browser/mobile mode.
  */
 
-import type { AccountType, AuthUser } from '../../shared/types'
+import type { AccountType, AuthUser, SimplefinStatus, SimplefinMapAction } from '../../shared/types'
 
 function isElectron(): boolean {
   return typeof window !== 'undefined' && !!(window as Window & { electronAPI?: unknown }).electronAPI
@@ -167,6 +167,43 @@ export function addContribution(goalId: string, amount: number, date: string, no
 export function deleteContribution(goalId: string, contributionId: string): Promise<unknown> {
   if (isElectron()) return ipc('goals:delete-contribution', goalId, contributionId)
   return httpDelete(`/api/goals/${goalId}/contributions/${contributionId}`)
+}
+
+// ── SimpleFIN ─────────────────────────────────────────────────────────────────
+// Web-mode only: the feature depends on server-side sync + admin roles, which
+// exist only behind the auth'd web server (Electron mode has neither).
+
+export function getSimplefinStatus(): Promise<SimplefinStatus> {
+  return httpGet('/api/simplefin/status') as Promise<SimplefinStatus>
+}
+
+export function claimSimplefin(setupToken: string): Promise<SimplefinStatus> {
+  return httpPost('/api/simplefin/claim', { setupToken }) as Promise<SimplefinStatus>
+}
+
+/** Manual sync. Distinguishes cooldown (429) and bridge failure (502) from success. */
+export async function syncSimplefin(): Promise<{ ok: true; status: SimplefinStatus } | { ok: false; error: string; httpStatus: number }> {
+  try {
+    const r = await fetch('/api/simplefin/sync', { method: 'POST' })
+    bounceToLoginOn401(r)
+    const body = await r.json().catch(() => ({}))
+    if (r.ok) return { ok: true, status: body as SimplefinStatus }
+    return { ok: false, error: (body as { error?: string }).error ?? `HTTP ${r.status}`, httpStatus: r.status }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Network error', httpStatus: 0 }
+  }
+}
+
+export function mapSimplefin(action: SimplefinMapAction): Promise<SimplefinStatus> {
+  return httpPost('/api/simplefin/map', action) as Promise<SimplefinStatus>
+}
+
+export function unlinkSimplefin(accountId: string): Promise<SimplefinStatus> {
+  return httpPost('/api/simplefin/unlink', { accountId }) as Promise<SimplefinStatus>
+}
+
+export function disconnectSimplefin(): Promise<SimplefinStatus> {
+  return httpDelete('/api/simplefin') as Promise<SimplefinStatus>
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────

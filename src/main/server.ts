@@ -15,7 +15,14 @@ import {
   addTransaction,
   updateTransaction,
   deleteTransaction,
+  linkSimplefin,
+  createLinkedAccount,
+  unlinkSimplefin,
 } from './assets-store'
+import { runSync, buildStatus } from './simplefin-sync'
+import { claimSetupToken } from './simplefin-client'
+import { getSimplefinData, updateSimplefinData } from './simplefin-store'
+import type { SimplefinMapAction } from '../shared/types'
 import {
   getGoals,
   addGoal,
@@ -297,6 +304,132 @@ export async function startServer(opts: StartServerOptions): Promise<ServerInfo>
       const result = deleteTransaction(accountId, transactionId)
       res.writeHead(200, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify(result))
+      return
+    }
+
+    // ── SimpleFIN REST API ──────────────────────────────────────────────────
+    // Admin = 'admin' role in web mode; with auth disabled (Electron/local
+    // dev) there are no roles, so management is allowed.
+    const sfIsAdmin = !opts.auth || opts.auth.getSessionUser(req)?.role === 'admin'
+    const sfForbid = (): void => {
+      res.writeHead(403, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'Admin only' }))
+    }
+    const sfStatus = (): void => {
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify(buildStatus(sfIsAdmin)))
+    }
+
+    if (urlPath === '/api/simplefin/status' && req.method === 'GET') {
+      sfStatus()
+      return
+    }
+
+    if (urlPath === '/api/simplefin/sync' && req.method === 'POST') {
+      // Success contract: 200 + SimplefinStatus body (renderer consumes it directly; plan's "202 {ok:true}" table line was superseded)
+      const result = await runSync({ manual: true })
+      if (result.ok) {
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify(buildStatus(sfIsAdmin)))
+      } else {
+        const status = result.reason === 'cooldown' ? 429 : result.reason === 'not-connected' ? 409 : 502
+        res.writeHead(status, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: result.message }))
+      }
+      return
+    }
+
+    if (urlPath === '/api/simplefin/claim' && req.method === 'POST') {
+      if (!sfIsAdmin) { sfForbid(); return }
+      // Not awaited: readBody's callback isn't invoked on malformed JSON (it
+      // writes its own 400 and returns), so wrapping this in an awaited
+      // Promise that only resolves from inside the callback would leave the
+      // request's handleRequest() call hanging forever on that path. Other
+      // async routes below (map, unlink) follow the same fire-and-return
+      // shape — the response is written from inside the callback whenever it
+      // completes, and handleRequest returns immediately after registering it.
+      readBody(req, res, (body) => {
+        claimSetupToken(String(body.setupToken ?? ''))
+          .then(async (accessUrl) => {
+            updateSimplefinData({ accessUrl, connectedAt: new Date().toISOString(), lastSyncError: null })
+            await runSync({ manual: false })   // first sync populates `discovered`
+            sfStatus()
+          })
+          .catch((err) => {
+            res.writeHead(400, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ error: err instanceof Error ? err.message : 'Claim failed' }))
+          })
+      })
+      return
+    }
+
+    if (urlPath === '/api/simplefin/map' && req.method === 'POST') {
+      if (!sfIsAdmin) { sfForbid(); return }
+      readBody(req, res, (body) => {
+        const action = body as SimplefinMapAction
+        const badRequest = (message: string): void => {
+          res.writeHead(400, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: message }))
+        }
+        const remote = getSimplefinData().discovered.find((d) => d.id === action.simplefinAccountId)
+        if (!remote) {
+          res.writeHead(404, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'Unknown SimpleFIN account' }))
+          return
+        }
+        if (action.action === 'attach') {
+          if (typeof action.accountId !== 'string' || action.accountId.trim() === '') {
+            badRequest('accountId is required'); return
+          }
+          const linked = linkSimplefin(action.accountId, { accountId: remote.id, org: remote.org })
+          if (!linked) {
+            res.writeHead(404, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ error: 'Unknown account' }))
+            return
+          }
+        } else if (action.action === 'create') {
+          const name = typeof action.name === 'string' ? action.name.trim() : ''
+          if (!name) { badRequest('name is required'); return }
+          if (!action.type) { badRequest('type is required'); return }
+          createLinkedAccount(name, action.type, { accountId: remote.id, org: remote.org })
+        } else if (action.action === 'ignore') {
+          const data = getSimplefinData()
+          if (!data.ignoredAccountIds.includes(remote.id)) {
+            updateSimplefinData({ ignoredAccountIds: [...data.ignoredAccountIds, remote.id] })
+          }
+        } else {
+          badRequest('Unknown action'); return
+        }
+        sfStatus()
+      })
+      return
+    }
+
+    if (urlPath === '/api/simplefin/unlink' && req.method === 'POST') {
+      if (!sfIsAdmin) { sfForbid(); return }
+      readBody(req, res, (body) => {
+        unlinkSimplefin(String(body.accountId ?? ''))
+        sfStatus()
+      })
+      return
+    }
+
+    if (urlPath === '/api/simplefin' && req.method === 'DELETE') {
+      if (!sfIsAdmin) { sfForbid(); return }
+      for (const account of getAccounts()) {
+        if (account.simplefin) unlinkSimplefin(account.id)
+      }
+      updateSimplefinData({
+        accessUrl: null,
+        connectedAt: null,
+        errors: [],
+        discovered: [],
+        lastSyncAt: null,
+        lastSyncError: null,
+        lastScheduledSlot: null,
+        ignoredAccountIds: [],
+      })
+      sfStatus()
       return
     }
 
