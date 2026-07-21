@@ -61,6 +61,10 @@ export interface AssetAccount {
   transactions: Transaction[]
   createdAt: string   // ISO datetime string
   syncedWithDashboard?: boolean  // if true, balance is sourced from dashboard
+  simplefin?: SimplefinLink      // present = balance is sourced from SimpleFIN
+  syncedBalance?: number         // last synced balance (source of truth when linked)
+  snapshots?: BalanceSnapshot[]  // daily balance history, accrues from link date
+  needsAttention?: boolean       // institution connection broken at the bridge
 }
 
 // Root structure written to assets.json
@@ -117,6 +121,56 @@ export interface Goal {
 export interface GoalsData {
   goals: Goal[]
 }
+
+// ── SimpleFIN (live balances) ────────────────────────────────────────────────
+
+export interface BalanceSnapshot {
+  date: string      // ISO "YYYY-MM-DD" local date — one per day, later syncs overwrite
+  balance: number
+}
+
+export interface SimplefinLink {
+  accountId: string   // SimpleFIN's opaque stable account id
+  org: string         // institution display name, e.g. "Navy Federal Credit Union"
+}
+
+export interface DiscoveredAccount {
+  id: string
+  org: string
+  name: string
+  balance: number
+  balanceDate: string   // ISO datetime
+}
+
+// Root structure written to simplefin.json — server-side only.
+// accessUrl is the credential; it must NEVER be sent to the client.
+export interface SimplefinData {
+  accessUrl: string | null
+  connectedAt: string | null
+  lastSyncAt: string | null          // last successful sync, ISO datetime
+  lastSyncError: string | null
+  lastScheduledSlot: string | null   // e.g. "2026-07-20-am"
+  errors: string[]                   // latest errors[] from the bridge
+  ignoredAccountIds: string[]
+  discovered: DiscoveredAccount[]
+}
+
+export type SimplefinMapState = 'linked' | 'ignored' | 'new'
+
+// Client-facing status DTO (no accessUrl!)
+export interface SimplefinStatus {
+  connected: boolean
+  lastSyncAt: string | null
+  lastSyncError: string | null
+  errors: string[]
+  isAdmin: boolean
+  discovered: (DiscoveredAccount & { state: SimplefinMapState; linkedAccountId?: string })[]
+}
+
+export type SimplefinMapAction =
+  | { simplefinAccountId: string; action: 'attach'; accountId: string }
+  | { simplefinAccountId: string; action: 'create'; name: string; type: AccountType }
+  | { simplefinAccountId: string; action: 'ignore' }
 
 // ── Auth (Phase 2) ────────────────────────────────────────────────────────────
 export type UserRole = 'admin' | 'member'
