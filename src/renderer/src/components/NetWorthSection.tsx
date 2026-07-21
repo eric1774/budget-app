@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react'
 import { Scales, Bank, HandCoins } from '@phosphor-icons/react'
 import type { AssetAccount, Mortgage } from '../../../shared/types'
 import { ChartCard, ChartStat, TooltipShell, chartGridProps, axisTick, axisTickSmall } from './ChartCard'
-import { getDisplayBalance, accountBalance } from '../lib/balances'
+import { getDisplayBalance, snapshotAtOrBefore } from '../lib/balances'
 import {
   PieChart,
   Pie,
@@ -77,6 +77,9 @@ export function NetWorthSection({ accounts, dashboardBalance, mortgages = [] }: 
       const dateStr = t.date as unknown as string
       monthSet.add(dateStr.slice(0, 7))
     }
+    for (const s of acct.snapshots ?? []) {
+      monthSet.add(s.date.slice(0, 7))
+    }
   }
   const months = Array.from(monthSet).sort()
 
@@ -98,9 +101,15 @@ export function NetWorthSection({ accounts, dashboardBalance, mortgages = [] }: 
       const [y, m] = ym.split('-').map(Number)
       const lastDay = new Date(y, m, 0).toISOString().slice(0, 10)
       for (const acct of accounts) {
-        const hasTxn = (acct.transactions ?? []).some((t) => (t.date as unknown as string) <= lastDay)
-        if (hasTxn) {
-          lastKnown[acct.id] = balanceAtEndOfMonth(acct, ym)
+        const snap = snapshotAtOrBefore(acct, lastDay)
+        if (acct.simplefin && snap !== null) {
+          // Linked account with sync history covering this month → snapshot wins
+          lastKnown[acct.id] = snap
+        } else {
+          const hasTxn = (acct.transactions ?? []).some((t) => (t.date as unknown as string) <= lastDay)
+          if (hasTxn) {
+            lastKnown[acct.id] = balanceAtEndOfMonth(acct, ym)
+          }
         }
         total += lastKnown[acct.id]
       }
