@@ -3,6 +3,7 @@ import { initDataDir } from '../main/data-dir'
 import { parseWorkbook } from '../main/excel'
 import { startServer, stopServer, setLastSnapshot } from '../main/server'
 import { startWatcher, stopWatcher } from '../main/watcher'
+import { startSyncScheduler, stopSyncScheduler } from '../main/simplefin-sync'
 import { getConfig } from './config'
 import { openDb, closeDb } from './db'
 import { initAuth, type AuthRuntime } from './auth/runtime'
@@ -39,11 +40,13 @@ async function main(): Promise<void> {
   }
 
   startWatcher(config.xlsxPath, undefined, { usePolling: true })
+  startSyncScheduler()
   const info = await startServer({ rendererRoot: config.rendererRoot, preferredPort: config.port, auth })
   console.log(`budget-app listening on ${info.url}`)
 
   const shutdown = (): void => {
     console.log('Shutting down...')
+    stopSyncScheduler()
     stopWatcher()
     stopServer().then(() => {
       closeDb()
