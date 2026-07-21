@@ -15,6 +15,7 @@ import {
   DeleteMortgageModal,
 } from './MortgageModals'
 import { MortgageDetailView } from './MortgageDetailView'
+import { SimplefinModal } from './SimplefinModal'
 import * as api from '../api'
 import { NetWorthSection } from './NetWorthSection'
 
@@ -358,7 +359,14 @@ export function AssetsTab({ onAccountSelect, selectedAccountId, dashboardBalance
       {modal?.kind === 'delete-mortgage' && (
         <DeleteMortgageModal mortgage={modal.mortgage} onClose={() => setModal(null)} onDeleted={() => { setModal(null); reloadMortgages() }} />
       )}
-      {modal?.kind === 'simplefin' && null}
+      {modal?.kind === 'simplefin' && simplefinStatus && (
+        <SimplefinModal
+          status={simplefinStatus}
+          accounts={accounts}
+          onClose={() => setModal(null)}
+          onChanged={async () => { await reloadSimplefin(); await reloadAccounts() }}
+        />
+      )}
     </div>
   )
 }
